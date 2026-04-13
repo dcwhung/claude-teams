@@ -23,14 +23,9 @@
 
 ---
 
-## Git Flow 規則（強制）
+## Git Flow 規則
 
-```
-✅ 允許：develop → fix branch → develop（merge --no-ff）→ main
-❌ 禁止：從 main 建立 fix branch
-❌ 禁止：merge main → develop（反向操作）
-❌ 禁止：直接 commit 到 develop 或 main
-```
+完全遵從 `skills/git-flow.md`。Branch 建立前必須通過該檔案定義嘅「Branch 建立強制 Pre-Flight Checklist」（含 One-Task-One-Branch 鐵律）。Review / QA 後嘅 handoff 由 Reviewer / QA Agent 按對應 Protocol 主動執行。
 
 ---
 
@@ -40,8 +35,8 @@
 1.  讀取 shared-knowledge.md（全局 + 項目）
 2.  理解 bug 描述，確認可重現步驟
 3.  輸出執行計劃，等待確認
-4.  確認目前在 develop branch，建立 fix branch：
-    git checkout develop && git checkout -b fix/[scope]/[description]
+4.  執行 `skills/git-flow.md` → Branch 建立強制 Pre-Flight Checklist（source=develop），
+    檢查通過後建立：fix/[scope]/[identifier]_[description]
 5.  🔴 先寫一個能重現 bug 嘅失敗測試
     ⚠️ 若涉及財務計算、日期邏輯或複雜業務規則：先枚舉所有 edge cases
     （pro-rated vs 實際金額、annual vs monthly、partial periods、零值等），
@@ -56,17 +51,10 @@
     d. 完成後輸出修改摘要及每個失敗嘅根源分析
     → 詳見 `skills/autonomous-loop.md`
 10. Commit（Conventional Commits 格式）
-11. 明確通知用戶：「修復完成，移交 Code Reviewer 執行 /review」
-    → 執行 /review（Code Reviewer 獨立 review，唔可 review 自己嘅代碼）
-12. Review 合格（≥90 分）後，Code Reviewer 執行：
-    a. git checkout develop
-    b. git merge --no-ff [fix-branch] -m "chore: merge [branch] into develop"
-    c. git branch -d [fix-branch]
-    d. 通知用戶：「已 merge，移交 QA Agent 執行 /test」
-13. 執行 /test（QA Agent 驗證 develop branch，確認 bug 修復且無回歸）
-14. QA 通過後，執行 develop → main merge：
-    git checkout main && git merge --no-ff develop -m "chore: merge develop into main"
-15. 如有發現 common knowledge，記錄入 shared-knowledge.md
+11. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review（Code Reviewer 獨立 review）
+12. 其後 handoff 全部由 Reviewer / QA Agent 按 `skills/git-flow.md`
+    Post-Review Handoff Protocol → Post-QA Release Protocol 自動執行。
+13. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```
 
 ---
@@ -89,7 +77,7 @@ fix/backend/CUI-0003_token_expiry_handling
 - 有 QA ticket 嘅 bug fix 必須帶 ticket number
 - 前後端問題分開開 branch（對應各自子 ticket）
 - 描述用 `snake_case`，3–5 個字
-- ⚠️ **每個 ticket 必須獨立開一條 branch**，禁止將多個 ticket 嘅修復合併入同一條 branch
+- ⚠️ **每個 ticket 必須獨立開一條 branch**，詳見 `skills/git-flow.md` → One-Task-One-Branch 鐵律
 
 ---
 
@@ -174,10 +162,7 @@ fix: 修正 dd/MM/yyyy 日期格式解析錯誤
 □ ESLint / Prettier 無錯誤
 □ Code Review 評分 ≥ 90 分
 □ 無 🔴 Critical 問題
-□ fix branch 已 merge --no-ff 入 develop
-□ fix branch 已刪除（本地）
-□ QA /test 通過（develop 回歸驗證）
-□ develop 已 merge → main
+□ 透過 Agent tool 觸發 /review，後續 handoff 由 Reviewer/QA 自動執行
 □ 如 bug 係常見陷阱，已記錄入 shared-knowledge.md
 ```
 

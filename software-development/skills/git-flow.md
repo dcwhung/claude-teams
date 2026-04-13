@@ -342,3 +342,83 @@ git rebase -i HEAD~3
 ❌ Commit message 用 "fix bug"、"update"、"misc" 等無意義描述
 ❌ Branch 名唔包含模組名（多模組項目）
 ```
+
+---
+
+## Branch 建立強制 Pre-Flight Checklist
+
+> **所有 `/feature`、`/refactor`、`/fix`、`/hotfix` 必須嚴格按順序執行以下步驟，任何一步失敗即停止，提示用戶處理後再繼續。禁止跳過或靜默忽略。**
+
+```
+□ Step 1：確認當前 branch
+    git rev-parse --abbrev-ref HEAD
+    - /feature、/refactor、/fix → 必須 === "develop"
+    - /hotfix               → 必須 === "main"
+    ❌ 不符合 → 停止。輸出：「⛔ 當前 branch 為 [X]，請先執行 git checkout [develop/main]」
+
+□ Step 2：確認 working tree 乾淨
+    git status --porcelain
+    - 輸出必須為空
+    ❌ 非空 → 停止。輸出：「⛔ 有未 commit 改動，請先 commit 或 stash 後再執行」
+
+□ Step 3：確認 task identifier 唯一（One-Task-One-Branch 鐵律）
+    - 每個 task identifier（Review Item ID / QA Ticket / 功能描述）對應一條且只得一條 branch
+    - 執行：git branch --list "*<identifier>*"
+    ❌ 若已有同 identifier 嘅 branch → 停止。
+       輸出：「⛔ 已存在 branch [X]，請 checkout 現有 branch 繼續，或確認是否需要新 identifier」
+
+□ Step 4：同步 source branch
+    git pull origin <source>   # source = develop（feature/fix/refactor）或 main（hotfix）
+
+□ Step 5：按本檔案命名規範建立 branch
+    git checkout -b <type>/<scope>/[identifier_]<description>
+
+□ Step 6：確認後輸出
+    「✅ 已建立 branch: <name>，正式進入開發」
+```
+
+### One-Task-One-Branch 鐵律
+
+> ⛔ 同一條 branch **禁止**處理多於一個 Review Item ID / QA Ticket。
+>
+> 若 `/fix W-003 W-004 S-007` 傳入多個 ID，Developer 必須**順序**處理：
+> 為第一個 ID 完成 Pre-Flight → TDD → /review → merge，再為下一個 ID 重新執行 Pre-Flight 開新 branch。
+>
+> **禁止任何形式嘅「一條 branch 打包多個 fix」。**
+
+---
+
+## Post-Review Handoff Protocol
+
+> **呢個 section 係 `/review` 完成後嘅唯一真相來源。**
+> Reviewer 完成評分後，**禁止**等用戶指令，必須立即按下表執行對應動作。
+> **禁用「通知」、「提醒」、「建議用戶執行」等被動詞；所有 handoff 必須透過 Agent tool 實際 invoke 下一個 agent。**
+
+### 標準流程（/feature、/fix、/refactor）
+
+| Review 結果 | Reviewer 強制動作 |
+|------------|------------------|
+| ✅ ≥ 90 分，且無 🔴 Critical | 1. 立即執行：`git checkout develop && git merge --no-ff [branch] -m "chore: merge [branch] into develop" && git branch -d [branch]`<br>2. 立即透過 **Agent tool** 呼叫 quality-assurance agent：<br>&nbsp;&nbsp;&nbsp;`subagent_type: quality-assurance`<br>&nbsp;&nbsp;&nbsp;`prompt: "執行 /test 驗證 develop branch，改動範圍：[branch 改動摘要]"`<br>3. ⛔ 禁止問用戶「要唔要叫 QA」 |
+| ⚠️ 75–89 分（有 Warning） | 1. ⛔ 唔 merge<br>2. 列出所有 🟡 W-NNN items<br>3. 立即透過 **Agent tool** 呼叫對應 Developer agent：<br>&nbsp;&nbsp;&nbsp;`subagent_type: frontend-developer 或 backend-developer`<br>&nbsp;&nbsp;&nbsp;`prompt: "喺現有 branch [name] 修正以下 Warning 後重新執行 /review：W-XXX [描述]、W-YYY [描述]"`<br>4. ⛔ 禁止問用戶「要唔要叫 developer 修」 |
+| ❌ < 75 分 或有 🔴 Critical | 1. ⛔ 唔 merge<br>2. 列出所有 🔴 C-NNN items 及主要 🟡 W-NNN<br>3. 立即透過 **Agent tool** 呼叫對應 Developer agent（同上格式），要求修正所有 Critical<br>4. 明確輸出：「⛔ 禁止 merge，直至 Critical 問題全部清除」 |
+
+### Hotfix 特殊流程（/hotfix，門檻 75 分）
+
+| Review 結果 | Reviewer 強制動作 |
+|------------|------------------|
+| ✅ ≥ 75 分，且無 🔴 Critical | 1. 立即執行：`git checkout main && git merge --no-ff [hotfix-branch] -m "fix: [TICKET] \| merge hotfix into main" && git branch -d [hotfix-branch]`<br>2. 立即透過 **Agent tool** 呼叫 devops-engineer：<br>&nbsp;&nbsp;&nbsp;`prompt: "立即執行 /deploy，target=production，原因：hotfix [TICKET]"`<br>3. 立即透過 **Agent tool** 呼叫 quality-assurance agent：<br>&nbsp;&nbsp;&nbsp;`prompt: "執行 smoke test 確認 hotfix [TICKET] 修復有效，完成後執行 back-merge：git checkout develop && git merge --no-ff main -m 'chore: sync hotfix [TICKET] back to develop'"`<br>4. ⛔ 禁止問用戶確認 |
+| ❌ < 75 分 或有 🔴 Critical | 同標準流程 Critical 處理，叫 Developer 修正後重新 /review |
+
+---
+
+## Post-QA Release Protocol
+
+> **呢個 section 係 `/test` 完成後嘅唯一真相來源。**
+> QA Agent 完成測試後，**禁止**等用戶確認，必須立即按下表執行。
+
+| QA 結果 | QA Agent 強制動作 |
+|--------|------------------|
+| ✅ 通過（無 🔴 Critical） | 1. 立即執行：`git checkout main && git merge --no-ff develop -m "chore: merge develop into main"`<br>2. 立即透過 **Agent tool** 呼叫 devops-engineer：<br>&nbsp;&nbsp;&nbsp;`prompt: "執行 /deploy，target=production"`<br>3. ⛔ 禁止問用戶「要唔要 release」 |
+| ❌ 失敗（有 🔴 Critical） | 1. 建立 QA ticket（CUI-XXXX），記錄失敗原因及重現步驟<br>2. 立即透過 **Agent tool** 呼叫對應 Developer agent：<br>&nbsp;&nbsp;&nbsp;`prompt: "執行 /fix CUI-XXXX"`<br>3. ⛔ 禁止 merge develop → main |
+
+> ⚠️ Hotfix 後嘅 back-merge to develop 由 QA smoke test 階段觸發（見 Post-Review Handoff Protocol → Hotfix 特殊流程），**不**經過此 Post-QA Release Protocol。

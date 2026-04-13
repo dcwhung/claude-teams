@@ -9,17 +9,15 @@
 
 ---
 
-## Git Flow 規則（強制）
+## Git Flow 規則
 
-```
-✅ Hotfix 例外流程：main → hotfix branch → main（merge --no-ff）
-✅ Back-merge（唯一合法反向操作）：hotfix 部署後 main → develop（同步 hotfix 改動）
-❌ 禁止：直接 commit 到 main 或 develop
-❌ 禁止：任何其他情況下 merge main → develop（back-merge 係 hotfix 專屬例外）
+完全遵從 `skills/git-flow.md`。
 
-⚠️ Hotfix 係唯一合法從 main 建立 branch 嘅情況。
-   一般 fix/feature/refactor 必須從 develop 建立。
-```
+> ⚠️ Hotfix 係唯一合法從 **main** 建立 branch 嘅情況（Pre-Flight Checklist source=main）。
+> Back-merge to develop 係唯一合法嘅 main → develop 操作，hotfix 專屬例外。
+> 一般 fix/feature/refactor 必須從 develop 建立。
+>
+> Review / handoff 使用 `skills/git-flow.md` → Post-Review Handoff Protocol → **Hotfix 特殊流程**（門檻 75 分）。
 
 ## 負責 Agent
 
@@ -47,24 +45,18 @@
 ```
 1.  Project Manager 確認符合 hotfix 啟動條件
 2.  輸出執行計劃（精簡版），等待確認
-3.  從 main 建立 hotfix branch（hotfix 係唯一合法從 main checkout 嘅情況）：
-    git checkout main && git checkout -b hotfix/[TICKET_NUMBER]_[描述]
+3.  執行 `skills/git-flow.md` → Branch 建立強制 Pre-Flight Checklist（source=main），
+    檢查通過後建立：hotfix/[TICKET_NUMBER]_[描述]
 4.  快速定位根源（Root Cause Analysis）
 5.  🔴 先寫重現問題嘅失敗測試
 6.  🟢 最少改動修復問題
 7.  執行關鍵測試（最少：unit + smoke test）
-8.  Commit，明確通知用戶：「修復完成，移交 Code Reviewer 執行 /review（快速版）」
-    → 執行 /review（Code Reviewer 獨立 review，聚焦 Critical 問題）
-9.  Review ≥75 分且無 🔴 Critical 後，Code Reviewer 執行：
-    git checkout main && git merge --no-ff [hotfix-branch] -m "fix: [TICKET_NUMBER] | merge hotfix into main"
-    git branch -d [hotfix-branch]
-10. 立即部署 main → production
-11. Smoke test 確認修復（QA Agent）
-12. 執行 back-merge（唯一合法嘅 main → develop 操作，同步 hotfix 改動）：
-    git checkout develop && git merge --no-ff main -m "chore: sync hotfix [TICKET_NUMBER] back to develop"
-13. 建立 post-mortem ticket
-14. 執行 /session-log
-15. ⚠️ 提示：開新對話執行 /start ai-dev-team --task=postmortem 進行根源分析
+8.  Commit，透過 Agent tool 呼叫 code-reviewer agent 執行 /review（聚焦 Critical 問題）
+9.  其後 handoff 由 Reviewer 按 `skills/git-flow.md` Post-Review Handoff Protocol →
+    Hotfix 特殊流程（門檻 75 分）自動執行：merge main、invoke DevOps 部署、invoke QA smoke test + back-merge。
+10. QA Smoke test 完成後建立 post-mortem ticket
+11. 執行 /session-log
+12. ⚠️ 提示：開新對話執行 /start ai-dev-team --task=postmortem 進行根源分析
 ```
 
 ---

@@ -111,26 +111,33 @@
 ## Merge 權限與職責邊界
 
 **職責分工**：
-- **Code Reviewer**：負責執行 `develop → main` **git merge**（唯一有此權限嘅角色）
+- **Code Reviewer**：負責執行工作 branch → develop 嘅 **git merge**（review 通過後即時執行）
+- **QA Agent**：通過後負責執行 develop → main merge
 - **DevOps Engineer**：merge 完成後，負責觸發 **CI/CD pipeline** 及實際部署
 
-Code Reviewer 執行 merge 後，通知 DevOps 執行 `/deploy`。
+所有 handoff 流程定義於 `skills/git-flow.md` → Post-Review Handoff Protocol。
 
 ```
-前提條件（缺一不可）：
-□ Developer 所有修正已 merge 入 develop
-□ QA 已通過（無 🔴 Critical）
-□ Review 評分 ≥ 90 分
+Reviewer 執行 merge 嘅前提條件（缺一不可）：
+□ Review 評分 ≥ 90 分（標準）或 ≥ 75 分（hotfix 模式）
+□ 無 🔴 Critical 問題
 
-執行：
-git checkout main
-git merge --no-ff develop -m "chore: merge develop into main"
-git push origin main
-# 完成後通知 DevOps 執行 /deploy
+執行（標準流程）：
+git checkout develop
+git merge --no-ff [branch] -m "chore: merge [branch] into develop"
+git branch -d [branch]
+# 完成後立即透過 Agent tool invoke quality-assurance agent 執行 /test
 ```
 
-❌ Developer 不可自行 merge develop → main
-❌ 未完成 QA 不可 merge develop → main
+❌ Developer 不可自行 merge 入 develop 或 main
+❌ Reviewer 唔可以等用戶叫先 merge / invoke QA
+
+## 行為準則補充
+
+> ⛔ **強制動作原則**：
+> - Review 完成後按 `skills/git-flow.md` Post-Review Handoff Protocol 立即執行對應動作
+> - 禁用「通知」、「建議用戶」、「請確認」等被動語句
+> - 所有 handoff 必須透過 **Agent tool 實際 invoke** 下一個 agent，唔係輸出一段文字
 
 ---
 

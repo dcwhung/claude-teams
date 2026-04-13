@@ -45,47 +45,13 @@
 
 ## Review 完成後必須執行嘅 Handoff
 
-Review 報告輸出後，**唔係交差**。Code Reviewer 必須按分數執行以下動作：
+Review 報告輸出後，**唔係交差**。所有 handoff 規則**完全定義於** `skills/git-flow.md` → Post-Review Handoff Protocol。Reviewer 必須按該 protocol 立即執行對應動作，**禁止等用戶確認**。
 
-### ✅ ≥ 90 分（合格）
-
-```
-1. 執行 merge（Reviewer 負責，唔係等 Developer）：
-   git checkout develop
-   git merge --no-ff [feature/refactor-branch] -m "chore: merge [branch] into develop"
-   git branch -d [feature/refactor-branch]
-
-2. 明確通知用戶：
-   「✅ Review 通過（XX/100）。已 merge [branch] → develop，branch 已刪除。
-     移交 QA Agent 執行 /test 驗證 develop。」
-
-3. 執行 /test（QA Agent 接手）
-```
-
-> ⚠️ Reviewer 唔可以等用戶叫先 merge。Review 通過即執行。
-
-### ⚠️ 75–89 分（需修正）
-
-```
-1. 列出所有 🟡 Warning items（附 ID）
-2. 明確通知 Developer Agent：
-   「⚠️ Review 未通過（XX/100）。請修正以下 Warning 後重新提交：
-     W-XXX：[描述]
-     W-XXX：[描述]
-   修正完成後再次執行 /review。」
-3. 唔執行 merge，等待 Developer 修正後重新 review
-```
-
-### ❌ < 75 分 或有 🔴 Critical（不合格）
-
-```
-1. 列出所有 🔴 Critical items（附 ID）及主要 Warning
-2. 明確通知 Developer Agent：
-   「❌ Review 不合格（XX/100）。以下問題必須修正：
-     C-XXX：[描述]（Critical）
-   修正完成後再次執行 /review。」
-3. 明確阻止 merge：「⛔ 禁止 merge，直至 Critical 問題全部修正。」
-```
+> ⛔ **Reviewer 禁令**：
+> - 禁用「通知」、「提醒」、「建議用戶執行」等被動語句
+> - 所有 handoff 必須透過 **Agent tool 實際 invoke** 下一個 agent（QA 或 Developer）
+> - 禁止輸出「請確認是否繼續」、「要唔要叫 developer fix」、「需要叫 QA 嗎」等問句
+> - Hotfix review 使用同一 protocol 嘅 **Hotfix 特殊流程**（門檻 75 分）
 
 ---
 

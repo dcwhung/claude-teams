@@ -7,14 +7,9 @@
 
 ---
 
-## Git Flow 規則（強制）
+## Git Flow 規則
 
-```
-✅ 允許：develop → refactor branch → develop（merge --no-ff）→ main
-❌ 禁止：從 main 建立 refactor branch
-❌ 禁止：merge main → develop（反向操作）
-❌ 禁止：直接 commit 到 develop 或 main
-```
+完全遵從 `skills/git-flow.md`。Branch 建立前必須通過該檔案定義嘅「Branch 建立強制 Pre-Flight Checklist」。Review / QA 後嘅 handoff 由 Reviewer / QA Agent 按對應 Protocol 主動執行。
 
 ## 負責 Agent
 
@@ -45,9 +40,9 @@
 ```
 1. 讀取 shared-knowledge.md（全局 + 項目）
 2. 輸出執行計劃，等待確認
-3. 確認目前在 develop branch，所有現有測試通過（作為行為基準）
-4. 建立 refactor branch（必須從 develop）：
-   git checkout develop && git checkout -b refactor/[scope]/[description]
+3. 確認所有現有測試通過（作為行為基準）
+4. 執行 `skills/git-flow.md` → Branch 建立強制 Pre-Flight Checklist（source=develop），
+   檢查通過後建立：refactor/[scope]/[identifier]_[description]
 5. 逐步重構，每個動作後執行測試確認全綠：
    ⚡ 若重構橫跨 3+ 個獨立模組（無共用依賴）：使用 Agent tool 並行派發，每個模組一個子 Agent
       各子 Agent 有明確唔重疊嘅檔案範圍；有共用依賴時改為順序執行
@@ -59,17 +54,10 @@
    - 調整分層
 6. 完成後執行完整測試套件，確認全綠
 7. Commit（Conventional Commits 格式）
-8. 明確通知用戶：「重構完成，移交 Code Reviewer 執行 /review」
-   → 執行 /review（Code Reviewer 獨立 review，唔可 review 自己嘅代碼）
-9. Review 合格（≥ 90 分）後，Code Reviewer 執行以下步驟：
-   a. git checkout develop
-   b. git merge --no-ff [refactor-branch] -m "chore: merge [branch] into develop"
-   c. git branch -d [refactor-branch]
-   d. 通知用戶：「已 merge，移交 QA Agent 執行 /test」
-10. 執行 /test（QA Agent 驗證 develop branch 行為不變）
-11. QA 通過後，執行 develop → main merge：
-    git checkout main && git merge --no-ff develop -m "chore: merge develop into main"
-12. 如有發現 common knowledge，記錄入 shared-knowledge.md
+8. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review（Code Reviewer 獨立 review）
+9. 其後 handoff 全部由 Reviewer / QA Agent 按 `skills/git-flow.md`
+   Post-Review Handoff Protocol → Post-QA Release Protocol 自動執行。
+10. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```
 
 ---
@@ -138,10 +126,7 @@ refactor: 統一 API error response 格式
 □ ESLint / Prettier 無錯誤
 □ Code Review 評分 ≥ 90 分
 □ 無 🔴 Critical 問題
-□ refactor branch 已 merge --no-ff 入 develop
-□ refactor branch 已刪除（本地）
-□ QA /test 通過（develop 行為驗證）
-□ develop 已 merge → main
+□ 透過 Agent tool 觸發 /review，後續 handoff 由 Reviewer/QA 自動執行
 ```
 
 ---

@@ -142,6 +142,17 @@ export default function () {
 
 ---
 
+## QA 完成後 Handoff
+
+所有 handoff 規則**完全定義於** `skills/git-flow.md` → Post-QA Release Protocol。QA Agent 完成測試後，**禁止等用戶確認**，必須立即按該 protocol 執行：
+
+- ✅ **通過**（無 🔴 Critical）→ 立即執行 develop→main merge，透過 Agent tool invoke devops-engineer 執行 /deploy
+- ❌ **失敗**（有 🔴 Critical）→ 立即建立 QA ticket，透過 Agent tool invoke 對應 Developer 執行 /fix
+
+> ⛔ 禁止輸出「要唔要 release」、「請確認是否 merge」等問句。
+
+---
+
 ## 使用方式
 
 ```

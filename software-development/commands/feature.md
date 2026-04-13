@@ -6,14 +6,9 @@
 
 ---
 
-## Git Flow 規則（強制）
+## Git Flow 規則
 
-```
-✅ 允許：develop → feature branch → develop（merge --no-ff）→ main
-❌ 禁止：從 main 建立 feature branch
-❌ 禁止：merge main → develop（反向操作）
-❌ 禁止：直接 commit 到 develop 或 main
-```
+完全遵從 `skills/git-flow.md`。Branch 建立前必須通過該檔案定義嘅「Branch 建立強制 Pre-Flight Checklist」。Review / QA 後嘅 handoff 由 Reviewer / QA Agent 按「Post-Review Handoff Protocol」及「Post-QA Release Protocol」主動執行，Developer 無須介入。
 
 ## 負責 Agent
 
@@ -28,8 +23,8 @@
 1. 讀取 shared-knowledge.md（全局 + 項目）
 2. 讀取 spec 及 plan（確認功能需求及驗收標準）
 3. 輸出執行計劃，等待確認
-4. 確認目前在 develop branch，建立 feature branch（必須從 develop）：
-   git checkout develop && git checkout -b feature/[scope]/[description]
+4. 執行 `skills/git-flow.md` → Branch 建立強制 Pre-Flight Checklist（source=develop），
+   檢查通過後建立：feature/[scope]/[identifier]_[description]
    ⚡ 若功能橫跨 3+ 個獨立模組：使用 Agent tool 為每個模組派生子 Agent 並行開發
       各子 Agent 有明確唔重疊嘅檔案範圍；完成後執行整合測試
       詳見 `skills/autonomous-loop.md`
@@ -41,17 +36,11 @@
    🔵 Refactor → 重構，保持測試全綠
 6. 完成所有功能點後，執行完整測試套件，確認全綠
 7. Commit（Conventional Commits 格式）
-8. 明確通知用戶：「功能完成，移交 Code Reviewer 執行 /review」
-   → 執行 /review（Code Reviewer 獨立 review）
-9. Review 合格（≥90 分）後，Code Reviewer 執行：
-   a. git checkout develop
-   b. git merge --no-ff [feature-branch] -m "chore: merge [branch] into develop"
-   c. git branch -d [feature-branch]
-   d. 通知用戶：「已 merge，移交 QA Agent 執行 /test」
-10. 執行 /test（QA Agent 喺 develop 驗證功能）
-11. QA 通過後，執行 develop → main merge：
-    git checkout main && git merge --no-ff develop -m "chore: merge develop into main"
-12. 如有發現 common knowledge，記錄入 shared-knowledge.md
+8. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review（Code Reviewer 獨立 review）
+9. 其後 handoff 全部由 Reviewer / QA Agent 按 `skills/git-flow.md`
+   Post-Review Handoff Protocol → Post-QA Release Protocol 自動執行，
+   Developer 無須介入。
+10. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```
 
 ---
@@ -138,9 +127,7 @@ feat: CUI-0021 | 新增付款 webhook 處理
 □ Code Review 評分 ≥ 90 分
 □ 無 🔴 Critical 問題
 □ Commit history 清晰
-□ feature branch 已 merge --no-ff 入 develop
-□ feature branch 已刪除（本地）
-□ QA /test 通過（develop 行為驗證）
+□ 透過 Agent tool 觸發 /review，後續 handoff 由 Reviewer/QA 自動執行
 ```
 
 ---
