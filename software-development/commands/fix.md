@@ -38,8 +38,8 @@
 4.  執行 `skills/git-flow.md` → Branch 建立強制 Pre-Flight Checklist（source=develop），
     檢查通過後建立：fix/[scope]/[identifier]_[description]
 5.  🔴 先寫一個能重現 bug 嘅失敗測試
-    ⚠️ 若涉及財務計算、日期邏輯或複雜業務規則：先枚舉所有 edge cases
-    （pro-rated vs 實際金額、annual vs monthly、partial periods、零值等），
+    ⚠️ 若涉及複雜業務規則（計算邏輯、日期邏輯、狀態機等）：
+    先枚舉所有 edge cases（零值、邊界值、null、異常輸入、並發操作、跨境條件），
     確保測試覆蓋全部情況，再進入修復。詳見 `skills/autonomous-loop.md`
 6.  定位 bug 根源（Root Cause Analysis）
 7.  🟢 修復 bug，令測試通過

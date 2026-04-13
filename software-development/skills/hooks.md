@@ -8,20 +8,21 @@
 
 ## 背景：為何需要 Hooks
 
-Session insight 分析顯示最常見嘅 friction：
-- **Buggy Code（8 次）**：variable redeclaration、語法錯誤、財務計算邏輯錯誤
-- **Post-merge 測試失敗（2 次）**：develop→main merge 後 stale files 引入測試失敗
+兩類常見 friction，hooks 可以自動攔截：
+- **語法 / 靜態錯誤**：variable redeclaration、類型錯誤、lint 違規
+- **Post-merge 回歸**：merge 後 stale files 引入測試失敗
 
 Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才發現。
 
 ---
 
-## 推薦配置（GAS JavaScript 項目）
+## 推薦配置
 
-### Hook 1：Edit 後即時 JS 語法檢查
+### Hook 1：Edit 後即時語法檢查（以 JS 為例）
 
-**解決問題**：variable redeclaration、語法錯誤（report 嘅最大 friction）
+**解決問題**：variable redeclaration、語法錯誤
 **觸發時機**：每次 `Edit` 或 `Write` 工具執行後
+**注意**：以下範例針對 `.js` 檔案，可按項目語言調整（如 TypeScript 用 `tsc --noEmit`，Python 用 `python -m py_compile`）
 
 ```json
 {

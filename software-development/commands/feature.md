@@ -29,8 +29,9 @@
       各子 Agent 有明確唔重疊嘅檔案範圍；完成後執行整合測試
       詳見 `skills/autonomous-loop.md`
 5. 逐個功能點執行 TDD 循環：
-   ⚠️ 若涉及財務計算、日期邏輯：先枚舉 edge cases（pro-rated、annual vs monthly、
-   partial periods、零值），再寫測試。詳見 `skills/autonomous-loop.md`
+   ⚠️ 若涉及複雜業務規則（計算邏輯、日期邏輯、狀態機等）：
+   先枚舉所有 edge cases（零值、邊界值、null、異常輸入、並發操作），再寫測試。
+   詳見 `skills/autonomous-loop.md`
    🔴 Red    → 寫失敗測試
    🟢 Green  → 最少代碼通過測試
    🔵 Refactor → 重構，保持測試全綠

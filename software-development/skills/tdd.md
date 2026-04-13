@@ -19,8 +19,8 @@
 
 **目標**：定義預期行為
 
-> ⚠️ **財務計算、日期邏輯、複雜業務規則例外**：進入 Red 前先枚舉所有 edge cases
-> （pro-rated vs 實際金額、annual vs monthly subscriptions、partial periods、零值），
+> ⚠️ **複雜業務規則例外**（計算邏輯、日期邏輯、狀態機等）：進入 Red 前先枚舉所有 edge cases
+> （零值、邊界值、null、異常輸入、並發操作、跨境條件等），
 > 確保後續測試全部覆蓋。詳見 `skills/autonomous-loop.md`
 
 規則：

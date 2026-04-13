@@ -117,7 +117,7 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 
 ## Hooks 配置（推薦）
 
-詳見 `skills/hooks.md`。每個 GAS 項目建議設定：
+詳見 `skills/hooks.md`。每個項目建議設定：
 
 | Hook | 觸發時機 | 用途 |
 |------|----------|------|

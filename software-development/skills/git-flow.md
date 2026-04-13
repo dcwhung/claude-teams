@@ -139,19 +139,19 @@ git push origin main --tags
 
 > ⚠️ `|` 分隔符**只在有 ticket number 時使用**，無 ticket 時直接 `[類型]: [描述]`。
 > ⚠️ 每個 sub-project 都有獨立 git repo，**唔使用 scope**（即唔寫 `feat(ModuleName):`）。
->    有 ticket 時 ticket ID 本身已包含 project context（如 `TS-001` = Travel_Summary）。
+>    有 ticket 時 ticket ID 本身已包含 project context（如 `PRJ-001`）。
 
 ### 範例
 
 ```
-✅ feat: add onOpen menu trigger
-✅ fix: RV-TS-003 | replace is1stElement with isFirstElement boolean
+✅ feat: add user login API
+✅ fix: PRJ-003 | replace is1stElement with isFirstElement boolean
 ✅ chore: merge develop into main
-✅ docs: add function and inline comments across Travel_Summary
+✅ docs: add inline comments across payment module
 
-❌ feat(Travel_Summary): add onOpen menu trigger   ← 唔用 scope
-❌ chore: | merge develop into main                ← 無 ticket 唔用 |
-❌ refactor: | migrate to unified utils namespace  ← 無 ticket 唔用 |
+❌ feat(PaymentModule): add stripe webhook   ← 唔用 scope
+❌ chore: | merge develop into main          ← 無 ticket 唔用 |
+❌ refactor: | migrate to unified utils      ← 無 ticket 唔用 |
 ```
 
 ### 類型

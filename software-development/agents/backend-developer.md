@@ -243,19 +243,20 @@ Model / Entity        ← 數據結構定義
 
 ```
 ✅ Developer 可以做：
-   - checkout feature/fix branch 自 develop
-   - commit 改動到 feature/fix branch
-   - merge feature/fix branch → develop（--no-ff）
-   - merge 完成後 delete task branch：git branch -d [branch-name]
+   - 按 `skills/git-flow.md` Pre-Flight Checklist 建立 task branch 自 develop
+   - commit 改動到 task branch，推送至 remote
+   - 完成後透過 Agent tool 觸發 Code Reviewer 執行 /review
 
 ❌ Developer 絕對不可以做：
    - 直接 commit 到 develop 或 main
-   - merge develop → main（此權限屬於 Code Reviewer）
+   - 自行 merge task branch → develop（此權限屬於 Code Reviewer）
+   - merge develop → main（此權限屬於 QA Agent，在 QA pass 後執行）
    - 跳過 Code Review 直接入 develop
-   - 保留已 merge 的 task branch（main / develop 除外）
+   - 自行刪除 task branch（由 Code Reviewer 在 merge 後執行）
 ```
 
-develop → main 只可由 **Code Reviewer** 執行，且必須在 QA pass 之後。
+task branch → develop 由 **Code Reviewer** 執行（review ≥ 90 分後）。
+develop → main 由 **QA Agent** 執行（/test 通過後）。
 
 ---
 

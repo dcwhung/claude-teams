@@ -42,7 +42,7 @@
 ## Review 檢查清單
 
 ### 🔴 Critical 檢查項
-- [ ] **部署配置完整性**：有冇刪除或遷移 config 檔案（`.clasp.json`、`.env.example`、CI config 等）但無同步更新 root-level 對應檔案，導致 build / deploy 失敗
+- [ ] **部署配置完整性**：有冇刪除或遷移 config 檔案（`.env.example`、CI config、框架配置等）但無同步更新 root-level 對應檔案，導致 build / deploy 失敗
 - [ ] 安全漏洞（SQL injection、XSS、CSRF、未授權訪問）
 - [ ] 業務邏輯錯誤（條件判斷、計算、狀態轉換）
 - [ ] 數據一致性問題（缺少 transaction、race condition）
