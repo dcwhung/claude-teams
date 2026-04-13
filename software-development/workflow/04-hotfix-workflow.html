@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dev Team — 緊急修復 Hotfix</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'SF Pro Display', -apple-system, sans-serif; padding: 32px; }
+  h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 14px; margin-bottom: 40px; }
+  .section { margin-bottom: 56px; }
+  h2 { font-size: 18px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
+  .diagram-card { background: #141921; border: 1px solid #1e293b; border-radius: 12px; padding: 28px; overflow-x: auto; }
+  .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+  .nav a { background: #1e293b; color: #94a3b8; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; border: 1px solid #2d3748; transition: all 0.2s; }
+  .nav a:hover { background: #2d3748; color: #e2e8f0; }
+  .nav a.active { background: #dc2626; color: #fff; border-color: #dc2626; }
+  .warning-box { background: #450a0a; border: 1px solid #dc2626; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; font-size: 13px; color: #fca5a5; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<h1>緊急修復流程 — /hotfix</h1>
+<p class="subtitle">生產環境緊急事故 → 快速修復 → Back-merge → Post-mortem</p>
+
+<nav class="nav">
+  <a href="00-overview.html">總覽</a>
+  <a href="01-new-project.html">新項目流程</a>
+  <a href="02-feature-tdd.html">功能開發 TDD</a>
+  <a href="03-fix-workflow.html">Bug 修復</a>
+  <a href="04-hotfix-workflow.html" class="active">緊急修復</a>
+  <a href="05-rescue-project.html">接手舊項目</a>
+  <a href="06-review-deploy.html">Review → 部署</a>
+</nav>
+
+<div class="warning-box">
+  ⚠️ <strong>Hotfix 只適用於生產緊急情況。</strong> 非緊急問題一律使用 /fix 經正常流程處理。啟動前必須確認符合啟動條件，由 PM 授權。
+</div>
+
+<div class="section">
+  <h2>Hotfix vs Fix 決策</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '14px', 'background': '#141921', 'mainBkg': '#1e293b', 'lineColor': '#475569'}}}%%
+flowchart TD
+    ISSUE(["🚨 發現問題"]) --> CHECK
+
+    CHECK{"符合 Hotfix 啟動條件?"}
+
+    subgraph CONDITIONS["🔴 Hotfix 啟動條件（符合其中一項）"]
+        C1["🔴 生產環境服務完全中斷（outage）"]
+        C2["🔴 核心功能無法使用，影響大量用戶"]
+        C3["🔴 嚴重安全漏洞已被利用或即將被利用"]
+        C4["🔴 數據洩露或數據損壞風險"]
+    end
+
+    CHECK -->|"✅ 符合"| HOTFIX["/hotfix<br/>🔧 緊急修復流程<br/>從 main checkout"]
+    CHECK -->|"❌ 不符合"| FIX["/fix<br/>🔨 正常修復流程<br/>從 develop checkout"]
+
+    subgraph COMPARE["對比"]
+        T1["Hotfix：<br/>• Checkout from main<br/>• Merge to main 直接<br/>• 再 back-merge to develop<br/>• 最少可接受測試<br/>• Review ≥ 75 分<br/>• 事後 post-mortem"]
+        T2["Fix：<br/>• Checkout from develop<br/>• Merge to develop → main<br/>• 完整測試套件<br/>• Review ≥ 90 分<br/>• QA 驗證後才部署"]
+    end
+
+    HOTFIX -.-> T1
+    FIX -.-> T2
+
+    style CHECK fill:#1e293b,stroke:#334155
+    style CONDITIONS fill:#450a0a,stroke:#dc2626
+    style HOTFIX fill:#450a0a,stroke:#dc2626,color:#fca5a5
+    style FIX fill:#052e16,stroke:#16a34a,color:#86efac
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>/hotfix 完整執行流程</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','nodeBorder': '#334155','fontSize': '13px'}}}%%
+flowchart TD
+    START(["🚨 /hotfix"]) --> PM_AUTH
+
+    subgraph AUTH["🔐 授權"]
+        PM_AUTH["📊 PM 確認符合 Hotfix 啟動條件"]
+        EXEC_PLAN["輸出執行計劃（精簡版）<br/>等待確認"]
+    end
+
+    subgraph FIX_PHASE["🔧 緊急修復"]
+        BRANCH["從 main 建立 hotfix branch<br/>hotfix/CUI-0099_payment_service_down"]
+        RCA["快速 Root Cause Analysis<br/>定位問題根源"]
+        RED_TEST["🔴 寫重現問題嘅失敗測試"]
+        GREEN_FIX["🟢 最少改動修復問題"]
+        MIN_TEST["執行最少可接受測試<br/>□ 重現問題測試通過<br/>□ Smoke Test 通過<br/>□ 核心功能快速人工驗證"]
+    end
+
+    subgraph REVIEW_DEPLOY["⚡ Review + 部署"]
+        FAST_REVIEW["快速 Code Review<br/>執行者：另一位 Developer 或 Code Reviewer<br/>⚠️ 唔可自我 review<br/>聚焦：正確性 + 安全性 + Side effects"]
+        REVIEW_SCORE{"Review ≥ 75 分?<br/>無 🔴 Critical?"}
+        REJECT["❌ 不合格<br/>修正後重新 review"]
+        COMMIT_HF["Commit：<br/>fix: CUI-0099 | 修復 payment service 503 錯誤"]
+        MERGE_MAIN["merge hotfix → main<br/>（--no-ff）"]
+        DEPLOY_PROD["🔧 DevOps /deploy --env=production<br/>即時部署"]
+        SMOKE["Smoke Test<br/>確認修復"]
+    end
+
+    subgraph SYNC["🔄 同步 + 收尾"]
+        BACK_MERGE["Back-merge to develop（必須執行）<br/>git checkout develop<br/>git merge --no-ff main<br/>git push origin develop"]
+        CONFLICT{"有 Conflict?"}
+        RESOLVE_CONFLICT["手動解決 conflict<br/>優先保留 hotfix 改動<br/>如涉複雜業務邏輯 → 通知 PM + Developer"]
+        POST_MORTEM["🧪 QA 建立 Post-mortem 文件<br/>.proj-docs/audits/<br/>YYYY-MM-DD_HH-MM_postmortem_[描述].md"]
+        SESSION_LOG["/session-log"]
+        TRIGGER_EM["⚡ 提示：開新對話<br/>/start ai-dev-team --task=postmortem<br/>由 🏢 Engineering Manager 主導分析"]
+    end
+
+    PM_AUTH --> EXEC_PLAN --> BRANCH
+    BRANCH --> RCA --> RED_TEST --> GREEN_FIX --> MIN_TEST
+    MIN_TEST --> FAST_REVIEW
+    FAST_REVIEW --> REVIEW_SCORE
+    REVIEW_SCORE -->|"❌"| REJECT --> FAST_REVIEW
+    REVIEW_SCORE -->|"✅"| COMMIT_HF
+    COMMIT_HF --> MERGE_MAIN --> DEPLOY_PROD --> SMOKE
+    SMOKE --> BACK_MERGE
+    BACK_MERGE --> CONFLICT
+    CONFLICT -->|"是"| RESOLVE_CONFLICT --> POST_MORTEM
+    CONFLICT -->|"否"| POST_MORTEM
+    POST_MORTEM --> SESSION_LOG --> TRIGGER_EM
+
+    style AUTH fill:#1a1a0f,stroke:#d97706,color:#e2e8f0
+    style FIX_PHASE fill:#450a0a,stroke:#dc2626,color:#e2e8f0
+    style REVIEW_DEPLOY fill:#0f1a2e,stroke:#1d4ed8,color:#e2e8f0
+    style SYNC fill:#0a1f1a,stroke:#059669,color:#e2e8f0
+    style RED_TEST fill:#450a0a,stroke:#dc2626,color:#fca5a5
+    style GREEN_FIX fill:#052e16,stroke:#16a34a,color:#86efac
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Post-mortem 流程（Engineering Manager）</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '14px', 'background': '#141921', 'mainBkg': '#1e293b', 'lineColor': '#475569', 'actorBkg': '#1e293b', 'actorBorder': '#334155', 'actorTextColor': '#e2e8f0'}}}%%
+sequenceDiagram
+    actor PM as 📊 PM
+    participant EM as 🏢 Engineering Manager
+    participant Team as 👥 Team
+    participant SK as 📚 Shared Knowledge
+
+    Note over PM,SK: 新對話 /start ai-dev-team --task=postmortem
+
+    PM->>EM: 觸發 Post-mortem<br/>（Hotfix 完成後）
+    EM->>EM: 讀取 Post-mortem 文件<br/>.proj-docs/audits/...
+
+    EM->>Team: 主導根源分析（5 Whys）
+    Team->>EM: 提供時間線 + 技術細節
+
+    EM->>EM: 整理完整 Post-mortem 報告
+    Note right of EM: Why 1: 表面原因<br/>Why 2: 深一層<br/>Why 3: 再深<br/>Why 4: ...<br/>Why 5: 根本原因
+
+    EM->>Team: 確定預防措施<br/>（具體 + 可執行 + 有負責人）
+    Team->>EM: 確認負責人 + 截止日期
+
+    EM->>SK: 記錄經驗總結
+    Note right of SK: 對整個團隊有價值的學習點
+
+    EM->>EM: 跟進預防措施落實
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Hotfix Git Flow</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'gitGraph': {'mainBranchName': 'main', 'rotateCommitLabel': false}}}%%
+gitGraph LR:
+   commit id: "last release" tag: "v1.2.0"
+   branch develop
+   checkout develop
+   commit id: "feat: new feature A"
+   commit id: "feat: new feature B"
+   checkout main
+   branch hotfix/CUI-0099
+   commit id: "🔴 重現測試" type: HIGHLIGHT
+   commit id: "🟢 fix: CUI-0099 | payment 503" type: HIGHLIGHT
+   checkout main
+   merge hotfix/CUI-0099 id: "merge hotfix → main" tag: "v1.2.1"
+   checkout develop
+   merge main id: "back-merge: sync hotfix to develop"
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });
+</script>
+</body>
+</html>

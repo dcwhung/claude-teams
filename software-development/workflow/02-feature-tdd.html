@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dev Team — 功能開發 TDD</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'SF Pro Display', -apple-system, sans-serif; padding: 32px; }
+  h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 14px; margin-bottom: 40px; }
+  .section { margin-bottom: 56px; }
+  h2 { font-size: 18px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
+  .diagram-card { background: #141921; border: 1px solid #1e293b; border-radius: 12px; padding: 28px; overflow-x: auto; }
+  .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+  .nav a { background: #1e293b; color: #94a3b8; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; border: 1px solid #2d3748; transition: all 0.2s; }
+  .nav a:hover { background: #2d3748; color: #e2e8f0; }
+  .nav a.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+  .info-box { background: #0a1f1a; border: 1px solid #059669; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; font-size: 13px; color: #6ee7b7; line-height: 1.6; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<h1>功能開發 TDD 流程 — /feature</h1>
+<p class="subtitle">Red-Green-Refactor 循環 + Code Review + Staging 測試</p>
+
+<nav class="nav">
+  <a href="00-overview.html">總覽</a>
+  <a href="01-new-project.html">新項目流程</a>
+  <a href="02-feature-tdd.html" class="active">功能開發 TDD</a>
+  <a href="03-fix-workflow.html">Bug 修復</a>
+  <a href="04-hotfix-workflow.html">緊急修復</a>
+  <a href="05-rescue-project.html">接手舊項目</a>
+  <a href="06-review-deploy.html">Review → 部署</a>
+</nav>
+
+<div class="section">
+  <h2>/feature 完整執行流程</h2>
+  <div class="info-box">
+    每個功能點都必須完整執行 TDD 循環。禁止跳步。完成所有功能點後，觸發 Code Review，Review 通過才可 merge to develop。
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','primaryBorderColor': '#2563eb','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','nodeBorder': '#334155','fontSize': '14px'}}}%%
+flowchart TD
+    START(["🚀 /feature [功能名]"]) --> PREP
+
+    subgraph PREP_PHASE["🔖 準備階段"]
+        PREP["1. 讀取 shared-knowledge.md<br/>（全局 + 項目）"]
+        READ_SPEC["2. 讀取 Spec + Plan<br/>確認功能需求及驗收標準"]
+        EXEC_PLAN["3. 輸出執行計劃<br/>等待確認"]
+        CREATE_BRANCH["4. 建立 Feature Branch<br/>feature/frontend/CUI-0015_xxx<br/>feature/backend/CUI-0015_xxx"]
+    end
+
+    subgraph TDD_LOOP["🔄 TDD 循環（每個功能點）"]
+        RED["🔴 Red<br/>寫失敗測試<br/>it('should [結果] when [條件]')<br/>確認測試真係失敗"]
+        GREEN["🟢 Green<br/>最少代碼通過測試<br/>唔追求完美<br/>唔提前優化"]
+        REFACTOR["🔵 Refactor<br/>消除重複（DRY）<br/>改善命名<br/>確保測試仍然全綠"]
+        MORE_POINTS{"還有<br/>功能點?"}
+    end
+
+    subgraph COMPLETE_PHASE["✅ 完成階段"]
+        FULL_TEST["執行完整測試套件<br/>覆蓋率 ≥ 80%（核心邏輯）"]
+        COMMIT["Commit<br/>feat: CUI-0015 | 新增用戶頭像上傳功能<br/>feat: CUI-0020 | 實現 JWT refresh token"]
+        REVIEW["/review<br/>👁️ 切換至 Code Reviewer 角色"]
+        REVIEW_SCORE{"Review 評分<br/>≥ 90 分?<br/>無 🔴 Critical?"}
+        FIX_ISSUES["修正 Review 問題<br/>各 fix commit 帶 Review Item ID<br/>fix: W-007 | 提取常數至 module-level"]
+        MERGE["merge feature → develop<br/>（--no-ff）<br/>👁️ Code Reviewer 執行"]
+        TEST_STAGING["/test（staging）<br/>🧪 QA Agent 主導"]
+        QA_PASS{"QA 通過?"}
+        QA_TICKET["🧪 建立 QA Ticket<br/>/fix [CUI-XXXX]"]
+        SK_UPDATE["記錄 Common Knowledge<br/>入 shared-knowledge.md"]
+    end
+
+    PREP --> READ_SPEC --> EXEC_PLAN --> CREATE_BRANCH
+    CREATE_BRANCH --> RED
+    RED --> GREEN --> REFACTOR
+    REFACTOR --> MORE_POINTS
+    MORE_POINTS -->|"是"| RED
+    MORE_POINTS -->|"否"| FULL_TEST
+    FULL_TEST --> COMMIT --> REVIEW
+    REVIEW --> REVIEW_SCORE
+    REVIEW_SCORE -->|"❌ 不合格"| FIX_ISSUES
+    FIX_ISSUES --> REVIEW
+    REVIEW_SCORE -->|"✅ 合格"| MERGE
+    MERGE --> TEST_STAGING
+    TEST_STAGING --> QA_PASS
+    QA_PASS -->|"❌ 發現問題"| QA_TICKET
+    QA_TICKET --> FIX_BRANCH["開 /fix branch<br/>修復 bug"]
+    FIX_BRANCH --> REVIEW
+    QA_PASS -->|"✅ 通過"| SK_UPDATE
+
+    style PREP_PHASE fill:#0f1a2e,stroke:#1d4ed8,color:#e2e8f0
+    style TDD_LOOP fill:#0a1a0f,stroke:#16a34a,color:#e2e8f0
+    style COMPLETE_PHASE fill:#1a1a0f,stroke:#ca8a04,color:#e2e8f0
+    style RED fill:#450a0a,stroke:#dc2626,color:#fca5a5
+    style GREEN fill:#052e16,stroke:#16a34a,color:#86efac
+    style REFACTOR fill:#0a1628,stroke:#2563eb,color:#93c5fd
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>TDD 循環詳解</h2>
+  <div class="two-col">
+    <div class="diagram-card">
+      <h3 style="color:#fca5a5;margin-bottom:16px">🔴 Red — 寫失敗測試</h3>
+      <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '13px', 'background': '#141921', 'mainBkg': '#1e293b'}}}%%
+flowchart TD
+    R1["描述預期行為<br/>唔係實現細節"]
+    R2["命名格式：<br/>it('should [結果]<br/>when [條件]')"]
+    R3["執行測試"]
+    R4{"測試結果"}
+    R5["✅ 真係失敗<br/>→ 進入 Green"]
+    R6["❌ 錯誤（Error）<br/>→ 修正測試代碼"]
+    R7["⚠️ 意外通過<br/>→ 重新思考測試"]
+
+    R1 --> R2 --> R3 --> R4
+    R4 -->|"失敗（Fail）"| R5
+    R4 -->|"Error"| R6
+    R4 -->|"Pass"| R7
+    R6 --> R3
+    R7 --> R1
+
+    style R5 fill:#052e16,stroke:#16a34a,color:#86efac
+    style R6 fill:#450a0a,stroke:#dc2626,color:#fca5a5
+    style R7 fill:#451a03,stroke:#d97706,color:#fcd34d
+      </div>
+    </div>
+    <div class="diagram-card">
+      <h3 style="color:#86efac;margin-bottom:16px">🟢 Green → 🔵 Refactor</h3>
+      <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '13px', 'background': '#141921', 'mainBkg': '#1e293b'}}}%%
+flowchart TD
+    G1["只寫令測試通過<br/>所需的最少代碼"]
+    G2["執行測試"]
+    G3{"全部通過?"}
+    G4["繼續修改代碼"]
+    G5["進入 Refactor"]
+
+    RF1["消除重複代碼（DRY）"]
+    RF2["改善命名<br/>抽取共用邏輯"]
+    RF3["確保符合 SOLID"]
+    RF4["執行測試"]
+    RF5{"仍然全綠?"}
+    RF6["回滾 Refactor 改動<br/>重新思考"]
+    RF7["✅ Refactor 完成<br/>→ 下一個功能點"]
+
+    G1 --> G2 --> G3
+    G3 -->|"否"| G4 --> G2
+    G3 -->|"是"| G5
+
+    G5 --> RF1 --> RF2 --> RF3 --> RF4 --> RF5
+    RF5 -->|"否"| RF6 --> RF1
+    RF5 -->|"是"| RF7
+
+    style RF7 fill:#052e16,stroke:#16a34a,color:#86efac
+    style RF6 fill:#450a0a,stroke:#dc2626,color:#fca5a5
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Branch 命名規則</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '14px', 'background': '#141921', 'mainBkg': '#1e293b'}}}%%
+graph LR
+    subgraph NAMING["Branch 命名格式"]
+        N1["feature/frontend/CUI-0015_user_profile_avatar"]
+        N2["feature/backend/CUI-0015_profile_upload_api"]
+        N3["feature/user-authentication/CUI-0020_login_flow"]
+        N4["feature/payment/CUI-0021_stripe_webhook_handler"]
+    end
+
+    subgraph RULES["命名規則"]
+        R1["有 ticket → 必須帶 ticket number"]
+        R2["前後端分離 → frontend / backend 層"]
+        R3["模組型 → 模組名稱層（user-authentication 等）"]
+        R4["描述用 snake_case，3–5 個字"]
+    end
+
+    subgraph COMMIT_FMT["Commit 格式"]
+        C1["有 ticket：<br/>feat: CUI-0015 | 新增用戶頭像上傳功能"]
+        C2["無 ticket：<br/>feat: 新增用戶登入 API"]
+    end
+
+    style NAMING fill:#0f1a2e,stroke:#1d4ed8
+    style RULES fill:#0a1f1a,stroke:#059669
+    style COMMIT_FMT fill:#1a1a0f,stroke:#d97706
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>完成標準 Checklist</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '14px', 'background': '#141921', 'mainBkg': '#1e293b'}}}%%
+graph TD
+    subgraph CHECKLIST["✅ /feature 完成標準"]
+        C1["□ 所有功能點測試通過"]
+        C2["□ 核心邏輯測試覆蓋率 ≥ 80%"]
+        C3["□ ESLint / Prettier 無錯誤"]
+        C4["□ TypeScript 無類型錯誤"]
+        C5["□ Code Review 評分 ≥ 90 分"]
+        C6["□ 無 🔴 Critical 問題"]
+        C7["□ Commit history 清晰"]
+    end
+
+    C1 --> C2 --> C3 --> C4 --> C5 --> C6 --> C7 --> DONE["✅ 可以 merge to develop"]
+
+    style DONE fill:#052e16,stroke:#16a34a,color:#86efac
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });
+</script>
+</body>
+</html>

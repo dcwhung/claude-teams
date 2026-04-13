@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dev Team — Code Review + Deploy Pipeline</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'SF Pro Display', -apple-system, sans-serif; padding: 32px; }
+  h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 14px; margin-bottom: 40px; }
+  .section { margin-bottom: 56px; }
+  h2 { font-size: 18px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
+  .diagram-card { background: #141921; border: 1px solid #1e293b; border-radius: 12px; padding: 28px; overflow-x: auto; }
+  .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+  .nav a { background: #1e293b; color: #94a3b8; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; border: 1px solid #2d3748; transition: all 0.2s; }
+  .nav a:hover { background: #2d3748; color: #e2e8f0; }
+  .nav a.active { background: #d97706; color: #fff; border-color: #d97706; }
+  .info-box { background: #1a1a0f; border: 1px solid #d97706; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; font-size: 13px; color: #fcd34d; line-height: 1.6; }
+</style>
+</head>
+<body>
+
+<h1>Code Review → Deploy Pipeline</h1>
+<p class="subtitle">Review 流程 + 評分系統 + Git Flow + CI/CD 部署</p>
+
+<nav class="nav">
+  <a href="00-overview.html">總覽</a>
+  <a href="01-new-project.html">新項目流程</a>
+  <a href="02-feature-tdd.html">功能開發 TDD</a>
+  <a href="03-fix-workflow.html">Bug 修復</a>
+  <a href="04-hotfix-workflow.html">緊急修復</a>
+  <a href="05-rescue-project.html">接手舊項目</a>
+  <a href="06-review-deploy.html" class="active">Review → 部署</a>
+</nav>
+
+<div class="section">
+  <h2>/review 執行流程 + 評分系統</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','nodeBorder': '#334155','fontSize': '14px'}}}%%
+flowchart TD
+    START(["👁️ /review"]) --> READ_SK
+
+    subgraph PREP["📖 準備"]
+        READ_SK["1. 讀取 shared-knowledge.md<br/>（全局 + 項目）"]
+        SCAN_IDS["2. 掃描 .proj-docs/reviews/<br/>所有現有報告<br/>提取 C/W/S 各類型最高序號<br/>（確保全局唯一 Review Item ID）"]
+        EXEC_PLAN["3. 輸出執行計劃，等待確認"]
+        READ_CODE["4. 完整閱讀目標代碼"]
+    end
+
+    subgraph REVIEW_EXEC["🔍 審閱執行"]
+        CHECKLIST["5. 逐項執行 Review 檢查清單<br/>代碼質量 · 架構設計<br/>安全性 · 性能 · 測試 · 文件"]
+        SCORE["6. 計算評分（0–100）<br/>各維度獨立評分"]
+        ASSIGN_IDS["7. 整理問題清單<br/>🔴 Critical → 🟡 Warning → 🟢 Suggestion<br/>每個問題賦予全局唯一 ID<br/>從最高序號+1 開始"]
+        SOLUTIONS["8. 每個問題提供 ≥2 個解決方案<br/>附 trade-off 分析"]
+        PRIORITY["9. 排列修正優先順序"]
+        REVISED_CODE["10. 輸出完整修訂代碼<br/>附 inline comment"]
+    end
+
+    subgraph OUTPUT["📝 輸出"]
+        SAVE_REPORT["11. 儲存報告至<br/>.proj-docs/reviews/<br/>YYYY-MM-DD_HH-MM_review_[描述].md"]
+        UPDATE_INDEX["12. 更新 .proj-docs/index.md<br/>加入新文件條目 + 更新「最後更新」日期"]
+        SK_UPDATE["13. 記錄 Common Knowledge（如有）"]
+    end
+
+    subgraph DECISION["⚖️ 評分決策"]
+        PASS["≥ 90 分 ✅<br/>無 🔴 Critical<br/>→ 可以 merge"]
+        WARN["75–89 分 ⚠️<br/>修正 Warning 後<br/>重新 review"]
+        FAIL["< 75 分 ❌<br/>必須修正所有 Critical<br/>及主要 Warning"]
+        CRITICAL_BLOCK["任何 🔴 Critical<br/>無論總分 → 一律不合格"]
+    end
+
+    READ_SK --> SCAN_IDS --> EXEC_PLAN --> READ_CODE
+    READ_CODE --> CHECKLIST --> SCORE --> ASSIGN_IDS --> SOLUTIONS --> PRIORITY --> REVISED_CODE
+    REVISED_CODE --> SAVE_REPORT --> UPDATE_INDEX --> SK_UPDATE
+
+    SCORE -->|"評分結果"| PASS
+    SCORE -->|"評分結果"| WARN
+    SCORE -->|"評分結果"| FAIL
+    ASSIGN_IDS -->|"如有 Critical"| CRITICAL_BLOCK
+
+    style PREP fill:#0f1a2e,stroke:#1d4ed8,color:#e2e8f0
+    style REVIEW_EXEC fill:#1a1a0f,stroke:#d97706,color:#e2e8f0
+    style OUTPUT fill:#0a1f1a,stroke:#059669,color:#e2e8f0
+    style PASS fill:#052e16,stroke:#16a34a,color:#86efac
+    style WARN fill:#451a03,stroke:#d97706,color:#fcd34d
+    style FAIL fill:#450a0a,stroke:#dc2626,color:#fca5a5
+    style CRITICAL_BLOCK fill:#450a0a,stroke:#dc2626,color:#fca5a5
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Git Flow：Develop → Main → Deploy</h2>
+  <div class="info-box">
+    Code Reviewer 負責 develop → main merge（唔係 Developer 自己 merge）。DevOps 負責在 main 上執行 CI/CD 部署。
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','fontSize': '14px'}}}%%
+flowchart LR
+    subgraph FEATURE_BRANCH["feature/fix Branch"]
+        FB1["Developer 開發完成<br/>所有測試通過"]
+        FB2["/review<br/>👁️ Code Reviewer"]
+        FB3{"≥ 90 分?<br/>無 Critical?"}
+        FB4["修正問題"]
+    end
+
+    subgraph DEVELOP["develop Branch"]
+        DV1["merge feature → develop<br/>（--no-ff）<br/>👁️ Code Reviewer 執行"]
+        DV2["/test（staging）<br/>🧪 QA Agent"]
+        DV3{"QA 通過?"}
+        DV4["建立 QA Ticket<br/>→ /fix"]
+    end
+
+    subgraph MAIN["main Branch"]
+        MN1["👁️ Code Reviewer<br/>merge develop → main"]
+        MN2["chore: merge develop into main"]
+    end
+
+    subgraph DEPLOY_PIPE["🚀 CI/CD Pipeline"]
+        P1["Lint & Type Check"]
+        P2["Unit Tests"]
+        P3["Integration Tests"]
+        P4["Build"]
+        P5["Security Scan"]
+        P6["DB Migration（如有）"]
+        P7["Deploy to Environment"]
+        P8["Smoke Test"]
+        P9["通知結果"]
+    end
+
+    FB1 --> FB2 --> FB3
+    FB3 -->|"❌"| FB4 --> FB2
+    FB3 -->|"✅"| DV1
+    DV1 --> DV2 --> DV3
+    DV3 -->|"❌"| DV4 --> FB2
+    DV3 -->|"✅ 全功能完成"| MN1
+    MN1 --> MN2 --> P1
+
+    P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8 --> P9
+
+    style FEATURE_BRANCH fill:#0a1f1a,stroke:#059669
+    style DEVELOP fill:#0f1a2e,stroke:#1d4ed8
+    style MAIN fill:#1a1a0f,stroke:#d97706
+    style DEPLOY_PIPE fill:#1a1a2e,stroke:#7c3aed
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Deploy 前置條件 + 回滾方案</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '14px', 'background': '#141921', 'mainBkg': '#1e293b', 'lineColor': '#475569'}}}%%
+flowchart TD
+    subgraph PREREQ["🔧 /deploy 前置條件（全部必須達標）"]
+        P1["□ Code Review 評分 ≥ 90，無 🔴 Critical"]
+        P2["□ QA 測試報告無 🔴 Critical 失敗"]
+        P3["□ 所有測試通過（Unit + Integration + E2E）"]
+        P4["□ ESLint / TypeScript 無錯誤"]
+        P5["□ Build 成功"]
+        P6["□ Security Scan 無 Critical 漏洞"]
+        P7["□ 環境變數 / Secrets 已正確配置"]
+        P8["□ Code Reviewer 已執行 develop → main merge"]
+        P9["□ 部署至 Production，已獲明確授權"]
+    end
+
+    subgraph ENVS["🌍 部署環境"]
+        ENV1["Staging<br/>merge to staging branch<br/>無需授權"]
+        ENV2["Production<br/>merge to main / tag release<br/>需要明確授權 ⚠️"]
+    end
+
+    subgraph ROLLBACK["🔄 回滾方案（部署前必須確認）"]
+        R1["觸發條件：<br/>[何時需要回滾]"]
+        R2["回滾步驟：<br/>git revert / 重新部署上一個版本"]
+        R3["回滾驗證：<br/>Smoke Test 確認"]
+        R4["預計回滾時間：<br/>[估計]"]
+    end
+
+    subgraph MIGRATION["💾 DB Migration 規範"]
+        M1["執行順序：<br/>舊代碼 running<br/>↓ 執行 Migration<br/>↓ 部署新代碼<br/>↓ 新代碼 running"]
+        M2["Breaking Change 分兩步：<br/>Deploy 1：新增欄位（向後兼容）<br/>Deploy 2：移除舊欄位"]
+        M3["Migration 失敗：<br/>立即停止 → 唔部署新代碼<br/>→ 執行 down migration<br/>→ 通知團隊"]
+    end
+
+    PREREQ --> ENVS
+    ENVS --> ROLLBACK
+    ROLLBACK -.->|"有 Migration"| MIGRATION
+
+    style PREREQ fill:#0f1a2e,stroke:#1d4ed8
+    style ENVS fill:#0a1f1a,stroke:#059669
+    style ROLLBACK fill:#1a1a0f,stroke:#d97706
+    style MIGRATION fill:#1a0f0f,stroke:#dc2626
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Review Item ID 全局唯一性機制</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '14px', 'background': '#141921', 'mainBkg': '#1e293b', 'lineColor': '#475569'}}}%%
+flowchart LR
+    subgraph SCAN["掃描步驟"]
+        S1["掃描 .proj-docs/reviews/<br/>所有現有報告"]
+        S2["找出各類型目前最高序號<br/>C: 最高 C-NNN<br/>W: 最高 W-NNN<br/>S: 最高 S-NNN"]
+        S3["下一個 ID = 最高序號 + 1<br/>（C、W、S 各自獨立計數）"]
+    end
+
+    subgraph EXAMPLE["例子"]
+        E1["上次 review 結束時：<br/>C-003, W-007, S-012"]
+        E2["新 review 開始分配：<br/>C-004 起, W-008 起, S-013 起"]
+        E3["❌ 錯誤：每次從 C-001, W-001, S-001 重新開始"]
+        E4["✅ 正確：延續上次最高序號"]
+    end
+
+    subgraph COMMIT["Commit 格式"]
+        C1["fix: W-007 | 提取常數至 module-level"]
+        C2["fix: C-002 | 修正 null reference 問題"]
+        C3["fix: S-007 | 提取 ANNUAL_SECTION_TITLES"]
+    end
+
+    S1 --> S2 --> S3
+    E1 --> E2
+    E3 -.->|"×"| E4
+
+    style E3 fill:#450a0a,stroke:#dc2626,color:#fca5a5
+    style E4 fill:#052e16,stroke:#16a34a,color:#86efac
+    style SCAN fill:#0f1a2e,stroke:#1d4ed8
+    style EXAMPLE fill:#1e293b,stroke:#334155
+    style COMMIT fill:#1a1a0f,stroke:#d97706
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });
+</script>
+</body>
+</html>

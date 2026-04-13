@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dev Team — 團隊總覽</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'SF Pro Display', -apple-system, sans-serif; padding: 32px; }
+  h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 14px; margin-bottom: 40px; }
+  .section { margin-bottom: 56px; }
+  h2 { font-size: 18px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
+  .diagram-card { background: #141921; border: 1px solid #1e293b; border-radius: 12px; padding: 28px; overflow-x: auto; }
+  .legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #94a3b8; }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
+  .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+  .nav a { background: #1e293b; color: #94a3b8; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; border: 1px solid #2d3748; transition: all 0.2s; }
+  .nav a:hover { background: #2d3748; color: #e2e8f0; }
+  .nav a.active { background: #1d4ed8; color: #fff; border-color: #1d4ed8; }
+</style>
+</head>
+<body>
+
+<h1>AI Dev Team — 團隊總覽</h1>
+<p class="subtitle">所有 Agents、Commands、Skills 嘅關係及觸發條件</p>
+
+<nav class="nav">
+  <a href="00-overview.html" class="active">總覽</a>
+  <a href="01-new-project.html">新項目流程</a>
+  <a href="02-feature-tdd.html">功能開發 TDD</a>
+  <a href="03-fix-workflow.html">Bug 修復</a>
+  <a href="04-hotfix-workflow.html">緊急修復</a>
+  <a href="05-rescue-project.html">接手舊項目</a>
+  <a href="06-review-deploy.html">Review → 部署</a>
+</nav>
+
+<div class="section">
+  <h2>Agent 團隊結構</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','primaryBorderColor': '#2563eb','lineColor': '#475569','secondaryColor': '#1a2744','tertiaryColor': '#0f1117','background': '#141921','mainBkg': '#1e293b','nodeBorder': '#334155','clusterBkg': '#0f1a2e','titleColor': '#e2e8f0','edgeLabelBackground': '#1e293b','fontSize': '14px'}}}%%
+graph TB
+    subgraph EM_LAYER["⚡ 管理層"]
+        EM["🏢 Engineering Manager<br/>技術決策 · 規範演化<br/>Post-mortem · 風險升級"]
+    end
+
+    subgraph PM_ARCH["📋 規劃層"]
+        PM["📊 Project Manager<br/>需求分析 · Spec 撰寫<br/>進度管理 · Sprint Planning"]
+        ARCH["🏛️ Architect<br/>系統設計 · 技術決策<br/>架構審閱 · 可行性研究"]
+    end
+
+    subgraph DEV_LAYER["💻 開發層"]
+        FE["🎨 Frontend Developer<br/>UI 實現 · 前端邏輯<br/>組件開發（TDD）"]
+        BE["⚙️ Backend Developer<br/>API · 業務邏輯<br/>數據層 · 服務開發（TDD）"]
+    end
+
+    subgraph QA_LAYER["🔍 質量層"]
+        CR["👁️ Code Reviewer<br/>Code Review<br/>輸出審閱報告"]
+        QA["🧪 Quality Assurance<br/>測試計劃 · 執行測試<br/>QA 報告"]
+    end
+
+    subgraph OPS_LAYER["🚀 運維層"]
+        DO["🔧 DevOps Engineer<br/>CI/CD · 環境管理<br/>部署流程"]
+    end
+
+    EM -.->|"風險升級 · 技術分歧仲裁"| PM
+    EM -.->|"規範審查 · 架構決策"| ARCH
+    PM <-->|"需求 ↔ 技術可行性"| ARCH
+    ARCH -->|"Technical Spec"| FE
+    ARCH -->|"Technical Spec"| BE
+    FE -->|"完成開發 → /review"| CR
+    BE -->|"完成開發 → /review"| CR
+    CR -->|"Review 通過 → merge to develop"| QA
+    QA -->|"QA 通過 → /deploy"| DO
+    QA -->|"發現 Bug → QA Ticket"| FE
+    QA -->|"發現 Bug → QA Ticket"| BE
+    CR -->|"Code Review 問題 → Review Item ID"| FE
+    CR -->|"Code Review 問題 → Review Item ID"| BE
+
+    style EM_LAYER fill:#1a1a2e,stroke:#7c3aed,color:#e2e8f0
+    style PM_ARCH fill:#0f1a2e,stroke:#1d4ed8,color:#e2e8f0
+    style DEV_LAYER fill:#0a1f1a,stroke:#059669,color:#e2e8f0
+    style QA_LAYER fill:#1a1a0f,stroke:#d97706,color:#e2e8f0
+    style OPS_LAYER fill:#1a0f0f,stroke:#dc2626,color:#e2e8f0
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Commands → Agent 對應表</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','primaryBorderColor': '#2563eb','lineColor': '#475569','secondaryColor': '#1a2744','background': '#141921','mainBkg': '#1e293b','nodeBorder': '#334155','fontSize': '14px'}}}%%
+graph LR
+    subgraph COMMANDS["📟 Commands"]
+        C1["/audit"]
+        C2["/spec"]
+        C3["/plan"]
+        C4["/feature"]
+        C5["/fix"]
+        C6["/hotfix"]
+        C7["/refactor"]
+        C8["/review"]
+        C9["/test"]
+        C10["/deploy"]
+        C11["/docs"]
+        C12["/session-log"]
+        C13["--task=postmortem"]
+        C14["--task=retrospective"]
+        C15["--task=escalation"]
+        C16["--task=governance"]
+    end
+
+    subgraph AGENTS["👥 Agents"]
+        A_ARCH["🏛️ Architect"]
+        A_PM["📊 Project Manager"]
+        A_FE["🎨 Frontend Dev"]
+        A_BE["⚙️ Backend Dev"]
+        A_CR["👁️ Code Reviewer"]
+        A_QA["🧪 QA"]
+        A_DO["🔧 DevOps"]
+        A_EM["🏢 Eng Manager"]
+        A_ALL["👥 全體"]
+    end
+
+    C1 --> A_ARCH
+    C1 -.->|"協助"| A_CR
+    C2 --> A_PM
+    C2 -.->|"Technical Spec"| A_ARCH
+    C3 --> A_PM
+    C3 -.->|"可行性評估"| A_ARCH
+    C4 --> A_FE
+    C4 -.->|"視功能範圍"| A_BE
+    C5 --> A_FE
+    C5 -.->|"視 bug 位置"| A_BE
+    C6 --> A_FE
+    C6 -.->|"視問題範圍"| A_BE
+    C6 -.->|"部署及監控"| A_DO
+    C7 --> A_FE
+    C7 -.->|"視代碼位置"| A_BE
+    C8 --> A_CR
+    C9 --> A_QA
+    C10 --> A_DO
+    C11 --> A_PM
+    C12 --> A_ALL
+    C13 --> A_EM
+    C14 --> A_EM
+    C15 --> A_EM
+    C15 -.->|"協助"| A_PM
+    C16 --> A_EM
+
+    style COMMANDS fill:#0f1117,stroke:#334155
+    style AGENTS fill:#0f1117,stroke:#334155
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Skills 使用範圍</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','fontSize': '14px'}}}%%
+graph LR
+    subgraph SKILLS["🛠️ Skills"]
+        SK1["📋 ticket-management<br/>QA Ticket 系統<br/>Review Item ID 系統"]
+        SK2["🌳 git-flow<br/>Branch 策略<br/>Merge 規則"]
+        SK3["🔴🟢🔵 tdd<br/>Red-Green-Refactor<br/>測試優先開發"]
+        SK4["🎨 coding-style<br/>代碼風格<br/>命名規範"]
+        SK5["🚀 ci-cd<br/>Pipeline 設計<br/>部署流程"]
+    end
+
+    SK1 -->|"建立/管理 ticket"| QA_A["🧪 QA"]
+    SK1 -->|"認領/完成 ticket"| DEV_A["💻 Developers"]
+    SK1 -->|"管理 ticket"| PM_A["📊 PM"]
+    SK2 -->|"branch 命名 + merge"| DEV_B["💻 Developers"]
+    SK2 -->|"develop → main merge"| CR_A["👁️ Code Reviewer"]
+    SK3 -->|"TDD 循環"| DEV_C["💻 Developers"]
+    SK4 -->|"代碼風格審查"| CR_B["👁️ Code Reviewer"]
+    SK4 -->|"編碼規範"| DEV_D["💻 Developers"]
+    SK5 -->|"Pipeline 設計"| DO_A["🔧 DevOps"]
+
+    style SKILLS fill:#0f1117,stroke:#334155
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Engineering Manager 觸發條件</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','fontSize': '14px'}}}%%
+graph TD
+    T1["PM 標記風險 🔴 Critical<br/>且無法自行決定"]
+    T2["Architect 同 Developer<br/>技術分歧無法解決"]
+    T3["Code Review 連續兩次<br/>總分 < 75 分"]
+    T4["提議修改 global-rules.md<br/>或 DoD"]
+    T5["/start --task=retrospective<br/>Sprint 回顧"]
+    T6["/start --task=postmortem<br/>Hotfix 事後分析"]
+
+    T1 -->|"觸發"| EM["🏢 Engineering Manager"]
+    T2 -->|"觸發"| EM
+    T3 -->|"觸發"| EM
+    T4 -->|"觸發"| EM
+    T5 -->|"觸發"| EM
+    T6 -->|"觸發"| EM
+
+    EM --> OUT1["技術分歧仲裁<br/>記錄決定原因"]
+    EM --> OUT2["Governance Review<br/>規範更新 + 通知"]
+    EM --> OUT3["Post-mortem 報告<br/>5 Whys 根源分析"]
+    EM --> OUT4["Sprint Retrospective<br/>回顧報告"]
+
+    style EM fill:#2d1b69,stroke:#7c3aed,color:#e2e8f0
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });
+</script>
+</body>
+</html>

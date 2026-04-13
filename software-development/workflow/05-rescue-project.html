@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dev Team — 接手舊項目</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'SF Pro Display', -apple-system, sans-serif; padding: 32px; }
+  h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+  .subtitle { color: #64748b; font-size: 14px; margin-bottom: 40px; }
+  .section { margin-bottom: 56px; }
+  h2 { font-size: 18px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 20px; border-bottom: 1px solid #1e293b; padding-bottom: 10px; }
+  .diagram-card { background: #141921; border: 1px solid #1e293b; border-radius: 12px; padding: 28px; overflow-x: auto; }
+  .nav { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 36px; }
+  .nav a { background: #1e293b; color: #94a3b8; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; border: 1px solid #2d3748; transition: all 0.2s; }
+  .nav a:hover { background: #2d3748; color: #e2e8f0; }
+  .nav a.active { background: #7c3aed; color: #fff; border-color: #7c3aed; }
+  .info-box { background: #1a1a2e; border: 1px solid #7c3aed; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px; font-size: 13px; color: #c4b5fd; line-height: 1.6; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<h1>接手舊項目流程 — Rescue / Legacy Project</h1>
+<p class="subtitle">分析現有 codebase → 評估可行性 → 決定修復或重建</p>
+
+<nav class="nav">
+  <a href="00-overview.html">總覽</a>
+  <a href="01-new-project.html">新項目流程</a>
+  <a href="02-feature-tdd.html">功能開發 TDD</a>
+  <a href="03-fix-workflow.html">Bug 修復</a>
+  <a href="04-hotfix-workflow.html">緊急修復</a>
+  <a href="05-rescue-project.html" class="active">接手舊項目</a>
+  <a href="06-review-deploy.html">Review → 部署</a>
+</nav>
+
+<div class="section">
+  <h2>接手舊項目端對端流程</h2>
+  <div class="info-box">
+    接手舊項目從 Architect 執行 /audit 開始，深度了解現有 codebase，再由 Code Reviewer /review，最後 PM 評估可行性，決定修復還是重建。
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','nodeBorder': '#334155','fontSize': '14px'}}}%%
+flowchart TD
+    START(["👤 用戶提供 codebase 或描述"]) --> AUDIT_PHASE
+
+    subgraph AUDIT_PHASE["🔍 Phase 1：審計分析"]
+        AUDIT["/audit<br/>🏛️ Architect 主導<br/>👁️ Code Reviewer 協助"]
+        AUDIT_FOCUS{"有特定聚焦?"}
+        AUDIT_SECURITY["/audit --focus=security<br/>HTTP Headers · CORS · Rate Limiting<br/>依賴庫漏洞 · SSL/TLS"]
+        AUDIT_PERF["/audit --focus=performance<br/>性能瓶頸 · 緩存策略"]
+        AUDIT_SCOPE["/audit --scope=src/api<br/>指定目錄"]
+        FULL_AUDIT["全面 /audit<br/>架構 · Tech Stack · API · DB<br/>技術債評估"]
+    end
+
+    subgraph REVIEW_PHASE["👁️ Phase 2：代碼審閱"]
+        CODE_REVIEW["/review<br/>👁️ Code Reviewer<br/>識別代碼層問題<br/>輸出 Review 報告 + Review Item IDs"]
+    end
+
+    subgraph PLAN_PHASE["📋 Phase 3：可行性評估"]
+        PLAN["/plan --feasibility-only<br/>📊 PM + 🏛️ Architect<br/>技術可行性 · 時間可行性<br/>資源可行性 · 風險評估"]
+        DECISION{"用戶決定方向"}
+    end
+
+    subgraph REPAIR["🔨 方案 A：修復現有系統"]
+        PLAN_REPAIR["/plan<br/>制定修復計劃<br/>任務分解 + 優先順序"]
+        SPRINT_REPAIR["/plan --sprint<br/>Sprint Planning"]
+        FIX_LOOP["循環：/fix 各問題<br/>按 Review Item ID 或 QA Ticket"]
+        TEST_REPAIR["/test（staging）<br/>🧪 QA 驗證修復"]
+        DEPLOY_REPAIR["/deploy<br/>🔧 DevOps 部署"]
+    end
+
+    subgraph REBUILD["🏗️方案 B：重建"]
+        NEW_SPEC["/spec<br/>📊 PM → Functional Spec<br/>🏛️ Architect → Technical Spec<br/>（基於舊系統洞察）"]
+        NEW_PLAN["/plan<br/>重建計劃"]
+        NEW_FEATURES["循環：/feature 逐功能重建<br/>TDD 開發"]
+        NEW_TEST["/test + /deploy<br/>完整驗證 + 部署"]
+    end
+
+    subgraph SESSION["📝 Session 記錄"]
+        SL["/session-log<br/>每個 session 結束必執行"]
+    end
+
+    AUDIT --> AUDIT_FOCUS
+    AUDIT_FOCUS -->|"安全審計"| AUDIT_SECURITY
+    AUDIT_FOCUS -->|"性能審計"| AUDIT_PERF
+    AUDIT_FOCUS -->|"指定範圍"| AUDIT_SCOPE
+    AUDIT_FOCUS -->|"全面審計"| FULL_AUDIT
+    AUDIT_SECURITY --> CODE_REVIEW
+    AUDIT_PERF --> CODE_REVIEW
+    AUDIT_SCOPE --> CODE_REVIEW
+    FULL_AUDIT --> CODE_REVIEW
+
+    CODE_REVIEW --> PLAN
+    PLAN --> DECISION
+    DECISION -->|"修復"| PLAN_REPAIR
+    DECISION -->|"重建"| NEW_SPEC
+
+    PLAN_REPAIR --> SPRINT_REPAIR --> FIX_LOOP --> TEST_REPAIR --> DEPLOY_REPAIR
+    NEW_SPEC --> NEW_PLAN --> NEW_FEATURES --> NEW_TEST
+
+    DEPLOY_REPAIR --> SL
+    NEW_TEST --> SL
+
+    style AUDIT_PHASE fill:#1a1a2e,stroke:#7c3aed,color:#e2e8f0
+    style REVIEW_PHASE fill:#1a1a0f,stroke:#d97706,color:#e2e8f0
+    style PLAN_PHASE fill:#0f1a2e,stroke:#1d4ed8,color:#e2e8f0
+    style REPAIR fill:#0a1a0f,stroke:#16a34a,color:#e2e8f0
+    style REBUILD fill:#0f1a1a,stroke:#0891b2,color:#e2e8f0
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>/audit 分析維度</h2>
+  <div class="two-col">
+    <div class="diagram-card">
+      <h3 style="color:#c4b5fd;margin-bottom:16px">🏛️ Architect 審計範圍</h3>
+      <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '13px', 'background': '#141921', 'mainBkg': '#1e293b'}}}%%
+graph TD
+    A["/audit"] --> A1["目錄結構分析"]
+    A --> A2["Tech Stack 識別<br/>package.json · requirements.txt"]
+    A --> A3["架構層次分析<br/>模組職責 · 依賴關係"]
+    A --> A4["API 結構<br/>Routes · Endpoints · Controllers"]
+    A --> A5["數據庫結構<br/>Schema · Migrations · Models"]
+    A --> A6["問題分類<br/>🔴 Critical<br/>🟡 Warning<br/>🟢 Observation"]
+    A --> A7["技術債評估<br/>代碼質量 · 測試覆蓋<br/>文件完整性 · 安全性"]
+    A --> A8["建議方向<br/>方案 A 修復 vs 方案 B 重建"]
+
+    style A fill:#1a1a2e,stroke:#7c3aed,color:#c4b5fd
+      </div>
+    </div>
+    <div class="diagram-card">
+      <h3 style="color:#fcd34d;margin-bottom:16px">🔒 安全審計重點項目</h3>
+      <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '13px', 'background': '#141921', 'mainBkg': '#1e293b'}}}%%
+graph TD
+    S["/audit --focus=security"] --> S1["HTTP Security Headers<br/>CSP · HSTS · X-Frame-Options"]
+    S --> S2["CORS 配置<br/>Allow-Origin · Credentials"]
+    S --> S3["敏感端點暴露<br/>/debug · /phpinfo · /admin"]
+    S --> S4["依賴庫安全<br/>npm audit · pip-audit<br/>Critical CVE 識別"]
+    S --> S5["SSL/TLS<br/>只支援 TLS 1.2+<br/>證書有效期"]
+    S --> S6["Rate Limiting<br/>認證端點 · 公開 API<br/>429 vs 500"]
+
+    style S fill:#450a0a,stroke:#dc2626,color:#fca5a5
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>決策矩陣：修復 vs 重建</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '14px', 'background': '#141921', 'mainBkg': '#1e293b', 'lineColor': '#475569'}}}%%
+graph LR
+    subgraph FACTORS["評估因素"]
+        F1["技術債程度"]
+        F2["架構問題嚴重性"]
+        F3["測試覆蓋率"]
+        F4["業務功能完整性"]
+        F5["時間線壓力"]
+        F6["現有代碼可維護性"]
+    end
+
+    subgraph REPAIR_SIGNALS["🔨 修復指標"]
+        R1["技術債：中等"]
+        R2["架構仍然合理"]
+        R3["有一定測試基礎"]
+        R4["核心功能正常"]
+        R5["時間緊迫"]
+    end
+
+    subgraph REBUILD_SIGNALS["🏗️ 重建指標"]
+        RB1["技術債：嚴重"]
+        RB2["架構已無法擴展"]
+        RB3["無任何測試"]
+        RB4["功能混亂不可靠"]
+        RB5["有足夠時間預算"]
+    end
+
+    F1 -.->|"中等"| REPAIR_SIGNALS
+    F1 -.->|"嚴重"| REBUILD_SIGNALS
+    F2 -.->|"合理"| REPAIR_SIGNALS
+    F2 -.->|"崩潰"| REBUILD_SIGNALS
+
+    REPAIR_SIGNALS --> REPAIR_OUT["✅ 方案 A：修復<br/>逐步改善<br/>按優先級修復問題"]
+    REBUILD_SIGNALS --> REBUILD_OUT["🏗️ 方案 B：重建<br/>利用舊系統洞察<br/>全新架構重新開發"]
+
+    style FACTORS fill:#1e293b,stroke:#334155
+    style REPAIR_SIGNALS fill:#0a1f1a,stroke:#059669
+    style REBUILD_SIGNALS fill:#1a0f0f,stroke:#dc2626
+    style REPAIR_OUT fill:#052e16,stroke:#16a34a,color:#86efac
+    style REBUILD_OUT fill:#0f1a2e,stroke:#1d4ed8,color:#93c5fd
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Agent 時序：接手舊項目分析階段</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'fontSize': '13px', 'background': '#141921', 'mainBkg': '#1e293b', 'actorBkg': '#1e293b', 'actorBorder': '#334155', 'actorTextColor': '#e2e8f0', 'signalColor': '#64748b', 'noteBkgColor': '#1e293b', 'noteTextColor': '#94a3b8'}}}%%
+sequenceDiagram
+    actor User as 👤 用戶
+    participant Arch as 🏛️ Architect
+    participant CR as 👁️ Code Reviewer
+    participant PM as 📊 Project Manager
+    participant Dev as 💻 Developer
+
+    User->>Arch: 提供 codebase + 背景描述
+    Arch->>Arch: 讀取 shared-knowledge.md
+    Arch->>Arch: 掃描目錄結構 + Tech Stack
+    Arch->>Arch: 分析架構 + API + DB
+    Arch->>Arch: 執行安全配置審計（必須）
+
+    Arch->>CR: 邀請協助識別代碼層問題
+    CR->>CR: 執行 /review
+    CR->>CR: 掃描現有 Review 報告最高序號
+    CR->>Arch: 輸出 Review 報告（含 Review Item IDs）
+
+    Arch->>Arch: 整合輸出完整 Audit 報告
+    Note right of Arch: .proj-docs/audits/<br/>YYYY-MM-DD_HH-MM_audit_[描述].md
+
+    Arch->>PM: 傳遞 Audit + Review 報告
+    PM->>Arch: /plan --feasibility-only
+    Arch->>PM: 技術可行性評估
+
+    PM->>User: 可行性報告 + 建議方向
+    User->>PM: 決定：修復 or 重建
+
+    alt 修復路線
+        PM->>PM: /plan 制定修復計劃
+        PM->>Dev: 分配修復任務（/fix）
+    else 重建路線
+        PM->>PM: /spec 制定全新 Spec
+        PM->>Dev: 開始 /feature 重建
+    end
+    </div>
+  </div>
+</div>
+
+<script>
+  mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose' });
+</script>
+</body>
+</html>

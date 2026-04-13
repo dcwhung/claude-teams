@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Dev Team — Workflow Diagrams</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0f1117; color: #e2e8f0; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 48px 32px; max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 32px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+  .tagline { color: #64748b; font-size: 15px; margin-bottom: 48px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+  .card { background: #141921; border: 1px solid #1e293b; border-radius: 14px; padding: 28px; text-decoration: none; color: inherit; transition: all 0.2s; display: block; }
+  .card:hover { border-color: var(--accent); background: #1a2030; transform: translateY(-2px); }
+  .card-icon { font-size: 32px; margin-bottom: 16px; }
+  .card-title { font-size: 17px; font-weight: 600; color: #fff; margin-bottom: 8px; }
+  .card-desc { font-size: 13px; color: #64748b; line-height: 1.6; }
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 16px; }
+  .tag { background: #1e293b; color: #94a3b8; font-size: 11px; padding: 3px 8px; border-radius: 4px; }
+  .section-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #475569; margin-bottom: 16px; margin-top: 40px; }
+  .divider { border: none; border-top: 1px solid #1e293b; margin: 8px 0 32px; }
+</style>
+</head>
+<body>
+
+<h1>AI Dev Team</h1>
+<p class="tagline">Workflow Diagrams — 所有 Agent 工作流、Skills 使用、Commands 觸發的可視化流程圖</p>
+
+<p class="section-label">所有流程圖</p>
+<hr class="divider">
+
+<div class="grid">
+
+  <a href="00-overview.html" class="card" style="--accent: #2563eb">
+    <div class="card-icon">🗺️</div>
+    <div class="card-title">團隊總覽</div>
+    <div class="card-desc">所有 Agents 結構、Commands 對應 Agent、Skills 使用範圍、Engineering Manager 觸發條件</div>
+    <div class="card-tags">
+      <span class="tag">全體 Agents</span>
+      <span class="tag">Commands 對應</span>
+      <span class="tag">Skills</span>
+      <span class="tag">EM 觸發</span>
+    </div>
+  </a>
+
+  <a href="01-new-project.html" class="card" style="--accent: #0891b2">
+    <div class="card-icon">🚀</div>
+    <div class="card-title">新項目開發流程</div>
+    <div class="card-desc">從用戶需求到生產部署的完整流程：Spec → Plan → 功能開發 → QA 測試 → 部署。包含 Agent 時序圖及文件輸出路徑。</div>
+    <div class="card-tags">
+      <span class="tag">/spec</span>
+      <span class="tag">/plan</span>
+      <span class="tag">/feature</span>
+      <span class="tag">/test</span>
+      <span class="tag">/deploy</span>
+    </div>
+  </a>
+
+  <a href="02-feature-tdd.html" class="card" style="--accent: #059669">
+    <div class="card-icon">🔴🟢🔵</div>
+    <div class="card-title">功能開發 TDD 流程</div>
+    <div class="card-desc">Red-Green-Refactor 詳細循環、Branch 命名規則、Commit 格式、完成標準 Checklist</div>
+    <div class="card-tags">
+      <span class="tag">/feature</span>
+      <span class="tag">TDD</span>
+      <span class="tag">Red-Green-Refactor</span>
+      <span class="tag">/review</span>
+    </div>
+  </a>
+
+  <a href="03-fix-workflow.html" class="card" style="--accent: #dc2626">
+    <div class="card-icon">🔨</div>
+    <div class="card-title">Bug 修復流程</div>
+    <div class="card-desc">兩套 ID 系統（Review Item ID vs QA Ticket）、TDD Fix 循環、QA Ticket 生命週期、.tickets/ 資料夾結構</div>
+    <div class="card-tags">
+      <span class="tag">/fix</span>
+      <span class="tag">C/W/S-NNN</span>
+      <span class="tag">QA Ticket</span>
+      <span class="tag">ticket-management</span>
+    </div>
+  </a>
+
+  <a href="04-hotfix-workflow.html" class="card" style="--accent: #dc2626">
+    <div class="card-icon">🚨</div>
+    <div class="card-title">緊急修復 Hotfix</div>
+    <div class="card-desc">生產緊急事故判斷 → 快速修復 → Back-merge to develop → Post-mortem。含 Git Flow 圖及 EM 主導的根源分析。</div>
+    <div class="card-tags">
+      <span class="tag">/hotfix</span>
+      <span class="tag">back-merge</span>
+      <span class="tag">post-mortem</span>
+      <span class="tag">Engineering Manager</span>
+    </div>
+  </a>
+
+  <a href="05-rescue-project.html" class="card" style="--accent: #7c3aed">
+    <div class="card-icon">🏚️</div>
+    <div class="card-title">接手舊項目</div>
+    <div class="card-desc">Rescue/Legacy 項目：/audit 分析 → /review → 可行性評估 → 決定修復或重建。含安全審計重點及決策矩陣。</div>
+    <div class="card-tags">
+      <span class="tag">/audit</span>
+      <span class="tag">/review</span>
+      <span class="tag">/plan</span>
+      <span class="tag">安全審計</span>
+    </div>
+  </a>
+
+  <a href="06-review-deploy.html" class="card" style="--accent: #d97706">
+    <div class="card-icon">🚢</div>
+    <div class="card-title">Review → 部署 Pipeline</div>
+    <div class="card-desc">/review 詳細流程 + 評分系統、Git Flow develop→main、CI/CD Pipeline 步驟、DB Migration 規範、回滾方案</div>
+    <div class="card-tags">
+      <span class="tag">/review</span>
+      <span class="tag">/deploy</span>
+      <span class="tag">CI/CD</span>
+      <span class="tag">DB Migration</span>
+      <span class="tag">git-flow</span>
+    </div>
+  </a>
+
+</div>
+
+<p class="section-label" style="margin-top: 56px">快速參考</p>
+<hr class="divider">
+
+<div style="background: #141921; border: 1px solid #1e293b; border-radius: 12px; padding: 24px; font-size: 13px; line-height: 2; font-family: 'SF Mono', 'Fira Code', monospace;">
+  <div style="color:#64748b;margin-bottom:12px"># 啟動方式</div>
+  <div><span style="color:#94a3b8">/start ai-dev-team</span> <span style="color:#475569">← 載入團隊，詢問今次目標</span></div>
+  <div><span style="color:#94a3b8">/start ai-dev-team --task=fix --ticket=CUI-0001</span> <span style="color:#475569">← 指定修復任務</span></div>
+  <div><span style="color:#94a3b8">/start ai-dev-team --task=postmortem</span> <span style="color:#475569">← EM 主導根源分析</span></div>
+  <br>
+  <div style="color:#64748b;margin-bottom:12px"># 開發循環</div>
+  <div><span style="color:#6ee7b7">/spec</span> → <span style="color:#6ee7b7">/plan</span> → <span style="color:#6ee7b7">/feature</span> → <span style="color:#6ee7b7">/review</span> → <span style="color:#6ee7b7">/test</span> → <span style="color:#6ee7b7">/deploy</span></div>
+  <br>
+  <div style="color:#64748b;margin-bottom:12px"># 評分門檻</div>
+  <div><span style="color:#86efac">≥ 90 分</span> <span style="color:#475569">→ 可以 merge（/feature, /fix, /refactor）</span></div>
+  <div><span style="color:#fcd34d">≥ 75 分</span> <span style="color:#475569">→ Hotfix 緊急情況最低門檻</span></div>
+  <div><span style="color:#fca5a5">任何 🔴 Critical</span> <span style="color:#475569">→ 無論總分，一律不合格</span></div>
+  <br>
+  <div style="color:#64748b;margin-bottom:12px"># 每個 session 結束</div>
+  <div><span style="color:#c4b5fd">/session-log</span> <span style="color:#475569">← 全體執行，記錄 session</span></div>
+</div>
+
+</body>
+</html>
