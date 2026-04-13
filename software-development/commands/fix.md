@@ -52,8 +52,7 @@
     → 詳見 `skills/autonomous-loop.md`
 10. Commit（Conventional Commits 格式）
 11. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review（Code Reviewer 獨立 review）
-12. 其後 handoff 全部由 Reviewer / QA Agent 按 `skills/git-flow.md`
-    Post-Review Handoff Protocol → Post-QA Release Protocol 自動執行。
+12. Reviewer 返回後，按 `skills/post-review-handoff.md` → 標準流程 執行 handoff
 13. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```
 

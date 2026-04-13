@@ -38,9 +38,7 @@
 6. 完成所有功能點後，執行完整測試套件，確認全綠
 7. Commit（Conventional Commits 格式）
 8. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review（Code Reviewer 獨立 review）
-9. 其後 handoff 全部由 Reviewer / QA Agent 按 `skills/git-flow.md`
-   Post-Review Handoff Protocol → Post-QA Release Protocol 自動執行，
-   Developer 無須介入。
+9. Reviewer 返回後，按 `skills/post-review-handoff.md` → 標準流程 執行 handoff
 10. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```
 

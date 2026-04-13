@@ -45,13 +45,14 @@
 
 ## Review 完成後必須執行嘅 Handoff
 
-Review 報告輸出後，**唔係交差**。所有 handoff 規則**完全定義於** `skills/git-flow.md` → Post-Review Handoff Protocol。Reviewer 必須按該 protocol 立即執行對應動作，**禁止等用戶確認**。
+Review 報告輸出後，**唔係交差**。
+
+**Reviewer 職責**：執行 git 操作（merge / branch delete），在報告末尾標明評分及 git 結果。
+**Main agent 職責**：監察 Reviewer 返回結果，按 `skills/post-review-handoff.md` 立即 invoke 下一個 agent。
 
 > ⛔ **Reviewer 禁令**：
 > - 禁用「通知」、「提醒」、「建議用戶執行」等被動語句
-> - 所有 handoff 必須透過 **Agent tool 實際 invoke** 下一個 agent（QA 或 Developer）
 > - 禁止輸出「請確認是否繼續」、「要唔要叫 developer fix」、「需要叫 QA 嗎」等問句
-> - Hotfix review 使用同一 protocol 嘅 **Hotfix 特殊流程**（門檻 75 分）
 
 ---
 

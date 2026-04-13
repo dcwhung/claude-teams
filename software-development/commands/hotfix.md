@@ -52,8 +52,7 @@
 6.  🟢 最少改動修復問題
 7.  執行關鍵測試（最少：unit + smoke test）
 8.  Commit，透過 Agent tool 呼叫 code-reviewer agent 執行 /review（聚焦 Critical 問題）
-9.  其後 handoff 由 Reviewer 按 `skills/git-flow.md` Post-Review Handoff Protocol →
-    Hotfix 特殊流程（門檻 75 分）自動執行：merge main、invoke DevOps 部署、invoke QA smoke test + back-merge。
+9.  Reviewer 返回後，按 `skills/post-review-handoff.md` → Hotfix 特殊流程 執行 handoff
 10. QA Smoke test 完成後建立 post-mortem ticket
 11. 執行 /session-log
 12. ⚠️ 提示：開新對話執行 /start ai-dev-team --task=postmortem 進行根源分析
