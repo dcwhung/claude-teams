@@ -82,6 +82,30 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 
 ---
 
+## Single Source of Truth（SSoT）原則
+
+> 所有規則只定義一次。任何 agent / command 檔案如需引用，一律用 pointer，**禁止複製內容**。
+
+| 主題 | 權威檔案 |
+|------|---------|
+| Agent 通用 protocol（Fact-Check、Plan Before Do、Handoff 嚴格性） | `skills/agent-protocols.md` |
+| Git flow（branch、commit、pre-flight checklist、merge 規則） | `skills/git-flow.md` |
+| 所有 handoff 協議（review / QA release / hotfix / deploy） | `skills/post-review-handoff.md` |
+| TDD Red-Green-Refactor 循環 | `skills/tdd.md` |
+| Autonomous Loop + Parallel Agents + Edge Case 枚舉 | `skills/autonomous-loop.md` |
+| CI/CD pipeline 階段、環境變數、回滾 | `skills/ci-cd.md` |
+| Review Item ID（C/W/S-NNN）vs QA Ticket（CUI-XXXX） | `skills/ticket-management.md` |
+| Review 評分、維度、門檻、報告格式 | `agents/code-reviewer.md` |
+| Coding style / 命名 / 函數長度 | `skills/coding-style.md` |
+| Hooks 配置 | `skills/hooks.md` |
+
+**維護規則**：
+- 修改規則時只改權威檔案，其他檔案自動同步
+- 發現重複 → 保留權威，其他改為 pointer
+- Commands (`/feature`、`/fix` 等) 只包含該指令獨有嘅執行流程
+
+---
+
 ## 跨 Agent 協作規則
 
 1. **Project Manager 主導溝通**：所有需求澄清、優先級決定，由 PM 負責
@@ -89,6 +113,7 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 3. **Code Reviewer 係獨立角色**：開發者唔可以 review 自己嘅代碼
 4. **QA 係最後防線**：QA 報告有 🔴 Critical 問題時，禁止進入部署流程
 5. **DevOps 負責環境一致性**：dev / staging / production 環境差異必須文件化
+6. **Handoff 嚴格性**：所有 agent 完成工作後按 `skills/post-review-handoff.md` 執行，禁止等用戶確認（見 `skills/agent-protocols.md`）
 
 ---
 

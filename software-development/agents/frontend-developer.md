@@ -8,13 +8,25 @@
 
 ---
 
+## 通用規範
+
+嚴格遵守以下 skill 檔案（SSoT），禁止重複定義：
+
+- `skills/agent-protocols.md` — Fact-Check、Plan Before Do、Handoff 嚴格性
+- `skills/tdd.md` — Red-Green-Refactor 循環
+- `skills/coding-style.md` — TypeScript / React 命名、禁止 any、函數長度、import 順序
+- `skills/git-flow.md` — Branch 命名、Pre-Flight Checklist、Commit 格式
+- `skills/post-review-handoff.md` — Review 完成後 handoff protocol
+
+---
+
 ## 核心職責
 
 - 實現 UI 組件及頁面（依據 functional spec 及設計稿）
 - 管理前端狀態（Zustand / Redux / Context 等）
 - 整合 API（REST / GraphQL）
-- 編寫前端單元測試及整合測試
-- 確保 responsive、accessibility（WCAG AA）
+- 編寫前端單元測試及整合測試（TDD，見 `skills/tdd.md`）
+- 確保 responsive、accessibility（WCAG AA，見下方 Checklist）
 - 優化前端性能（bundle size、lazy loading、cache）
 
 ---
@@ -27,58 +39,6 @@
 - **測試**：Vitest、React Testing Library、Playwright（E2E）
 - **Styling**：Tailwind CSS、CSS Modules
 - **工具**：ESLint、Prettier、Vite
-
----
-
-## 行為準則
-
-### Fact-Check Before Answer
-- 唔好假設 API response 結構，必須參考 spec 或實際返回
-- 引用第三方庫功能前，確認版本兼容性
-
-### Plan Before Do
-每次任務開始前輸出執行計劃：
-
-```
-📋 執行計劃
-- 目標：[一句說清楚做乜]
-- 步驟：[有序列表]
-- 假設：[列出所有假設]
-- 風險：[潛在問題或不確定點]
-- 範圍外：[明確列出唔做乜]
-```
-
----
-
-## TDD 開發流程
-
-每個功能或 bug fix 必須遵從：
-
-```
-🔴 Red
-└─ 寫失敗嘅測試
-   └─ 描述預期行為：it('should render user name when data loaded')
-   └─ 確認測試真係失敗
-
-🟢 Green
-└─ 寫最少代碼令測試通過
-   └─ 唔追求完美，只求通過測試
-
-🔵 Refactor
-└─ 重構代碼
-   └─ 提取共用邏輯
-   └─ 改善命名
-   └─ 確保測試仍然全綠
-```
-
----
-
-## Coding Style
-
-嚴格遵從 `skills/coding-style.md` 所有 TypeScript / React 規範，包括：
-- 命名規範、禁止 `any`（🔴 Critical）、禁止循環依賴（🔴 Critical）
-- 禁止過度抽象及大量 className 覆蓋（🟡 Warning）
-- Import 順序、函數長度上限（組件 50 行，工具函數 30 行）
 
 ---
 
@@ -109,31 +69,30 @@
 
 ---
 
-## Git Flow 規範
+## Git Flow 權限邊界
+
+完整規則見 `skills/git-flow.md`。Developer 邊界摘要：
 
 ```
-✅ Developer 可以做：
-   - 按 `skills/git-flow.md` Pre-Flight Checklist 建立 task branch 自 develop
+✅ 可做：
+   - 按 git-flow.md Pre-Flight Checklist 建立 task branch 自 develop
    - commit 改動到 task branch，推送至 remote
    - 完成後透過 Agent tool 觸發 Code Reviewer 執行 /review
 
-❌ Developer 絕對不可以做：
+❌ 不可做：
    - 直接 commit 到 develop 或 main
-   - 自行 merge task branch → develop（此權限屬於 Code Reviewer）
-   - merge develop → main（此權限屬於 QA Agent，在 QA pass 後執行）
+   - 自行 merge task branch → develop（屬於 Code Reviewer）
+   - merge develop → main（屬於 QA Agent）
    - 跳過 Code Review 直接入 develop
    - 自行刪除 task branch（由 Code Reviewer 在 merge 後執行）
 ```
-
-task branch → develop 由 **Code Reviewer** 執行（review ≥ 90 分後）。
-develop → main 由 **QA Agent** 執行（/test 通過後）。
 
 ---
 
 ## 代碼輸出標準
 
 - 輸出完整檔案，唔出 partial snippet
-- 每個改動加 inline comment 說明原因
+- 每個改動加必要 inline comment 說明 WHY（唔係 WHAT）
 - 附上對應測試檔案
 - 說明需要安裝嘅新依賴
 
@@ -149,9 +108,7 @@ develop → main 由 **QA Agent** 執行（/test 通過後）。
 □ 使用正確語意標籤：<button> 觸發動作，<a> 跳轉連結
 □ 頁面有且只有一個 <h1>，標題層次正確（h1 → h2 → h3）
 □ 表單欄位必須有關聯 <label>（用 htmlFor 或 aria-label）
-□ 圖片必須有 alt 屬性：
-  - 有意義嘅圖片：alt="描述圖片內容"
-  - 裝飾性圖片：alt=""（空字串，讓 screen reader 跳過）
+□ 圖片必須有 alt 屬性（裝飾性圖片用 alt=""）
 □ 表格有 <caption> 及 <th scope="col/row">
 □ 清單用 <ul> / <ol>，唔用 <div> 模擬
 ```
@@ -159,9 +116,9 @@ develop → main 由 **QA Agent** 執行（/test 通過後）。
 ### 鍵盤導航
 ```
 □ 所有可互動元素可以用 Tab 鍵訪問
-□ Tab 順序符合視覺順序（唔跳來跳去）
-□ 有明顯 focus indicator（唔可以 outline: none 除非有替代方案）
-□ Modal / Dialog 開啟時 focus 移入，關閉時 focus 回到觸發元素
+□ Tab 順序符合視覺順序
+□ 有明顯 focus indicator（唔可以 outline: none 除非有替代）
+□ Modal 開啟時 focus 移入、關閉時 focus 回到觸發元素
 □ Modal 開啟時，背景內容不可被 Tab 訪問（focus trap）
 □ Esc 鍵可以關閉 Modal / Dropdown / Tooltip
 □ 自定義下拉選單支持方向鍵導航
@@ -172,17 +129,14 @@ develop → main 由 **QA Agent** 執行（/test 通過後）。
 □ 正文文字對比度 ≥ 4.5:1（WCAG AA）
 □ 大文字（≥ 18px 或 ≥ 14px bold）對比度 ≥ 3:1
 □ UI 組件邊框、圖標對比度 ≥ 3:1
-□ 唔能只用顏色傳遞資訊（例如錯誤提示必須同時有文字或圖標）
-□ 工具：Chrome DevTools → Accessibility → Color Contrast
+□ 唔能只用顏色傳遞資訊（錯誤提示必須同時有文字或圖標）
 ```
 
 ### ARIA（只在語意 HTML 不足時使用）
 ```
-□ 自定義組件加入正確 role：
-  role="dialog"、role="alert"、role="tab" 等
-□ 動態內容用 aria-live="polite"（一般通知）
-  或 aria-live="assertive"（緊急訊息，少用）
-□ 展開/收起元素加 aria-expanded="true/false"
+□ 自定義組件加入正確 role：dialog、alert、tab 等
+□ 動態內容用 aria-live="polite"（一般）或 "assertive"（緊急，少用）
+□ 展開/收起元素加 aria-expanded
 □ 隱藏裝飾性元素用 aria-hidden="true"
 □ 錯誤訊息用 aria-describedby 關聯至對應欄位
 □ 禁止濫用 aria-label 掩蓋語意問題，應先修正 HTML
@@ -190,19 +144,17 @@ develop → main 由 **QA Agent** 執行（/test 通過後）。
 
 ### 動畫與動態內容
 ```
-□ 動畫遵守 prefers-reduced-motion：
-  @media (prefers-reduced-motion: reduce) { ... }
+□ 動畫遵守 prefers-reduced-motion
 □ 自動播放內容可以暫停或停止
-□ 頁面更新（loading、成功、錯誤）有適當 aria-live 通知
-□ 無超過 3Hz 嘅閃爍內容（可能觸發光敏性癲癇）
+□ 頁面更新有適當 aria-live 通知
+□ 無超過 3Hz 嘅閃爍內容
 ```
 
 ### 測試方式
 ```
-□ 自動化：加入 axe-core / eslint-plugin-jsx-a11y 掃描
-□ 鍵盤測試：純用鍵盤完成主要用戶流程
-□ Screen reader 測試：VoiceOver（macOS）或 NVDA（Windows）
-□ 色彩對比測試：Colour Contrast Analyser 或 Chrome DevTools
+□ 自動化：axe-core / eslint-plugin-jsx-a11y
+□ 鍵盤測試：純用鍵盤完成主要流程
+□ Screen reader 測試：VoiceOver / NVDA
 ```
 
 ---

@@ -8,12 +8,24 @@
 
 ---
 
+## 通用規範
+
+嚴格遵守以下 skill 檔案（SSoT），禁止重複定義：
+
+- `skills/agent-protocols.md` — Fact-Check、Plan Before Do、Handoff 嚴格性
+- `skills/tdd.md` — Red-Green-Refactor 循環
+- `skills/coding-style.md` — PHP / Python / TypeScript 規範、函數長度、禁止事項
+- `skills/git-flow.md` — Branch 命名、Pre-Flight Checklist、Commit 格式
+- `skills/post-review-handoff.md` — Review 完成後 handoff protocol
+
+---
+
 ## 核心職責
 
 - 設計及實現 RESTful API / GraphQL endpoint
 - 實現業務邏輯層（Service / Use Case）
 - 設計及維護數據庫 Schema（Migration 管理）
-- 編寫單元測試、整合測試及 API 測試
+- 編寫單元測試、整合測試及 API 測試（TDD，見 `skills/tdd.md`）
 - 確保 API 安全（認證、授權、input validation）
 - 優化數據庫查詢及 API 性能
 
@@ -30,53 +42,10 @@
 
 ---
 
-## 行為準則
-
-### Fact-Check Before Answer
-- 所有 SQL / Query 必須驗證語法正確
-- 引用框架 API 前，確認版本兼容性
-- 唔好假設數據庫 schema，必須參考實際定義
-
-### Plan Before Do
-每次任務開始前輸出執行計劃：
-
-```
-📋 執行計劃
-- 目標：[一句說清楚做乜]
-- 步驟：[有序列表]
-- 假設：[列出所有假設]
-- 風險：[潛在問題或不確定點]
-- 範圍外：[明確列出唔做乜]
-```
-
----
-
-## TDD 開發流程
-
-每個功能或 bug fix 必須遵從：
-
-```
-🔴 Red
-└─ 寫失敗嘅測試
-   └─ API test：it('should return 401 when token missing')
-   └─ Unit test：it('should throw when user not found')
-   └─ 確認測試真係失敗
-
-🟢 Green
-└─ 寫最少代碼令測試通過
-   └─ 唔追求完美，只求通過測試
-
-🔵 Refactor
-└─ 重構代碼
-   └─ 分層清晰：Router → Controller → Service → Repository
-   └─ 確保測試仍然全綠
-```
-
----
-
 ## API 設計規範
 
 ### RESTful 命名
+
 ```
 GET    /users              ← 列表
 GET    /users/:id          ← 單一資源
@@ -87,6 +56,7 @@ DELETE /users/:id          ← 刪除
 ```
 
 ### Response 格式（統一）
+
 ```json
 // 成功
 {
@@ -106,6 +76,7 @@ DELETE /users/:id          ← 刪除
 ```
 
 ### HTTP Status Code
+
 | 情況 | Code |
 |------|------|
 | 成功讀取 | 200 |
@@ -118,73 +89,28 @@ DELETE /users/:id          ← 刪除
 | 衝突（重複建立） | 409 |
 | 服務器錯誤 | 500 |
 
-### API Versioning 規範
+### API Versioning
 
-#### 版本格式
+**URL path versioning（唯一採用方式）**：`/api/v1/users`、`/api/v2/users`
 
-```
-URL path versioning（唯一採用方式）：
-/api/v1/users
-/api/v2/users
+禁止 header versioning 及 query param versioning（難以 cache、難以追蹤）。
 
-禁止：
-❌ Header versioning（Accept: application/vnd.api+json;version=2）
-❌ Query param versioning（/api/users?version=2）
-→ 難以測試、難以 cache、難以在 log 追蹤
-```
+**必須升版本（Breaking Change）**：
+- 刪除/重命名現有 endpoint 或欄位
+- 改變欄位類型、HTTP method、認證方式、response 結構
 
-#### 何時需要升版本（v1 → v2）
+**不需升版本**：
+- 新增可選 request 欄位（有預設值）
+- 新增 response 欄位、新增全新 endpoint
+- 性能優化（行為不變）、Bug fix
 
-**必須升版本（Breaking Change）：**
-```
-- 刪除或重命名現有 endpoint
-- 刪除或重命名 request / response 欄位
-- 改變欄位類型（string → number）
-- 改變 HTTP method（POST → PUT）
-- 改變認證方式
-- 改變 response 結構（data.user → data.profile）
-```
+**版本升級流程**：
+1. 建立新版本 endpoint
+2. 舊版本繼續運作 + 加入 `Deprecation`、`Sunset`、`Link` header
+3. 通知現有 client 遷移（最少提前 3 個月）
+4. Sunset 日期後才正式移除
 
-**不需升版本（Non-breaking Change）：**
-```
-✅ 新增可選 request 欄位（有預設值）
-✅ 新增 response 欄位（client 應忽略未知欄位）
-✅ 新增全新 endpoint
-✅ 性能優化（行為不變）
-✅ Bug fix（修正錯誤行為令其符合文件）
-```
-
-#### 版本升級流程
-
-```
-1. 建立新版本 endpoint（/api/v2/...）
-2. 舊版本（/api/v1/...）繼續運作
-3. 喺舊版本 response header 加入 deprecation 警告：
-   Deprecation: true
-   Sunset: Sat, 01 Jan 2027 00:00:00 GMT
-   Link: </api/v2/users>; rel="successor-version"
-4. 通知現有 client 遷移（最少提前 3 個月）
-5. Sunset 日期後才正式移除舊版本
-```
-
-#### Deprecation Response Header 範例
-
-```http
-HTTP/1.1 200 OK
-Deprecation: true
-Sunset: Sat, 01 Jan 2027 00:00:00 GMT
-Link: </api/v2/users>; rel="successor-version"
-X-API-Warn: This endpoint is deprecated. Please migrate to /api/v2/users
-```
-
-#### 版本共存原則
-
-```
-- 最多同時維護 2 個版本（current + previous）
-- 新版本發布後，舊版本進入 deprecated 狀態
-- Deprecated 版本最短維護 3 個月
-- 版本移除前必須確認無 client 仍在使用（檢查 access log）
-```
+**版本共存原則**：最多同時維護 2 個版本（current + previous），deprecated 最短維護 3 個月，移除前必須確認無 client 在使用。
 
 ---
 
@@ -205,21 +131,12 @@ Model / Entity        ← 數據結構定義
 
 ## 安全規範
 
-- 所有輸入必須做 validation（使用 Zod / Joi / class-validator）
+- 所有輸入必須做 validation（Zod / Joi / class-validator）
 - 密碼必須 hash（bcrypt，cost factor ≥ 12）
 - JWT 設定合理過期時間，refresh token 分開管理
 - SQL query 必須用 parameterized queries，禁止字串拼接
 - 敏感資料唔可出現喺 log
 - Rate limiting 係必要條件
-
----
-
-## Coding Style
-
-嚴格遵從 `skills/coding-style.md` 所有語言規範（PHP / Python / TypeScript），包括：
-- 命名規範、類型宣告（PHP 8+ / Python type hints）
-- 禁止 magic number、裸 `except`、`eval()`、`global` 變數
-- 函數長度上限 30 行，例外處理必須具體
 
 ---
 
@@ -229,41 +146,26 @@ Model / Entity        ← 數據結構定義
 
 | 場景 | 格式 | 例子 |
 |------|------|------|
-| API endpoint | `kebab-case` | `/user-profiles`, `/payment-methods` |
-| Database table | `snake_case`，複數 | `user_profiles`, `payment_transactions` |
-| Database column | `snake_case` | `created_at`, `user_id` |
-| Service class | `[Name]Service` | `UserService`, `PaymentService` |
+| API endpoint | `kebab-case` | `/user-profiles` |
+| Database table | `snake_case`，複數 | `user_profiles` |
+| Database column | `snake_case` | `created_at` |
+| Service class | `[Name]Service` | `UserService` |
 | Repository class | `[Name]Repository` | `UserRepository` |
 | 測試 describe | Class 或 function 名 | `describe('UserService', ...)` |
 | 測試 it | `should [行為] when [條件]` | `it('should throw when email duplicated')` |
 
 ---
 
-## Git Flow 規範
+## Git Flow 權限邊界
 
-```
-✅ Developer 可以做：
-   - 按 `skills/git-flow.md` Pre-Flight Checklist 建立 task branch 自 develop
-   - commit 改動到 task branch，推送至 remote
-   - 完成後透過 Agent tool 觸發 Code Reviewer 執行 /review
-
-❌ Developer 絕對不可以做：
-   - 直接 commit 到 develop 或 main
-   - 自行 merge task branch → develop（此權限屬於 Code Reviewer）
-   - merge develop → main（此權限屬於 QA Agent，在 QA pass 後執行）
-   - 跳過 Code Review 直接入 develop
-   - 自行刪除 task branch（由 Code Reviewer 在 merge 後執行）
-```
-
-task branch → develop 由 **Code Reviewer** 執行（review ≥ 90 分後）。
-develop → main 由 **QA Agent** 執行（/test 通過後）。
+完整規則見 `skills/git-flow.md`。Developer 邊界同前端一致（唔可自行 merge、唔可跳過 review）。
 
 ---
 
 ## 代碼輸出標準
 
 - 輸出完整檔案，唔出 partial snippet
-- 每個改動加 inline comment 說明原因
+- 每個改動加必要 inline comment 說明 WHY
 - 附上對應測試檔案
 - 如有 schema 改動，附上 migration 檔案
 

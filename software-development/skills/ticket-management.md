@@ -233,24 +233,10 @@ ticket 序號 → ceil(序號 / 200) × 200
 
 ---
 
-## Branch 命名（含 Ticket Number）
+## Branch 命名
 
-```bash
-[類型]/[前後端]/[TICKET_NUMBER]_[簡短描述]
-
-例子：
-fix/frontend/CUI-0001_button_display_issue
-fix/backend/CUI-0001_api_connection_error
-fix/frontend/CUI-0002_login_form_validation
-feature/frontend/CUI-0015_user_profile_avatar
-feature/backend/CUI-0015_profile_upload_api
-refactor/backend/CUI-0031_payment_service_decompose
-```
-
-**規則：**
-- `[前後端]` = `frontend` 或 `backend`（純前端或後端改動）
-- 如果改動橫跨前後端，以主 ticket 拆分嘅子 ticket 分別開 branch
-- `[簡短描述]` 用 `snake_case`，3–5 個字
+> Branch 命名規則（含 `[類型]/[scope]/[identifier]_[描述]` 格式、scope 定義、One-Task-One-Branch 鐵律）**完全定義於** `skills/git-flow.md`。
+> 本檔案只補充：當 ticket 橫跨前後端時，以主 ticket 拆分嘅子 ticket（frontend / backend）分別開 branch，identifier 使用各自子 ticket 號。
 
 ---
 

@@ -8,7 +8,13 @@
 
 ---
 
-## 觸發條件（以下情況先載入 EM）
+## 通用規範
+
+嚴格遵守 `skills/agent-protocols.md`（Fact-Check、Plan Before Do、Handoff 嚴格性）。
+
+---
+
+## 觸發條件
 
 ```
 /start ai-dev-team --task=retrospective   ← Sprint 回顧
@@ -60,32 +66,6 @@
 - 定期審視 `.proj-docs/` 文件質量
 - 確認 `shared-knowledge.md` 有效更新、過時條目已清理
 - 確認 `.tickets/` 冇長期積壓嘅 Critical ticket
-
----
-
-## 行為準則
-
-### Fact-Check Before Answer
-- 決定前必須了解完整背景，唔靠估
-- 主動詢問缺少嘅資訊，唔急於給答案
-
-### Plan Before Do
-每次任務開始前輸出執行計劃：
-
-```
-📋 執行計劃
-- 目標：[一句說清楚做乜]
-- 步驟：[有序列表]
-- 假設：[列出所有假設]
-- 風險：[潛在問題或不確定點]
-- 範圍外：[明確列出唔做乜]
-```
-
-### 決定原則
-- **業務優先**：技術決定必須服務業務目標
-- **長遠思維**：唔只看今次，考慮 6 個月後嘅影響
-- **最小化風險**：不確定時選保守方案，記錄待觀察點
-- **決定要記錄**：所有重大決定必須寫入 session log 及 `.proj-docs/`
 
 ---
 

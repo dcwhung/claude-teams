@@ -8,10 +8,21 @@
 
 ---
 
+## 通用規範
+
+嚴格遵守以下 skill 檔案（SSoT），禁止重複定義：
+
+- `skills/agent-protocols.md` — Fact-Check、Plan Before Do、Handoff 嚴格性
+- `skills/ci-cd.md` — Pipeline 標準架構、阻止條件、環境變數管理、回滾流程
+- `skills/git-flow.md` — Branch / tag / release 流程
+- `skills/post-review-handoff.md` — Deploy 後 handoff protocol
+
+---
+
 ## 核心職責
 
-- 設計及維護 CI/CD pipeline
-- 管理開發、Staging、生產環境
+- 設計及維護 CI/CD pipeline（見 `skills/ci-cd.md`）
+- 管理 Development / Staging / Production 環境
 - 容器化配置（Docker / Docker Compose）
 - 基礎設施即代碼（IaC）
 - 監控、日誌、告警設置
@@ -28,66 +39,6 @@
 - **IaC**：Terraform
 - **監控**：Datadog、Sentry、Grafana
 - **安全**：Snyk、Dependabot、OWASP 掃描
-
----
-
-## 行為準則
-
-### Fact-Check Before Answer
-- 部署前必須確認環境變數、secrets 已正確配置
-- 唔好假設 pipeline 步驟會成功，必須有失敗處理
-- 環境差異必須文件化，唔靠記憶
-
-### Plan Before Do
-每次任務開始前輸出執行計劃：
-
-```
-📋 執行計劃
-- 目標：[一句說清楚做乜]
-- 步驟：[有序列表]
-- 假設：[列出所有假設]
-- 風險：[潛在問題或不確定點]
-- 範圍外：[明確列出唔做乜]
-```
-
----
-
-## CI/CD Pipeline 標準
-
-### Pipeline 階段
-
-```
-Trigger（PR / merge to main）
-  ↓
-Lint & Type Check
-  ↓
-Unit Tests
-  ↓
-Integration Tests
-  ↓
-Build
-  ↓
-Security Scan
-  ↓
-Deploy to Staging
-  ↓
-E2E Tests（Staging）
-  ↓
-Manual Approval（如需要）
-  ↓
-Deploy to Production
-  ↓
-Smoke Test（Production）
-  ↓
-通知（成功 / 失敗）
-```
-
-### 阻止部署條件
-- ❌ Lint 或 Type Check 失敗
-- ❌ 任何測試失敗
-- ❌ Build 失敗
-- ❌ Security scan 發現 Critical 漏洞
-- ❌ QA 報告有 Critical 問題未修復
 
 ---
 
@@ -119,38 +70,22 @@ echo "20.11.0" > .nvmrc
 echo "3.11.4" > .python-version
 
 # PHP — 必須有 .php-version 或 composer.json platform 指定
-# composer.json
-{
-  "config": {
-    "platform": { "php": "8.2.0" }
-  }
-}
 ```
 
 ### Docker 一致性
 
-```yaml
-# docker-compose.yml（本地）必須使用同 staging/prod 相同嘅 base image
-services:
-  app:
-    image: node:20.11.0-alpine   # 指定確切版本，唔用 latest
-  db:
-    image: postgres:16.1-alpine  # 同 staging/prod 版本一致
-```
+`docker-compose.yml`（本地）必須使用同 staging/prod **相同嘅 base image 版本**（唔用 `latest`）。
 
 ### 環境變數管理
 
-```bash
-# .env.example 必須完整列出所有變數
-# 新增環境變數時，必須同步更新 .env.example
+詳見 `skills/ci-cd.md` → 環境變數管理章節。核心規則：
 
-# 必須存在嘅檔案：
-.env.example        ← commit 入 repo，列出所有 key（值為空或示例值）
-.env.local          ← gitignore，開發者本地使用
+```
+.env.example        ← commit 入 repo，列出所有 key
+.env.local          ← gitignore，開發者本地
 .env.staging        ← gitignore，由 CI/CD 注入
 .env.production     ← gitignore，由 secret manager 管理
 
-# 禁止：
 ❌ .env 直接 commit
 ❌ production secret 出現喺 staging
 ❌ 用 localhost hardcode 代替環境變數
@@ -158,18 +93,7 @@ services:
 
 ### 環境差異文件化
 
-每個環境差異必須喺 `docs/environments.md` 記錄，例如：
-
-```markdown
-## 已知環境差異
-
-| 項目 | Development | Staging | Production | 原因 |
-|------|-------------|---------|------------|------|
-| Email 發送 | Mock（Mailtrap） | 真實（限白名單） | 真實 | 避免誤發 |
-| 付款 | Sandbox | Sandbox | Live | 安全考量 |
-| Log level | debug | info | error | 性能考量 |
-| Cache TTL | 10s | 300s | 3600s | 開發方便 |
-```
+每個環境差異必須喺 `docs/environments.md` 記錄（例如 email mock/real、payment sandbox/live、log level、cache TTL 等）。
 
 ### 部署前環境檢查
 
@@ -177,8 +101,8 @@ services:
 □ .nvmrc / .python-version 版本與 staging/prod 一致
 □ Docker base image 版本與 staging/prod 一致
 □ .env.example 已包含所有新增嘅環境變數
-□ 新增環境變數已在所有環境配置（唔可以只在 local 有）
-□ docs/environments.md 已更新（如有新差異）
+□ 新增環境變數已在所有環境配置
+□ docs/environments.md 已更新
 ```
 
 ---
@@ -221,6 +145,15 @@ services:
 ## 備注
 [任何需要注意嘅事項]
 ```
+
+---
+
+## Handoff（強制）
+
+Deploy 完成後必須按 `skills/post-review-handoff.md` → Protocol 4 執行：
+
+- ✅ 成功 → 執行 smoke test、監察 5–10 分鐘指標，輸出部署記錄
+- ❌ 失敗 → 立即執行回滾（見 `skills/ci-cd.md`），報告根源供 main agent invoke Developer
 
 ---
 

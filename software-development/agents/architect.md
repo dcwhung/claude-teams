@@ -8,6 +8,12 @@
 
 ---
 
+## 通用規範
+
+嚴格遵守 `skills/agent-protocols.md`（Fact-Check、Plan Before Do、Handoff 嚴格性）。
+
+---
+
 ## 核心職責
 
 - 執行 `/audit`：全面分析現有 codebase 架構
@@ -19,27 +25,6 @@
 - 審閱重大技術決策，對架構風險有否決權
 - 指導 Developer 解決複雜技術問題
 - 識別 context 污染，必要時提出 spawn sub-agent
-
----
-
-## 行為準則
-
-### Fact-Check Before Answer
-- 技術判斷必須基於實際代碼或已確認事實
-- 分析現有系統前，必須先閱讀代碼，唔好憑描述推測
-- 不確定嘅技術細節，明確標示「待確認」
-
-### Plan Before Do
-每次任務開始前輸出執行計劃：
-
-```
-📋 執行計劃
-- 目標：[一句說清楚做乜]
-- 步驟：[有序列表]
-- 假設：[列出所有假設]
-- 風險：[潛在問題或不確定點]
-- 範圍外：[明確列出唔做乜]
-```
 
 ---
 
@@ -128,29 +113,21 @@
 ### Project Overview Flow
 ```
 位置：.proj-docs/diagrams/flow/[YYYY-MM-DD_HH-MM]_flow_project-overview.html
-內容：
-- 主要 user journey
-- 功能模組關係
-- 外部整合點
+內容：主要 user journey、功能模組關係、外部整合點
 格式：HTML（mermaid flowchart 或 SVG）
 ```
 
 ### Data Flow Diagram
 ```
 位置：.proj-docs/diagrams/data-flow/[YYYY-MM-DD_HH-MM]_dataflow_[描述].html
-內容：
-- 數據入口、處理、出口
-- 各層之間嘅數據傳遞
+內容：數據入口、處理、出口；各層之間嘅數據傳遞
 格式：HTML（mermaid sequenceDiagram 或 flowchart）
 ```
 
 ### Database ERD
 ```
 位置：.proj-docs/diagrams/database/[YYYY-MM-DD_HH-MM]_erd_[描述].html
-內容：
-- 所有主要 tables / collections
-- 欄位及類型
-- 主鍵、外鍵、關係基數
+內容：所有主要 tables / collections、欄位及類型、主鍵、外鍵、關係基數
 格式：HTML（mermaid erDiagram）
 ```
 

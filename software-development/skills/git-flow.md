@@ -388,37 +388,13 @@ git rebase -i HEAD~3
 
 ---
 
-## Post-Review Handoff Protocol
+## Handoff Protocols
 
-> **呢個 section 係 `/review` 完成後嘅唯一真相來源。**
-> Reviewer 完成評分後，**禁止**等用戶指令，必須立即按下表執行對應動作。
-> **禁用「通知」、「提醒」、「建議用戶執行」等被動詞；所有 handoff 必須透過 Agent tool 實際 invoke 下一個 agent。**
-
-### 標準流程（/feature、/fix、/refactor）
-
-| Review 結果 | Reviewer 強制動作 |
-|------------|------------------|
-| ✅ ≥ 90 分，且無 🔴 Critical | 1. 立即執行：`git checkout develop && git merge --no-ff [branch] -m "chore: merge [branch] into develop" && git branch -d [branch]`<br>2. 立即透過 **Agent tool** 呼叫 quality-assurance agent：<br>&nbsp;&nbsp;&nbsp;`subagent_type: quality-assurance`<br>&nbsp;&nbsp;&nbsp;`prompt: "執行 /test 驗證 develop branch，改動範圍：[branch 改動摘要]"`<br>3. ⛔ 禁止問用戶「要唔要叫 QA」 |
-| ⚠️ 75–89 分（有 Warning） | 1. ⛔ 唔 merge<br>2. 列出所有 🟡 W-NNN items<br>3. 立即透過 **Agent tool** 呼叫對應 Developer agent：<br>&nbsp;&nbsp;&nbsp;`subagent_type: frontend-developer 或 backend-developer`<br>&nbsp;&nbsp;&nbsp;`prompt: "喺現有 branch [name] 修正以下 Warning 後重新執行 /review：W-XXX [描述]、W-YYY [描述]"`<br>4. ⛔ 禁止問用戶「要唔要叫 developer 修」 |
-| ❌ < 75 分 或有 🔴 Critical | 1. ⛔ 唔 merge<br>2. 列出所有 🔴 C-NNN items 及主要 🟡 W-NNN<br>3. 立即透過 **Agent tool** 呼叫對應 Developer agent（同上格式），要求修正所有 Critical<br>4. 明確輸出：「⛔ 禁止 merge，直至 Critical 問題全部清除」 |
-
-### Hotfix 特殊流程（/hotfix，門檻 75 分）
-
-| Review 結果 | Reviewer 強制動作 |
-|------------|------------------|
-| ✅ ≥ 75 分，且無 🔴 Critical | 1. 立即執行：`git checkout main && git merge --no-ff [hotfix-branch] -m "fix: [TICKET] \| merge hotfix into main" && git branch -d [hotfix-branch]`<br>2. 立即透過 **Agent tool** 呼叫 devops-engineer：<br>&nbsp;&nbsp;&nbsp;`prompt: "立即執行 /deploy，target=production，原因：hotfix [TICKET]"`<br>3. 立即透過 **Agent tool** 呼叫 quality-assurance agent：<br>&nbsp;&nbsp;&nbsp;`prompt: "執行 smoke test 確認 hotfix [TICKET] 修復有效，完成後執行 back-merge：git checkout develop && git merge --no-ff main -m 'chore: sync hotfix [TICKET] back to develop'"`<br>4. ⛔ 禁止問用戶確認 |
-| ❌ < 75 分 或有 🔴 Critical | 同標準流程 Critical 處理，叫 Developer 修正後重新 /review |
-
----
-
-## Post-QA Release Protocol
-
-> **呢個 section 係 `/test` 完成後嘅唯一真相來源。**
-> QA Agent 完成測試後，**禁止**等用戶確認，必須立即按下表執行。
-
-| QA 結果 | QA Agent 強制動作 |
-|--------|------------------|
-| ✅ 通過（無 🔴 Critical） | 1. 立即執行：`git checkout main && git merge --no-ff develop -m "chore: merge develop into main"`<br>2. 立即透過 **Agent tool** 呼叫 devops-engineer：<br>&nbsp;&nbsp;&nbsp;`prompt: "執行 /deploy，target=production"`<br>3. ⛔ 禁止問用戶「要唔要 release」 |
-| ❌ 失敗（有 🔴 Critical） | 1. 建立 QA ticket（CUI-XXXX），記錄失敗原因及重現步驟<br>2. 立即透過 **Agent tool** 呼叫對應 Developer agent：<br>&nbsp;&nbsp;&nbsp;`prompt: "執行 /fix CUI-XXXX"`<br>3. ⛔ 禁止 merge develop → main |
-
-> ⚠️ Hotfix 後嘅 back-merge to develop 由 QA smoke test 階段觸發（見 Post-Review Handoff Protocol → Hotfix 特殊流程），**不**經過此 Post-QA Release Protocol。
+> **所有 handoff 規則定義於 `skills/post-review-handoff.md`（Single Source of Truth）。**
+> 本檔案只負責 branch / commit / PR 規則，唔再重複 handoff 內容。
+>
+> 快速導引：
+> - `/feature`、`/fix`、`/refactor` 完成 → `post-review-handoff.md` → Protocol 1
+> - `/test` 完成 → `post-review-handoff.md` → Protocol 2
+> - `/hotfix` 完成 → `post-review-handoff.md` → Protocol 3
+> - `/deploy` 完成 → `post-review-handoff.md` → Protocol 4

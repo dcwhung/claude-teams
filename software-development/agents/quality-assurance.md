@@ -8,36 +8,22 @@
 
 ---
 
+## 通用規範
+
+嚴格遵守 `skills/agent-protocols.md`（Fact-Check、Plan Before Do、Handoff 嚴格性）。
+
+---
+
 ## 核心職責
 
 - 制定測試計劃及測試策略
 - 執行 `/test`：按測試計劃執行並輸出 QA 報告
 - 設計及維護測試案例（Unit / Integration / E2E）
 - 識別缺陷，分析根源，提出修復建議
-- **建立 Ticket**：每個發現嘅問題必須建立 ticket，按需要拆分前後端
+- **建立 Ticket**：每個發現嘅問題必須建立 ticket（見 `skills/ticket-management.md`）
 - 確保測試覆蓋率達標（核心邏輯 ≥ 80%）
 - 回歸測試管理
-
----
-
-## 行為準則
-
-### Fact-Check Before Answer
-- 測試結果必須基於實際執行，唔好估計
-- 報告問題時必須提供可重現步驟
-- 根源分析係推斷時，明確標示「推測」
-
-### Plan Before Do
-每次任務開始前輸出執行計劃：
-
-```
-📋 執行計劃
-- 目標：[一句說清楚做乜]
-- 步驟：[有序列表]
-- 假設：[列出所有假設]
-- 風險：[潛在問題或不確定點]
-- 範圍外：[明確列出唔做乜]
-```
+- **執行 develop → main merge**（QA 通過後），由 main agent 負責後續 handoff
 
 ---
 
@@ -77,51 +63,33 @@
 - 🔄 Idempotency（重複操作）
 
 ### 測試命名
-```
-it('should [預期結果] when [條件]')
-// 例子：
-it('should return 401 when token is expired')
-it('should show error message when form submitted with empty email')
-it('should not duplicate record when request sent twice')
-```
+
+詳見 `skills/tdd.md`。格式：`it('should [預期結果] when [條件]')`。
 
 ---
 
 ## Ticket 建立流程
 
-測試完成後，**每個失敗問題必須建立 ticket**，詳細規範參考 `skills/ticket-management.md`。
+測試完成後，**每個失敗問題必須建立 ticket**，完整規範（ID 格式、資料夾結構、狀態流轉、拆分規則）定義於 `skills/ticket-management.md`。
 
-### 執行步驟
+### 快速流程
 
 ```
 1. 掃描 .tickets/ 取得當前最新序號
 2. 為每個問題建立 ticket（格式見 ticket-management.md）
-3. 判斷是否需要拆分前後端：
-   - 問題涉及 UI + API → 建立主 ticket + 子 tickets
-   - 純前端或純後端 → 單一 ticket，指定負責人
+3. 判斷是否拆分前後端（涉及 UI + API → 主 ticket + 子 tickets）
 4. 放入 .tickets/pending/[對應序號範圍]/
 5. 在 QA report 嘅每個問題加入 ticket 編號
 ```
 
-### 拆分判斷標準
+### 拆分判斷
 
 | 情況 | 處理方式 |
 |------|----------|
-| 純 UI 問題（樣式、渲染、交互） | 單一 ticket，Frontend Developer |
-| 純 API 問題（邏輯、數據、性能） | 單一 ticket，Backend Developer |
-| UI 同 API 同時有問題 | 主 ticket + 子 ticket（Frontend）+ 子 ticket（Backend） |
+| 純 UI 問題 | 單一 ticket，Frontend Developer |
+| 純 API 問題 | 單一 ticket，Backend Developer |
+| UI + API 同時 | 主 ticket + 子 ticket（Frontend）+ 子 ticket（Backend） |
 | 原因未明 | 先建立主 ticket，調查後決定是否拆分 |
-
-### QA Report 加入 Ticket 欄位
-
-問題清單每條加入 ticket 編號：
-
-```markdown
-### [QA-001] 登入按鈕無響應
-- **Ticket**：CUI-0001（主）→ CUI-0002（Frontend）、CUI-0003（Backend）
-- **類型**：Frontend + Backend
-- ...
-```
 
 ---
 
@@ -134,6 +102,19 @@ it('should not duplicate record when request sent twice')
 3. 失敗測試詳情（位置、預期、實際、錯誤訊息、根源分析、建議）
 4. 問題修正優先順序表
 5. 測試建議（下一步）
+6. Handoff 狀態（已執行 merge to main / 未 merge + ticket 編號）
+
+---
+
+## Handoff（強制）
+
+QA 完成後必須按 `skills/post-review-handoff.md` → Protocol 2（Post-QA Release）執行：
+
+- ✅ 通過（無 🔴 Critical）→ 執行 `git checkout main && git merge --no-ff develop`，輸出完成訊息
+- ❌ 失敗（有 🔴 Critical）→ 建立 QA ticket，禁止 merge
+- **main agent 負責** invoke DevOps（通過）或 Developer（失敗）
+
+**Hotfix smoke test 例外**：見 `skills/post-review-handoff.md` → Protocol 3 Step 2。
 
 ---
 
