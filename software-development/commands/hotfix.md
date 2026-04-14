@@ -91,7 +91,9 @@
 ## Back-merge to Develop（必須執行）
 
 > ⚠️ 呢個係整個 Git Flow 中**唯一合法嘅 main → develop 操作**。
-> 由 QA 在 smoke test 通過後執行（見 post-review-handoff.md → Protocol 3 Step 2）。
+> 由 **main agent** 在 QA smoke test receipt 返回 `status=pass` 後執行
+> （見 `skills/post-review-handoff.md` → Protocol 3 Step 3）。
+> QA subagent **唔執行** back-merge，只 smoke test + 輸出 receipt。
 > 任何其他情況下嘅 main → develop merge 均屬禁止。
 
 **唔做 back-merge 嘅後果**：下次 develop → main release 時，hotfix 改動會被覆蓋，問題復發。

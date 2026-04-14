@@ -1,3 +1,8 @@
+---
+name: sw-hooks
+description: Claude Code hook configurations that auto-run on tool lifecycle (PostEdit lint, post-merge test, handoff-receipt enforcement). Load when setting up a new project or adding a quality gate.
+---
+
 # Skill：Hooks（自動化守衛）
 
 > Claude Code hooks 喺工具調用生命週期自動執行 shell 命令。
@@ -101,6 +106,32 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
   }
 }
 ```
+
+### Hook 3：Handoff Receipt Enforcement（Harness 強制）
+
+**解決問題**：subagent 忘記輸出 `handoff-receipt` block → main agent 跳步
+**觸發時機**：subagent 任務結束（SubagentStop）
+**原理**：檢查 subagent 最終輸出有無符合格式嘅 receipt block，缺失即視為 fail 並要求重交。
+
+```json
+{
+  "hooks": {
+    "SubagentStop": [
+      {
+        "matcher": "code-reviewer|quality-assurance|devops-engineer",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "grep -qE '^```handoff-receipt' \"${CLAUDE_SUBAGENT_OUTPUT_FILE:-/dev/null}\" || echo '⛔ Missing handoff-receipt block — main agent MUST NOT proceed. Re-invoke this agent to emit receipt.'"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+> 如 Claude Code 版本唔支援 `SubagentStop` hook，main agent 仍須按 `post-review-handoff.md` → 驗證 Checklist 人工檢查。
 
 ---
 

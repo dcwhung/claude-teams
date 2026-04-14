@@ -1,7 +1,11 @@
+---
+name: sw-git-flow
+description: Branch naming, commit format, pre-flight checklist, merge rules, One-Task-One-Branch rule. Load when starting /feature, /fix, /refactor, /hotfix, or whenever creating a branch / writing a commit.
+---
+
 # Skill：Git Flow
 
 > Branch 管理、Commit 規範、PR 流程。
-> 適用於所有開發工作流程。
 
 ---
 

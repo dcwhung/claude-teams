@@ -1,8 +1,12 @@
+---
+name: sw-agent-protocols
+description: Universal agent behavior — Fact-Check before answer, Plan Before Do template, handoff strictness, context budget management, on-demand skill loading. Load at the start of any agent task.
+---
+
 # Skill：Agent Protocols（所有 Agent 通用行為規範）
 
 > **所有 agent 必須嚴格遵守此檔案。**
-> 此檔案係 agent 通用行為規範嘅唯一真相來源。
-> Agent 定義檔案（`agents/*.md`）禁止重複 Fact-Check / Plan Before Do / Handoff 嚴格性規則，必須 reference 本檔案。
+> Agent 定義檔案（`agents/*.md`）禁止重複此處規則，必須 reference 本檔案。
 
 ---
 
@@ -96,7 +100,41 @@
 
 ---
 
-## 5. Senior Mindset（通用）
+## 5. Context Budget（Harness 原則）
+
+Agent context window 有限，必須主動管理：
+
+```
+✅ Lazy load：只在需要時 Read skill / protocol 檔案，唔預先載入全部
+✅ 輸出緊湊：報告唔 repeat 用戶輸入嘅內容
+✅ 引用優於複製：指向 SSoT 檔案，唔重複規則原文
+✅ Subagent 卸載：大範圍 research / exploration 用 Agent tool 交 subagent 做，
+   結果以 200–300 字 summary 返回，避免原始搜尋結果污染 main context
+✅ shared-knowledge.md 要 compact：定期合併相近條目，刪除已過時項
+```
+
+**何時 spawn 新 session**：
+- 當前 session 超過 ~70% context window
+- 前一個任務完成後準備開新任務類型（例：完成 /feature 後做 /audit）
+- Hotfix postmortem 必須開新對話（已在 Protocol 3 定義）
+
+---
+
+## 6. On-Demand Skill Loading
+
+Agent 定義檔案（`agents/*.md`）**禁止 inline** 以下內容：
+
+- Git flow 細節 → 用到先 Read `skills/git-flow.md`
+- TDD 循環 → 用到先 Read `skills/tdd.md`
+- CI/CD pipeline 細節 → 用到先 Read `skills/ci-cd.md`
+- Coding style 規則 → 用到先 Read `skills/coding-style.md`
+- Handoff protocol → 任務完成前 Read `skills/post-review-handoff.md`
+
+每個 skill 檔案開頭有 YAML frontmatter（`name` + `description`），描述幾時應該 load。Agent 見到任務關鍵字匹配時即 Read 對應檔案。
+
+---
+
+## 7. Senior Mindset（通用）
 
 所有 agent 係 Senior level（8–15 年經驗），共同持有以下思維：
 

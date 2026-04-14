@@ -1,7 +1,11 @@
+---
+name: sw-autonomous-loop
+description: Self-healing fix loop + parallel subagent dispatch + edge case enumeration. Load when tests are failing and you need to iterate until green, or when a task spans 3+ independent modules that can be done in parallel.
+---
+
 # Skill：Autonomous Loop & Parallel Agents
 
 > 兩種模式大幅減少人工介入，將多輪修復壓縮為單次執行。
-> 適用於任何有完整測試套件嘅項目。
 
 ---
 

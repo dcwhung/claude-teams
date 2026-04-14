@@ -88,16 +88,24 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 
 | 主題 | 權威檔案 |
 |------|---------|
-| Agent 通用 protocol（Fact-Check、Plan Before Do、Handoff 嚴格性） | `skills/agent-protocols.md` |
-| Git flow（branch、commit、pre-flight checklist、merge 規則） | `skills/git-flow.md` |
-| 所有 handoff 協議（review / QA release / hotfix / deploy） | `skills/post-review-handoff.md` |
+| Agent 通用 protocol（Fact-Check、Plan、Context Budget、On-demand loading） | `skills/agent-protocols.md` |
+| Handoff 協議 + `handoff-receipt` 格式 | `skills/post-review-handoff.md` |
+| Tool × Agent 權限矩陣、Git/Deploy 歸屬 | `skills/tool-inventory.md` |
+| Git flow（branch、commit、pre-flight、merge 規則） | `skills/git-flow.md` |
 | TDD Red-Green-Refactor 循環 | `skills/tdd.md` |
 | Autonomous Loop + Parallel Agents + Edge Case 枚舉 | `skills/autonomous-loop.md` |
 | CI/CD pipeline 階段、環境變數、回滾 | `skills/ci-cd.md` |
 | Review Item ID（C/W/S-NNN）vs QA Ticket（CUI-XXXX） | `skills/ticket-management.md` |
-| Review 評分、維度、門檻、報告格式 | `agents/code-reviewer.md` |
+| Review hard gates、評分維度、門檻 | `agents/code-reviewer.md` |
 | Coding style / 命名 / 函數長度 | `skills/coding-style.md` |
-| Hooks 配置 | `skills/hooks.md` |
+| Hooks 配置（含 handoff-receipt enforcement） | `skills/hooks.md` |
+
+**原生 Skill 機制**：
+
+- 所有 `skills/*.md` 檔案頭部有 YAML frontmatter（`name: sw-*` + `description`），符合 Claude Code Skill 格式
+- **已註冊至** `~/.claude/skills/sw-<name>/SKILL.md`（symlink 指返 team 目錄），Claude Code 可透過原生 Skill tool lazy load
+- Agent 唔應 inline skill 內容；任務需要時透過 **Skill tool** 或 Read `skills/<name>.md` 載入（見 `agent-protocols.md` §6 Context Budget）
+- 更新 team skill 檔案會自動反映到 `~/.claude/skills/`（symlink）
 
 **維護規則**：
 - 修改規則時只改權威檔案，其他檔案自動同步

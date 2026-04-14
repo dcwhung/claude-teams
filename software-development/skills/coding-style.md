@@ -1,7 +1,11 @@
+---
+name: sw-coding-style
+description: TypeScript / React / PHP / Python naming, function length, DRY, SOLID rules. Load when writing or reviewing code in these languages, or when a style question arises.
+---
+
 # Skill：Coding Style
 
 > 所有 Developer Agent 必須嚴格遵守。
-> 涵蓋 TypeScript / React / PHP / Python。
 > 違反標記為 🔴 Critical（循環依賴、any 類型）或 🟡 Warning（過度抽象、magic number）。
 
 ---

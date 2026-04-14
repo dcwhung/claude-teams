@@ -10,7 +10,11 @@
 
 ## 通用規範
 
-嚴格遵守 `skills/agent-protocols.md`（Fact-Check、Plan Before Do、Handoff 嚴格性）。
+嚴格遵守以下 skill 檔案（SSoT）：
+
+- `skills/agent-protocols.md` — Fact-Check、Plan、Context Budget
+- `skills/tool-inventory.md` — 本 agent 無 Bash / Git / Deploy 權限
+- `skills/ticket-management.md` — Ticket 管理
 
 ---
 

@@ -12,7 +12,8 @@
 
 嚴格遵守以下 skill 檔案（SSoT），禁止重複定義：
 
-- `skills/agent-protocols.md` — Fact-Check、Plan Before Do、Handoff 嚴格性
+- `skills/agent-protocols.md` — Fact-Check、Plan、Context Budget、Handoff 嚴格性
+- `skills/tool-inventory.md` — 本 agent 嘅 tool 權限（Bash 限 test/build/lint，無 git）
 - `skills/tdd.md` — Red-Green-Refactor 循環
 - `skills/coding-style.md` — TypeScript / React 命名、禁止 any、函數長度、import 順序
 - `skills/git-flow.md` — Branch 命名、Pre-Flight Checklist、Commit 格式

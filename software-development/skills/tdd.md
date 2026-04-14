@@ -1,7 +1,11 @@
+---
+name: sw-tdd
+description: Red-Green-Refactor cycle for /feature and /fix. Load before writing any production code — defines how to write failing test first, minimal fix, then refactor.
+---
+
 # Skill：TDD（Test-Driven Development）
 
 > Red-Green-Refactor 循環規範。
-> 適用於所有 `/feature` 及 `/fix` 工作流程。
 
 ---
 

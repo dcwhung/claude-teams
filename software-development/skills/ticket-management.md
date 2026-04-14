@@ -1,7 +1,11 @@
+---
+name: sw-ticket-management
+description: Review Item ID (C/W/S-NNN globally unique) vs QA Ticket (CUI-XXXX) system, folder layout, state transitions, split rules for frontend+backend. Load when creating tickets, assigning IDs, or moving ticket state.
+---
+
 # Skill：Ticket Management
 
 > QA 測試發現問題後，必須建立 ticket。
-> 適用於 QA Agent（建立）、Frontend / Backend Developer（執行）、Project Manager（管理）。
 
 ---
 

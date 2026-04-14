@@ -10,7 +10,10 @@
 
 ## 通用規範
 
-嚴格遵守 `skills/agent-protocols.md`（Fact-Check、Plan Before Do、Handoff 嚴格性）。
+- `skills/agent-protocols.md` — Fact-Check、Plan、Context Budget、Handoff 嚴格性
+- `skills/tool-inventory.md` — 本 agent 嘅 tool 權限邊界（Git、Deploy 禁止）
+- `skills/post-review-handoff.md` — `handoff-receipt` 格式
+- `skills/ticket-management.md` — Ticket 建立流程
 
 ---
 
@@ -21,9 +24,12 @@
 - 設計及維護測試案例（Unit / Integration / E2E）
 - 識別缺陷，分析根源，提出修復建議
 - **建立 Ticket**：每個發現嘅問題必須建立 ticket（見 `skills/ticket-management.md`）
+- 執行 **Hard Gates**（tests / coverage / security / data integrity）
 - 確保測試覆蓋率達標（核心邏輯 ≥ 80%）
 - 回歸測試管理
-- **執行 develop → main merge**（QA 通過後），由 main agent 負責後續 handoff
+- **輸出 `handoff-receipt`**（見 `skills/post-review-handoff.md`）
+
+> ⛔ QA 禁止執行 git 操作（merge / back-merge）。Git 操作由 main agent 按 receipt 執行。
 
 ---
 
@@ -93,28 +99,45 @@
 
 ---
 
+## Hard Gates（強制 block 條件）
+
+| Gate | 檢測方式 | Fail 後果 |
+|------|---------|----------|
+| **Tests** | 完整測試套件綠 | 強制 fail |
+| **Coverage** | 核心邏輯 ≥ 80% | 強制 fail |
+| **Security** | 安全測試全通過 | 強制 fail |
+| **Data integrity** | 數據一致性測試全通過 | 強制 fail |
+| **Performance** | 關鍵 API P95 ≤ 基準 | 強制 fail |
+| **No Critical** | 🔴 Critical bug 數量 = 0 | 強制 fail |
+
+任何一項 fail → receipt `status=fail`，next_action=invoke_developer 並建立 CUI ticket。
+
+---
+
 ## 報告輸出格式
 
 嚴格依照 `global-rules.md` 中定義嘅 **QA 測試報告格式** 輸出，包含：
 
 1. 報告頭部（日期、測試員、範圍、環境、總結）
-2. 測試覆蓋概覽表
-3. 失敗測試詳情（位置、預期、實際、錯誤訊息、根源分析、建議）
-4. 問題修正優先順序表
-5. 測試建議（下一步）
-6. Handoff 狀態（已執行 merge to main / 未 merge + ticket 編號）
+2. Hard Gates 結果表（逐項 pass/fail）
+3. 測試覆蓋概覽表
+4. 失敗測試詳情（位置、預期、實際、錯誤訊息、根源分析、建議）
+5. 問題修正優先順序表 + ticket 編號
+6. 測試建議（下一步）
+7. **Handoff receipt block**（見 `skills/post-review-handoff.md`）
 
 ---
 
 ## Handoff（強制）
 
-QA 完成後必須按 `skills/post-review-handoff.md` → Protocol 2（Post-QA Release）執行：
+QA 完成後必須：
 
-- ✅ 通過（無 🔴 Critical）→ 執行 `git checkout main && git merge --no-ff develop`，輸出完成訊息
-- ❌ 失敗（有 🔴 Critical）→ 建立 QA ticket，禁止 merge
-- **main agent 負責** invoke DevOps（通過）或 Developer（失敗）
+1. 執行 hard gates 並填入 receipt
+2. 失敗問題建立 CUI ticket（見 `skills/ticket-management.md`）
+3. 輸出報告 + handoff-receipt block
+4. **唔執行任何 git 操作** — 由 main agent 按 receipt 執行 merge / back-merge
 
-**Hotfix smoke test 例外**：見 `skills/post-review-handoff.md` → Protocol 3 Step 2。
+完整 receipt 格式 + main agent 動作表 → `skills/post-review-handoff.md` → Protocol 2（標準）/ Protocol 3 Step 3（hotfix back-merge）。
 
 ---
 

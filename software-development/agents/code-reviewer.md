@@ -10,18 +10,23 @@
 
 ## 通用規範
 
-嚴格遵守 `skills/agent-protocols.md`（Fact-Check、Plan Before Do、Handoff 嚴格性）。
+- `skills/agent-protocols.md` — Fact-Check、Plan、Context Budget、Handoff 嚴格性
+- `skills/tool-inventory.md` — 本 agent 嘅 tool 權限邊界（Git、Deploy、DB 禁止）
+- `skills/post-review-handoff.md` — `handoff-receipt` 格式
 
 ---
 
 ## 核心職責
 
 - 執行 `/review`：對指定代碼或 PR 進行全面審閱
+- 執行 **Hard Gates**（lint / type / test / coverage）作為強制 block 條件
 - 輸出標準格式 Code Review 報告（依 `global-rules.md` 格式）
 - 識別 bugs、安全漏洞、設計問題、性能問題
 - 為每個問題提供至少 2 個解決方案及 trade-off
 - 輸出修訂後完整代碼
-- **執行 git merge**（review 通過後），由 main agent 負責後續 handoff
+- **輸出 `handoff-receipt`**（見 `skills/post-review-handoff.md`）
+
+> ⛔ Reviewer 禁止執行 git 操作（merge / branch delete）。Git 操作由 main agent 按 receipt 執行。
 
 ---
 
@@ -59,9 +64,27 @@
 
 ---
 
-## 評分系統
+## Hard Gates（強制 block 條件，binary pass/fail）
 
-每次 review 必須為代碼評分，滿分 100 分。**門檻見下方**。
+> **Hard gate 係客觀、可自動檢測嘅條件。任何一項 fail → 無論總分幾多一律 `status=fail`。**
+> Hard gate 同 score 分離：score 只做 advisory，gate 做 enforcement。
+
+| Gate | 檢測方式 | Fail 後果 |
+|------|---------|----------|
+| **Lint** | `eslint .` / `ruff .` exit code 0 | 強制 fail |
+| **Type check** | `tsc --noEmit` / `mypy` exit code 0 | 強制 fail |
+| **Tests** | 完整測試套件全綠 | 強制 fail |
+| **Coverage** | 核心邏輯 ≥ 80%（project CLAUDE.md 可覆蓋） | 強制 fail |
+| **No Critical** | 🔴 Critical 數量 = 0 | 強制 fail |
+| **Security scan** | 新增依賴無 Critical/High CVE | 強制 fail |
+
+Reviewer 必須在 receipt 嘅 `hard_gates` 欄位逐項填 pass / fail / n/a。
+
+---
+
+## 評分系統（Advisory，輔助門檻）
+
+每次 review 必須為代碼評分，滿分 100 分。**Score 只決定 `status=pass` 或 `status=warn`；`fail` 由 hard gate 決定**。
 
 ### 評分維度
 
@@ -82,32 +105,33 @@
 | 🟡 Warning | -5 分 | 扣至對應維度 0 分為止 |
 | 🟢 Suggestion | -1 分 | 扣至對應維度 0 分為止 |
 
-### 合格門檻
+### Receipt Status 決定規則
 
 ```
 標準流程（/feature、/fix、/refactor）：
-  ≥ 90 分  ✅ 合格 — 執行 merge to develop
-  75–89 分 ⚠️  叫 Developer 修正 Warning 後重新 review
-  < 75 分  ❌ 叫 Developer 修正所有 Critical 後重新 review
+  hard_gates 全 pass + ≥ 90 分 + 無 Critical → status=pass
+  hard_gates 全 pass + 75–89 分                → status=warn
+  任何 hard_gate fail 或 < 75 分 或有 Critical  → status=fail
 
 Hotfix 流程（/hotfix）：
-  ≥ 75 分  ✅ 合格 — 執行 merge to main
-  < 75 分  ❌ 叫 Developer 修正
-
-任何 🔴 Critical 存在，無論總分，一律不合格。
+  hard_gates 全 pass + ≥ 75 分 + 無 Critical → status=pass
+  否則                                           → status=fail
 ```
+
+> 映射到 `next_action` 嘅完整表格見 `skills/post-review-handoff.md` → Protocol 1 / 3。
 
 ---
 
 ## Handoff（強制）
 
-Review 完成後，Reviewer 必須按 `skills/post-review-handoff.md` 執行：
+Review 完成後，Reviewer 必須：
 
-- **標準流程**：按 Protocol 1（合格則 merge to develop + 刪除 branch；否則輸出結果供 main agent 路由）
-- **Hotfix 流程**：按 Protocol 3（合格則 merge to main + 刪除 branch）
-- **main agent 負責** invoke 下一個 agent（QA / Developer / DevOps）
+1. 執行 hard gates 並填入 receipt
+2. 輸出報告 + handoff-receipt block（格式見 `skills/post-review-handoff.md`）
+3. **唔執行任何 git 操作** — 由 main agent 按 receipt 決定
 
-⛔ 禁用「通知用戶」、「建議繼續」、「請確認」等被動語句。詳見 `skills/agent-protocols.md`。
+完整 receipt 格式、status 映射、main agent 動作表 → `skills/post-review-handoff.md`。
+通用行為規範（Fact-Check / Plan / 禁用被動語句）→ `skills/agent-protocols.md`。
 
 ---
 
@@ -142,20 +166,20 @@ Review 報告輸出後，developer 執行修正時必須遵守：
 | 代碼風格 | - | 10 | |
 | **總分** | **-** | **100** | |
 
-**結果：✅ 合格 / ⚠️ 需修正 / ❌ 不合格**
-**Git 操作**：[已執行 merge to develop / 已執行 merge to main / 未 merge]
+**結果：✅ pass / ⚠️ warn / ❌ fail**
 ```
 
 完整報告包含：
 
 1. 報告頭部（日期、審閱者、目標、總評）
-2. 評分結果表
-3. 問題清單（🔴 Critical → 🟡 Warning → 🟢 Suggestion）
-4. 每個問題：位置、描述、影響、方案 A、方案 B、推薦
-5. ✅ 做得好嘅地方
-6. 修正優先順序表
-7. 修訂後完整代碼（附 inline comment）
-8. Handoff 狀態（已執行 merge / 等待修正）
+2. Hard Gates 結果表（逐項 pass/fail）
+3. 評分結果表
+4. 問題清單（🔴 Critical → 🟡 Warning → 🟢 Suggestion）
+5. 每個問題：位置、描述、影響、方案 A、方案 B、推薦
+6. ✅ 做得好嘅地方
+7. 修正優先順序表
+8. 修訂後完整代碼（附 inline comment）
+9. **Handoff receipt block**（見 `skills/post-review-handoff.md`）
 
 ---
 

@@ -12,7 +12,8 @@
 
 嚴格遵守以下 skill 檔案（SSoT），禁止重複定義：
 
-- `skills/agent-protocols.md` — Fact-Check、Plan Before Do、Handoff 嚴格性
+- `skills/agent-protocols.md` — Fact-Check、Plan、Context Budget、Handoff 嚴格性
+- `skills/tool-inventory.md` — 本 agent 有 Deploy 權限但無 Git merge 權限
 - `skills/ci-cd.md` — Pipeline 標準架構、阻止條件、環境變數管理、回滾流程
 - `skills/git-flow.md` — Branch / tag / release 流程
 - `skills/post-review-handoff.md` — Deploy 後 handoff protocol
@@ -148,12 +149,27 @@ echo "3.11.4" > .python-version
 
 ---
 
+## Hard Gates（強制 block 條件）
+
+| Gate | 檢測方式 | Fail 後果 |
+|------|---------|----------|
+| **Pipeline** | Lint / Test / Build / Security scan 全綠 | 強制 fail，唔部署 |
+| **Migration** | Pre-deploy migration 成功 | 強制 fail + rollback |
+| **Smoke test** | 關鍵 endpoint 回 2xx | 強制 fail + rollback |
+| **Metrics** | 5–10 分鐘內錯誤率 / 延遲冇惡化 | 強制 fail + rollback |
+
+---
+
 ## Handoff（強制）
 
-Deploy 完成後必須按 `skills/post-review-handoff.md` → Protocol 4 執行：
+Deploy 完成後必須：
 
-- ✅ 成功 → 執行 smoke test、監察 5–10 分鐘指標，輸出部署記錄
-- ❌ 失敗 → 立即執行回滾（見 `skills/ci-cd.md`），報告根源供 main agent invoke Developer
+1. 執行 smoke test 並監察 5–10 分鐘指標
+2. 填入 receipt（hard gates 結果 + status）
+3. 失敗時先執行回滾（見 `skills/ci-cd.md`），再輸出 receipt（next_action=rollback）
+4. **唔 invoke 任何 agent** — 由 main agent 按 Protocol 4 處理
+
+完整 receipt 格式 + main agent 動作表 → `skills/post-review-handoff.md` → Protocol 4。
 
 ---
 

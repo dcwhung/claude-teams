@@ -1,7 +1,11 @@
+---
+name: sw-ci-cd
+description: Pipeline stages, environment variable management, blocking conditions, rollback procedures. Load before /deploy, when configuring a new environment, or troubleshooting a failed deploy.
+---
+
 # Skill：CI/CD
 
 > 持續整合及持續部署標準流程。
-> 適用於 `/deploy` 指令及 DevOps Engineer agent。
 
 ---
 
