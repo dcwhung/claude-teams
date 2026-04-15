@@ -43,7 +43,9 @@
 
 ```
 1. 讀取 shared-knowledge.md（全局 + 項目）
-2. 輸出執行計劃，等待確認
+2. 輸出執行計劃
+   - Main agent（直接同用戶對話）：等用戶確認
+   - Subagent（由 main agent invoke）：立即執行，唔等確認（見 agent-protocols.md §2）
 3. 確認所有現有測試通過（作為行為基準）
 4. 執行 git-flow.md → Branch Pre-Flight Checklist（source=develop）
    → 建立：refactor/[scope]/[identifier]_[description]
@@ -58,7 +60,10 @@
 6. 完成後執行完整測試套件，確認全綠
 7. Commit（見 git-flow.md）
 8. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review
-9. Reviewer 返回後，main agent 按 post-review-handoff.md → Protocol 1 執行 handoff
+9. Reviewer 返回後，main agent 按 **`skills/post-review-handoff.md` → Protocol 1** 執行 handoff：
+   - 驗證 receipt 格式（fenced block）+ next_action 係合法 enum
+   - `pass` → ① git merge develop → ② invoke QA → ③ QA pass 後 git merge main → ④ invoke devops → ⑤ devops pass 才結束
+   - `fail/warn` → invoke developer 修正（main agent 禁止自己改代碼）
 10. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```
 

@@ -13,13 +13,14 @@
 ## 執行流程
 
 ```
-1. 回顧今次 session 嘅完整對話
-2. 整理完成事項
-3. 整理重要決定及原因
-4. 識別待注意事項及未完成工作
-5. 制定下次 session 建議任務
-6. 確認有冇 common knowledge 需要補充入 shared-knowledge.md
-7. 生成 log 檔案，儲存至指定位置
+1. 執行 date '+%Y-%m-%d %H:%M' 取得本機當前時間（用於 log header 及文件名，見 agent-protocols.md §8）
+2. 回顧今次 session 嘅完整對話
+3. 整理完成事項
+4. 整理重要決定及原因
+5. 識別待注意事項及未完成工作
+6. 制定下次 session 建議任務
+7. 確認有冇 common knowledge 需要補充入 shared-knowledge.md
+8. 生成 log 檔案，儲存至指定位置
 ```
 
 ---

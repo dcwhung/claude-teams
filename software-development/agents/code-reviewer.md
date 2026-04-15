@@ -127,11 +127,46 @@ Hotfix 流程（/hotfix）：
 Review 完成後，Reviewer 必須：
 
 1. 執行 hard gates 並填入 receipt
-2. 輸出報告 + handoff-receipt block（格式見 `skills/post-review-handoff.md`）
+2. 輸出報告 + handoff-receipt block（格式見下方）
 3. **唔執行任何 git 操作** — 由 main agent 按 receipt 決定
 
-完整 receipt 格式、status 映射、main agent 動作表 → `skills/post-review-handoff.md`。
-通用行為規範（Fact-Check / Plan / 禁用被動語句）→ `skills/agent-protocols.md`。
+### Receipt 格式（必須逐字跟從）
+
+````
+```handoff-receipt
+protocol: 1
+status: pass | warn | fail
+score: XX/100
+hard_gates:
+  lint: pass | fail | n/a
+  type_check: pass | fail | n/a
+  tests: pass | fail | n/a
+  coverage: "XX%"
+  no_critical: pass | fail
+  security_scan: pass | fail | n/a
+next_action: merge_develop | invoke_developer
+next_agent: quality-assurance | frontend-developer | backend-developer
+branch: "feature/..."
+context: "one-line summary"
+blockers:
+  - "描述（冇問題就省略此 key）"
+```
+````
+
+> ⚠️ **格式禁令**：禁止用 `---` YAML delimiter。必須係 `` ```handoff-receipt `` fenced block，否則 hook 無法偵測。
+
+### `next_action` 允許值（固定 enum，禁止自創）
+
+| `status` | `next_action` |
+|----------|--------------|
+| `pass`（≥90分，hard gates 全 pass） | `merge_develop` |
+| `warn`（75–89分，hard gates 全 pass） | `invoke_developer` |
+| `fail`（任何 hard gate fail 或 <75 分） | `invoke_developer` |
+
+> ⛔ `fix_and_rereview`、`rereview`、`fix` 等均**不合法**。唯一允許嘅 fail 分支 action 係 `invoke_developer`。
+
+完整 status 映射同 main agent 動作表 → `skills/post-review-handoff.md` → Protocol 1 / 3。
+通用行為規範 → `skills/agent-protocols.md`。
 
 ---
 

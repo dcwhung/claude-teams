@@ -38,6 +38,15 @@ description: Universal agent behavior — Fact-Check before answer, Plan Before 
 - 範圍外：[明確列出唔做乜]
 ```
 
+**確認規則（重要）**：
+
+| 角色 | 行為 |
+|------|------|
+| **Main agent**（直接同用戶對話）| 輸出計劃後等用戶確認先執行 |
+| **Subagent**（由 main agent 透過 Agent tool invoke）| 輸出計劃後**立即執行**，唔等用戶確認——main agent invoke 本身已係確認 |
+
+> ⛔ Subagent 禁止輸出「等確認先執行」、「請確認是否繼續」等被動語句。收到任務即執行。
+
 **例外**：計劃不適用嘅情況
 - 單純讀取文件、查詢資訊（唔涉及改動）
 - `/session-log` 等純記錄任務
@@ -127,10 +136,36 @@ Agent 定義檔案（`agents/*.md`）**禁止 inline** 以下內容：
 - Git flow 細節 → 用到先 Read `skills/git-flow.md`
 - TDD 循環 → 用到先 Read `skills/tdd.md`
 - CI/CD pipeline 細節 → 用到先 Read `skills/ci-cd.md`
-- Coding style 規則 → 用到先 Read `skills/coding-style.md`
+- Coding style 規則 → 用到先 Read `skills/coding-style.md`（入口），再按語言 Read `skills/coding-style/ts.md` / `php.md` / `py.md`
 - Handoff protocol → 任務完成前 Read `skills/post-review-handoff.md`
 
 每個 skill 檔案開頭有 YAML frontmatter（`name` + `description`），描述幾時應該 load。Agent 見到任務關鍵字匹配時即 Read 對應檔案。
+
+---
+
+## 8. Timestamp 規範（所有 Agent 強制）
+
+凡輸出任何含日期／時間嘅文件，或使用時間戳作為文件名的一部分時：
+
+```
+✅ 必須先執行 date '+%Y-%m-%d %H:%M' 取得本機當前時間
+❌ 禁止自行估算時間（「目前大概是 XX 點」、「現在應該是 HH:MM」）
+❌ 禁止假設 UTC 或任何固定 timezone
+```
+
+**適用範圍（所有以下產出）**：
+
+| 產出 | 舉例 |
+|------|------|
+| Session log 文件名及 header | `session-logs/YYYY-MM-DD_HH-MM.md` |
+| Audit report 文件名及 header | `audits/YYYY-MM-DD_HH-MM_audit_*.md` |
+| Review report 文件名及 header | `reviews/YYYY-MM-DD_HH-MM_review_*.md` |
+| Spec 文件 header（`**日期**` 欄位） | Functional Spec / Technical Spec |
+| Implementation Plan header | `**日期**` 欄位 |
+| DevOps deployment record | 部署記錄時間戳 |
+| Architect diagram 文件名 | `diagrams/flow/YYYY-MM-DD_HH-MM_*.html` |
+
+> 執行方式：在生成文件前，先 Bash `date '+%Y-%m-%d %H:%M'`，將輸出直接用於文件名及 header。
 
 ---
 

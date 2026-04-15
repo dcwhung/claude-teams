@@ -74,6 +74,27 @@
 
 ---
 
+## 主動測試要求（強制）
+
+> ⚠️ 收到功能後，唔可以只跑現有測試套件。QA 必須主動識別測試盲點並補寫 test cases。
+
+對每個收到嘅功能，以下步驟**強制執行**：
+
+1. **閱讀實現代碼**，識別以下類型嘅潛在盲點：
+   - 邊界值（0、負數、最大值、空字串）
+   - Null / undefined / missing 輸入
+   - 異常狀態（網絡失敗、數據庫錯誤）
+   - 並發 / 重複操作（idempotency）
+   - 安全邊界（unauthorized access、injection）
+
+2. **最少補寫 3 個新 edge case tests**（唔係 happy path，唔係已有測試嘅複製）
+
+3. 如新 tests 失敗 → 記錄為 🔴 Critical，按 Hard Gates 規則輸出 `status=fail`
+
+> 唔寫新 tests 就直接 pass 係無效 QA。發現盲點但唔寫 test 係 P1 violation。
+
+---
+
 ## Ticket 建立流程
 
 測試完成後，**每個失敗問題必須建立 ticket**，完整規範（ID 格式、資料夾結構、狀態流轉、拆分規則）定義於 `skills/ticket-management.md`。

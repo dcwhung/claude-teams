@@ -41,7 +41,9 @@
 ```
 1.  讀取 shared-knowledge.md（全局 + 項目）
 2.  理解 bug 描述，確認可重現步驟
-3.  輸出執行計劃，等待確認
+3.  輸出執行計劃
+    - Main agent（直接同用戶對話）：等用戶確認
+    - Subagent（由 main agent invoke）：立即執行，唔等確認（見 agent-protocols.md §2）
 4.  執行 git-flow.md → Branch Pre-Flight Checklist（source=develop）
     → 建立：fix/[scope]/[identifier]_[description]
     ⚠️ One-Task-One-Branch 鐵律：每個 identifier 獨立 branch
@@ -53,7 +55,10 @@
 9.  使用 Agent tool 啟動 Autonomous Loop 直至測試全綠（見 autonomous-loop.md）
 10. Commit（每個 review item 一個 commit，見 git-flow.md）
 11. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review
-12. Reviewer 返回後，main agent 按 post-review-handoff.md → Protocol 1 執行 handoff
+12. Reviewer 返回後，main agent 按 **`skills/post-review-handoff.md` → Protocol 1** 執行 handoff：
+    - 驗證 receipt 格式（fenced block）+ next_action 係合法 enum
+    - `pass` → ① git merge develop → ② invoke QA → ③ QA pass 後 git merge main → ④ invoke devops → ⑤ devops pass 才結束
+    - `fail/warn` → invoke developer 修正（main agent 禁止自己改代碼）
 13. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```
 

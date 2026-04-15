@@ -48,9 +48,26 @@ blockers:
 ```
 ````
 
-**規則**：
+> ⚠️ **格式強制要求**：必須使用 `` ```handoff-receipt `` fenced code block。禁止使用 `---` YAML delimiter 或任何其他格式——hook 係 grep `` ```handoff-receipt `` 嚟偵測，格式錯誤 = receipt 不存在。
 
-- `status=fail` 或任何 `hard_gates.*=fail` → `next_action` 禁止為 merge/invoke_qa/invoke_devops，必須係 invoke_developer / rollback / end
+**`next_action` 固定 enum（禁止自創值）**：
+
+| 值 | 適用情況 |
+|----|---------|
+| `merge_develop` | Protocol 1 pass：merge feature branch → develop |
+| `merge_main` | Protocol 2 pass：merge develop → main |
+| `back_merge` | Hotfix back-merge：merge main → develop |
+| `invoke_qa` | （保留，Protocol 3 Step 3 使用） |
+| `invoke_developer` | 任何 fail/warn 需要 developer 修正 |
+| `invoke_devops` | Protocol 2 pass 後，main agent merge 完再 invoke devops |
+| `rollback` | Protocol 4 deploy fail |
+| `end` | 流程正常結束 |
+
+> ⛔ 任何不在以上 enum 嘅 `next_action`（如 `fix_and_rereview`）→ main agent 必須視為格式錯誤，按 `status=fail` 處理，唔可照單全收。
+
+**其他規則**：
+
+- `status=fail` 或任何 `hard_gates.*=fail` → `next_action` 禁止為 merge/invoke_qa/invoke_devops，必須係 `invoke_developer` / `rollback` / `end`
 - 任何 🔴 Critical 存在 → 自動 `status=fail`，無論 score
 - Main agent 讀取 receipt 後**必須按 `next_action` 執行**，唔可以自行判斷跳步
 
@@ -59,14 +76,40 @@ blockers:
 ## Main Agent 讀取 Receipt 流程（強制）
 
 ```
+0. 驗證 receipt 格式：
+   - 必須係 ```handoff-receipt fenced block（唔係 --- YAML）
+   - next_action 必須係 fixed enum 值
+   - 任何格式錯誤 → 視為 status=fail，invoke 上一個 subagent 重新輸出
 1. 解析 handoff-receipt block
 2. 驗證 hard_gates：任何 fail → 強制走 fail 分支，忽略 score
+2a. 驗證 status 同 next_action 一致性：
+    若兩者衝突（如 status=warn + next_action=merge_develop）→ 以 status 為準，忽略 next_action
+    status 對應正確 next_action：
+      pass  → merge_develop / merge_main / back_merge（視 protocol）
+      warn  → invoke_developer
+      fail  → invoke_developer / rollback（視 protocol）
 3. 執行 git 操作（見下方 Protocol 映射表）
    ↳ 失敗：停止，輸出錯誤，唔 invoke 下一個 agent
-4. 按 next_action + next_agent 透過 Agent tool invoke
+4. 按 next_action 透過 Agent tool invoke 下一個 agent
+   ↳ next_agent 欄位只係參考，以 Protocol 定義為準（見下方 note）
    ↳ prompt 必須包含 receipt.context + receipt.branch + receipt.blockers
 5. 禁止問用戶「要唔要繼續」
 ```
+
+> ⚠️ **Receipt 驗證：status vs next_action 衝突**
+> LLM 有可能輸出內部不一致嘅 receipt（高分 warn + `next_action=merge_develop`）。
+> **唯一處理原則：以 `status` 為準，`next_action` 只係參考，衝突時忽略 `next_action`。**
+> 例：`status=warn` + `next_action=merge_develop` → 按 `warn` 走，invoke developer subagent。
+
+> ⚠️ **Receipt 驗證：next_agent 欄位不可靠**
+> LLM 有可能輸出錯誤嘅 `next_agent` 值（如 Protocol 2 pass 後輸出 `next_agent: null`，應為 `devops-engineer`）。
+> **唯一處理原則：以各 Protocol 定義嘅 next agent 為準，唔盲從 receipt 嘅 `next_agent` 欄位。**
+> 例：Protocol 2 `status=pass` → 必定 invoke `devops-engineer`，即使 receipt 寫 `next_agent: null`。
+
+> ⛔ **Main agent 核心邊界（Harness 原則）**：
+> Main agent 只做 3 件事：**解析 receipt → 執行 git → 透過 Agent tool invoke subagent**。
+> **禁止自己修改任何項目代碼、配置檔案、或執行任何 fix**。
+> 收到 `status=fail` receipt 時，main agent 唯一動作係 invoke developer subagent，唔係自己修正問題。
 
 ---
 
@@ -87,9 +130,9 @@ blockers:
 
 | receipt | Git 操作（main agent 執行） | 下一步 |
 |---------|---------------------------|-------|
-| `pass / merge_develop` | `git checkout develop && git merge --no-ff <branch> -m "..." && git branch -d <branch>` | Agent tool invoke `quality-assurance`，prompt 含 `context` |
+| `pass / merge_develop` | `git checkout develop && git merge --no-ff <branch> -m "..." && git branch -d <branch>` | **必須** Agent tool invoke `quality-assurance`，prompt 含 `context`。禁止直接結束。 |
 | `warn / invoke_developer` | 無 | Agent tool invoke `frontend-developer` 或 `backend-developer`，prompt：「喺 `<branch>` 修正 Warning 後重新 /review：`<blockers>`」 |
-| `fail / invoke_developer` | 無 | 同上，修正 Critical |
+| `fail / invoke_developer` | 無 | 同上，修正 Critical/hard gate fail。**Main agent 禁止自己修正代碼。** |
 
 ---
 
@@ -165,14 +208,35 @@ Smoke test pass + 指標正常 → status=pass, next_action=end
   - 禁止執行 git merge / branch delete / push
   - 禁止輸出「請確認是否繼續」等被動語句
   - 禁止省略 handoff-receipt block
+  - 禁止用 --- YAML delimiter 代替 ```handoff-receipt fenced block
   - 禁止 receipt 內加 prose 或 free-form 欄位
+  - 禁止使用 next_action enum 以外的值（如 fix_and_rereview）
 
 ⛔ Main Agent 禁令：
   - 禁止收到 fail receipt 後照樣 merge / invoke 下一個 agent
   - 禁止問用戶「要唔要繼續」
   - 禁止自行跳過 Protocol 步驟
-  - 禁止對 receipt 做 fuzzy 解讀（缺欄就當 fail）
+  - 禁止對 receipt 做 fuzzy 解讀（缺欄就當 fail，無效 next_action 就當 fail）
+  - 禁止自己修改任何項目代碼或配置（收到 fail → 只 invoke developer subagent）
+  - 禁止 Protocol 1 merge 後直接結束（必須 invoke QA）
 ```
+
+---
+
+## Edge Case：Requirements Conflict
+
+當 Reviewer 返回 `status=fail` / `status=warn`，但 Critical / Warning 與現有需求存在明顯衝突時：
+
+**Main agent 唯一動作**：按 receipt 執行，invoke Developer subagent
+**禁止動作**：問用戶「是否需要修改需求」——呢個係 Developer + PM 嘅職責，唔係 main agent 嘅判斷範疇
+
+Developer subagent 收到任務後：
+1. 分析 Critical / Warning 描述
+2. 若確認係需求定義問題（唔係實現問題），Developer 喺自己嘅 context 內升級至 PM
+3. PM 釐清後，Developer 修正實現或建議需求變更
+4. 完成後執行 `/review` → 輸出新 receipt 交回 main agent
+
+> 核心原則：Main agent 係 harness，只路由，唔判斷業務邏輯。任何需求 vs 技術嘅決策都喺 subagent level 解決。
 
 ---
 
@@ -190,10 +254,16 @@ Subagent 完成前自我檢查：
 Main agent 收到 receipt 後：
 
 ```
+□ receipt 係 ```handoff-receipt fenced block（唔係 --- YAML）？
+□ next_action 係 fixed enum 值（唔係自創）？
 □ receipt 格式完整？（缺欄 → 視為 fail，唔執行下一步）
 □ hard_gates 有冇 fail？（有 → 強制 fail 分支）
+□ status 同 next_action 有冇衝突？（有 → 以 status 為準，見「Receipt 驗證」note）
+□ next_agent 欄位有冇錯誤/缺失？（有 → 以 Protocol 定義為準，見「Receipt 驗證」note）
+□ 我有冇自己修改代碼或配置？（禁止）
 □ 我執行咗 git 操作（如適用）？
 □ 我透過 Agent tool 實際 invoke 下一個 agent（唔係輸出文字叫用戶做）？
+□ Protocol 1 pass 後有冇 invoke QA？（禁止直接結束）
 ```
 
 ---

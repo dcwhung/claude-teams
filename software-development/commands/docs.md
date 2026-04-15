@@ -14,12 +14,22 @@
 
 ---
 
+## 引用規範（SSoT）
+
+- Plan Before Do 確認規則（main vs subagent）→ `skills/agent-protocols.md` §2
+
+本檔案只定義 `/docs` 獨有嘅執行流程、README / OpenAPI / CHANGELOG 格式同文件同步規則。
+
+---
+
 ## 執行流程
 
 ```
 1. 讀取 shared-knowledge.md（全局 + 項目）
 2. 確認文件類型（見 --type 選項）
-3. 輸出執行計劃，等待確認
+3. 輸出執行計劃
+   - Main agent（直接同用戶對話）：等用戶確認
+   - Subagent（由 main agent invoke）：立即執行，唔等確認（見 agent-protocols.md §2）
 4. 讀取現有代碼 / spec，生成或更新文件
 5. 輸出文件
 6. 如有發現 common knowledge，記錄入 shared-knowledge.md

@@ -10,12 +10,22 @@
 
 ---
 
+## 引用規範（SSoT）
+
+- Plan Before Do 確認規則（main vs subagent）→ `skills/agent-protocols.md` §2
+
+本檔案只定義 `/spec` 獨有嘅執行流程、Functional/Technical Spec 格式同 CR 流程。
+
+---
+
 ## 執行流程
 
 ```
 1. 讀取 shared-knowledge.md（全局 + 項目）
 2. 讀取現有 project CLAUDE.md（了解 stack 及 constraints）
-3. 輸出執行計劃，等待確認
+3. 輸出執行計劃
+   - Main agent（直接同用戶對話）：等用戶確認
+   - Subagent（由 main agent invoke）：立即執行，唔等確認（見 agent-protocols.md §2）
 4. 如需求未釐清，按需求釐清框架提問（一次過）
 5. 撰寫 Functional Spec（PM 主導）
 6. 等待用戶確認 Functional Spec

@@ -10,11 +10,21 @@
 
 ---
 
+## 引用規範（SSoT）
+
+- Plan Before Do 確認規則（main vs subagent）→ `skills/agent-protocols.md` §2
+
+本檔案只定義 `/audit` 獨有嘅執行流程同報告格式。
+
+---
+
 ## 執行流程
 
 ```
 1. 讀取 shared-knowledge.md（全局 + 項目）
-2. 輸出執行計劃，等待確認
+2. 輸出執行計劃
+   - Main agent（直接同用戶對話）：等用戶確認
+   - Subagent（由 main agent invoke）：立即執行，唔等確認（見 agent-protocols.md §2）
 3. 掃描整個 codebase 目錄結構
 4. 分析 tech stack（package.json、requirements.txt、composer.json 等）
 5. 分析架構層次（目錄結構、模組職責、依賴關係）

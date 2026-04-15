@@ -10,12 +10,22 @@
 
 ---
 
+## 引用規範（SSoT）
+
+- Plan Before Do 確認規則（main vs subagent）→ `skills/agent-protocols.md` §2
+
+本檔案只定義 `/plan` 獨有嘅執行流程、可行性框架同輸出格式。
+
+---
+
 ## 執行流程
 
 ```
 1. 讀取 shared-knowledge.md（全局 + 項目）
 2. 讀取現有 spec（如有）及 project CLAUDE.md
-3. 輸出執行計劃，等待確認
+3. 輸出執行計劃
+   - Main agent（直接同用戶對話）：等用戶確認
+   - Subagent（由 main agent invoke）：立即執行，唔等確認（見 agent-protocols.md §2）
 4. Architect 進行技術可行性評估
 5. PM 制定任務分解及優先順序
 6. 識別風險及依賴關係
