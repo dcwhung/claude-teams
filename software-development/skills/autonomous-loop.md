@@ -1,6 +1,6 @@
 ---
 name: sw-autonomous-loop
-description: Self-healing fix loop + parallel subagent dispatch + edge case enumeration. Load when tests are failing and you need to iterate until green, or when a task spans 3+ independent modules that can be done in parallel.
+description: Self-healing fix loop + parallel subagent dispatch + edge case enumeration. Load when tests are failing and need to iterate until green, when a task spans 3+ independent modules, or when the user says "fix all failing tests", "do this in parallel", "run agents simultaneously", or "I don't want to babysit each step". Also load when a fix loop keeps cycling without converging — edge case enumeration breaks the cycle.
 ---
 
 # Skill：Autonomous Loop & Parallel Agents

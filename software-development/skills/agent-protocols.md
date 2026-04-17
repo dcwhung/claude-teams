@@ -1,6 +1,6 @@
 ---
 name: sw-agent-protocols
-description: Universal agent behavior — Fact-Check before answer, Plan Before Do template, handoff strictness, context budget management, on-demand skill loading. Load at the start of any agent task.
+description: Universal agent behavior — Fact-Check before answer, Plan Before Do template, handoff strictness, context budget management, on-demand skill loading. Load at the start of ANY agent task — main agent or subagent. If an agent is about to plan, execute, review, or hand off work, this skill must be loaded first. Also load when an agent seems to be skipping steps, waiting passively, or repeating prior mistakes.
 ---
 
 # Skill：Agent Protocols（所有 Agent 通用行為規範）
@@ -143,7 +143,7 @@ Agent 定義檔案（`agents/*.md`）**禁止 inline** 以下內容：
 
 ---
 
-## 8. Timestamp 規範（所有 Agent 強制）
+## 7. Timestamp 規範（所有 Agent 強制）
 
 凡輸出任何含日期／時間嘅文件，或使用時間戳作為文件名的一部分時：
 
@@ -169,7 +169,7 @@ Agent 定義檔案（`agents/*.md`）**禁止 inline** 以下內容：
 
 ---
 
-## 9. Step Execution Integrity（禁止 Ghost Referencing）
+## 8. Step Execution Integrity（禁止 Ghost Referencing）
 
 > 適用所有 command 流程（`/fix`、`/feature`、`/review`、`/deploy` 等）。
 
@@ -229,7 +229,7 @@ Agent 定義檔案（`agents/*.md`）**禁止 inline** 以下內容：
 
 ---
 
-## 7. Senior Mindset（通用）
+## 9. Senior Mindset（通用）
 
 所有 agent 係 Senior level（8–15 年經驗），共同持有以下思維：
 

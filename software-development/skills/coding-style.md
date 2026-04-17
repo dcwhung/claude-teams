@@ -1,6 +1,6 @@
 ---
 name: sw-coding-style
-description: Coding style entry point — universal rules (function length, magic number, comments) + pointers to language-specific sub-skills. Load this first; load sub-skills on demand by language.
+description: Coding style entry point — universal rules (function length, magic number, comments) + pointers to language-specific sub-skills. Load this before writing or reviewing ANY code. If you're about to implement a feature, fix a bug, refactor, or do a code review, load this skill first. Then load the language-specific sub-skill (ts.md / php.md / py.md) on demand.
 ---
 
 # Skill：Coding Style（入口）
@@ -57,7 +57,10 @@ description: Coding style entry point — universal rules (function length, magi
 
 ### Critical / Warning 標記（所有語言）
 
-| 嚴重程度 | 觸發條件 |
-|---------|---------|
-| 🔴 Critical | 循環依賴、`any` 類型、無類型宣告（PHP/Python public func）、`eval()`/`exec()` |
-| 🟡 Warning | 過度抽象、magic number、函數超長、複雜巢狀條件 |
+Code Review 使用以下等級標記問題，並按 `skills/ticket-management.md` 嘅 Review Item ID 系統（C-NNN / W-NNN / S-NNN）追蹤：
+
+| 嚴重程度 | Review ID 前綴 | 觸發條件 | PR 影響 |
+|---------|--------------|---------|---------|
+| 🔴 Critical | `C-NNN` | 循環依賴、`any` 類型、無類型宣告（PHP/Python public func）、`eval()`/`exec()` | 必須修正先可以 merge |
+| 🟡 Warning | `W-NNN` | 過度抽象、magic number、函數超長、複雜巢狀條件 | 建議修正，score 扣分 |
+| 💡 Suggestion | `S-NNN` | 可讀性改善、命名優化 | 可選，唔影響 merge |

@@ -1,6 +1,6 @@
 ---
 name: sw-tool-inventory
-description: Per-agent tool permissions, error modes, and boundaries. Load when invoking an agent to verify it has the tools it needs, or when an agent is about to perform a side-effectful operation (git, deploy, db).
+description: Per-agent tool permissions, error modes, and boundaries. Load when invoking an agent to verify it has the tools it needs, when an agent is about to perform a side-effectful operation (git, deploy, db), or when there's any question about which agent should do what. If a subagent seems to be doing git operations, deployments, or DB writes it shouldn't, load this skill to enforce boundaries.
 ---
 
 # Skill：Tool Inventory

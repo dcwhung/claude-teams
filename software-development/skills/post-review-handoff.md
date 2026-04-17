@@ -1,6 +1,6 @@
 ---
 name: sw-post-review-handoff
-description: Defines how main agent routes work between subagents after /review, /test, /deploy, /hotfix. Load this when a subagent (code-reviewer, quality-assurance, devops-engineer) returns a HANDOFF_RECEIPT, or when an agent finishes its own work and needs to emit one.
+description: Defines how main agent routes work between subagents after /review, /test, /deploy, /hotfix. Load this whenever a subagent (code-reviewer, quality-assurance, devops-engineer) returns a HANDOFF_RECEIPT, when an agent finishes its own work and needs to emit one, or when there's any uncertainty about what to do next after a review, test, or deploy. This is the Single Source of Truth for all handoff logic — if in doubt, load it.
 ---
 
 # Skill：Handoff Protocol（唯一真相來源）

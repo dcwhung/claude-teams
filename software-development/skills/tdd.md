@@ -1,6 +1,6 @@
 ---
 name: sw-tdd
-description: Red-Green-Refactor cycle for /feature and /fix. Load before writing any production code — defines how to write failing test first, minimal fix, then refactor.
+description: Red-Green-Refactor cycle for /feature and /fix. Load before writing any production code — even a one-liner. If you're about to implement a function, fix a bug, or add a feature without first writing a failing test, stop and load this skill. Also load when someone says "write tests for this", "add test coverage", or "I want to do TDD".
 ---
 
 # Skill：TDD（Test-Driven Development）
@@ -88,7 +88,9 @@ it('should not create duplicate when request sent twice')
 
 ## 測試覆蓋要求
 
-| 類型 | 目標覆蓋率 | 說明 |
+以下係**最低門檻**，唔係目標。覆蓋率本身唔等於質量——100% 覆蓋率但測試只驗實現細節毫無意義。
+
+| 類型 | 最低覆蓋率 | 說明 |
 |------|-----------|------|
 | 核心業務邏輯 | ≥ 80% | Service、Use Case 層 |
 | API Endpoint | 100% | 所有 endpoint 必須有測試 |

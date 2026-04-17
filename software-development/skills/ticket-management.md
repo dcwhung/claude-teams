@@ -1,6 +1,6 @@
 ---
 name: sw-ticket-management
-description: Review Item ID (C/W/S-NNN globally unique) vs QA Ticket (CUI-XXXX) system, folder layout, state transitions, split rules for frontend+backend. Load when creating tickets, assigning IDs, or moving ticket state.
+description: Review Item ID (C/W/S-NNN globally unique) vs QA Ticket (CUI-XXXX) system, folder layout, state transitions, split rules for frontend+backend. Load when creating tickets, assigning IDs, or moving ticket state. Also load whenever QA finds a bug, a reviewer assigns a C/W/S ID, or someone asks "what's the next ticket number?" — the numbering rules are strict and easy to get wrong without this skill.
 ---
 
 # Skill：Ticket Management

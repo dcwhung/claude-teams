@@ -1,6 +1,6 @@
 ---
 name: sw-ci-cd
-description: Pipeline stages, environment variable management, blocking conditions, rollback procedures. Load before /deploy, when configuring a new environment, or troubleshooting a failed deploy.
+description: Pipeline stages, environment variable management, blocking conditions, rollback procedures. Load before /deploy, when configuring a new environment, troubleshooting a failed deploy, or whenever the user mentions CI, CD, GitHub Actions, pipelines, staging, production deploy, env vars, secrets, or rollback. Also load when a deploy is about to happen and there's no pipeline config yet.
 ---
 
 # Skill：CI/CD

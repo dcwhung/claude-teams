@@ -1,6 +1,6 @@
 ---
 name: sw-git-flow
-description: Branch naming, commit format, pre-flight checklist, merge rules, One-Task-One-Branch rule. Load when starting /feature, /fix, /refactor, /hotfix, or whenever creating a branch / writing a commit.
+description: Branch naming, commit format, pre-flight checklist, merge rules, One-Task-One-Branch rule. Load when starting /feature, /fix, /refactor, or /hotfix — and any time a branch is about to be created or a commit written. If you're unsure about branch naming, commit message format, or merge target, this skill has the answer. Also load when the user asks "how do I name this branch?" or "is this ready to merge?".
 ---
 
 # Skill：Git Flow

@@ -1,6 +1,6 @@
 ---
 name: sw-hooks
-description: Claude Code hook configurations that auto-run on tool lifecycle (PostEdit lint, post-merge test, handoff-receipt enforcement). Load when setting up a new project or adding a quality gate.
+description: Claude Code hook configurations that auto-run on tool lifecycle (PostEdit lint, post-merge test, handoff-receipt enforcement). Load when setting up a new project, adding a quality gate, or when the user says "automate X", "run Y after every edit", "enforce Z automatically", or "I keep forgetting to run lint". Also load when a recurring mistake (syntax error, missed handoff, broken merge) could be caught by a hook instead of manual reminders.
 ---
 
 # Skill：Hooks（自動化守衛）
