@@ -60,5 +60,4 @@
 /review                          ← review 當前對話中嘅代碼
 /review src/services/payment.ts  ← review 指定檔案
 /review --pr=42                  ← review 指定 PR
-/review --focus=security         ← 聚焦安全問題
 ```

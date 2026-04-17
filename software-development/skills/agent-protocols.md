@@ -169,6 +169,66 @@ Agent 定義檔案（`agents/*.md`）**禁止 inline** 以下內容：
 
 ---
 
+## 9. Step Execution Integrity（禁止 Ghost Referencing）
+
+> 適用所有 command 流程（`/fix`、`/feature`、`/review`、`/deploy` 等）。
+
+### Ghost Referencing 定義
+
+**Ghost Referencing** = agent 喺輸出中提及某步驟（或承認跳過某步驟），但**從未實際執行**。典型表現：
+
+```
+❌ 確認計劃後直接埋手改代碼，冇執行 git-flow pre-flight
+❌ 修改完成後冇 invoke code-reviewer，只文字描述「下一步係 review」
+❌ Handoff 流程停在描述層，冇透過 Agent tool 實際觸發
+❌ 輸出「Step 4: 建立 branch（略）」但冇執行對應 git 命令
+```
+
+### 強制規則
+
+```
+⛔ 禁止 Ghost Referencing：
+  每個 command 步驟必須實際執行，唔可只喺文字中提及或略過
+  「略」、「此步略去」、「同上」一律視為違規
+
+⛔ 禁止靜默跳步：
+  如有充分理由跳過某步驟，必須明確向用戶說明原因並取得確認
+  用戶唔確認 = 唔可跳步
+```
+
+### 步驟完成公告（Step Checkpoint）
+
+執行任何多步驟 command 時，**每完成一個步驟必須輸出 checkpoint**，然後才進行下一步：
+
+```
+✅ 步驟 [N] 完成：[一句描述做咗乜、結果係乜]
+→ 進行步驟 [N+1]：[下一步描述]
+```
+
+**範例（/fix 流程）：**
+
+```
+✅ 步驟 4 完成：已 checkout fix/auth/CUI-0012_login-error branch（base: develop）
+→ 進行步驟 5：寫 failing test
+
+✅ 步驟 5 完成：test `should return 401 when token expired` — RED confirmed
+→ 進行步驟 6：實現修復
+
+✅ 步驟 6 完成：修改 authMiddleware.ts，測試轉 GREEN
+→ 進行步驟 7：commit
+```
+
+**要求：**
+
+```
+✅ Checkpoint 必須包含可驗證嘅事實（branch 名、測試結果、commit hash 等）
+✅ 若某步驟有子操作（如 pre-flight checklist），列出每項 ☑ 結果
+✅ Invoke subagent（reviewer / QA）必須透過 Agent tool，唔係文字描述
+❌ 唔可一次過輸出多個步驟嘅描述而冇逐步執行
+```
+
+---
+
 ## 7. Senior Mindset（通用）
 
 所有 agent 係 Senior level（8–15 年經驗），共同持有以下思維：

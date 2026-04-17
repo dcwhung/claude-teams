@@ -38,45 +38,12 @@
 6. 完成所有功能點後，執行完整測試套件確認全綠
 7. Commit（Conventional Commits，見 git-flow.md）
 8. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review
-9. **收到 Reviewer receipt 後，main agent 依序執行以下步驟（禁止跳步）：**
-
-   **Step 9a — 驗證 receipt 格式**
-   - 必須係 `` ```handoff-receipt `` fenced block（唔係 `---` YAML）
-   - `next_action` 必須係以下其中一個：`merge_develop` / `invoke_developer`
-   - 任何格式錯誤或非法 `next_action` → 視為 `status=fail`，re-invoke reviewer
-
-   **Step 9b — 按 status 執行**
-
-   | receipt status | main agent 動作 |
-   |----------------|----------------|
-   | `pass`（hard gates 全 pass + score ≥ 90） | 執行 Step 9c |
-   | `warn` 或 `fail` | Agent tool invoke developer：「喺 `<branch>` 修正 `<blockers>` 後重新 /review」。**Main agent 禁止自己修改代碼。** 等 developer 完成後重新從 Step 9a 開始 |
-
-   **Step 9c — pass 分支（必須依序完成，禁止在任一步後輸出「完成摘要」結束）**
-   ```
-   1. git checkout develop
-   2. git merge --no-ff <feature-branch> -m "feat: merge <功能名> — <描述>"
-   3. git branch -d <feature-branch>
-   4. Agent tool invoke quality-assurance，prompt 含 receipt.context
-   ```
-
-   **Step 9d — 收到 QA receipt 後（Protocol 2）**
-
-   | QA receipt status | main agent 動作 |
-   |-------------------|----------------|
-   | `pass` | 依序：① `git checkout main` ② `git merge --no-ff develop -m "release: <描述>"` ③ Agent tool invoke devops-engineer |
-   | `fail` | Agent tool invoke developer：「執行 /fix <CUI ticket>」。禁止 merge main。 |
-
-   **Step 9e — 收到 DevOps receipt 後（Protocol 4）**
-
-   | DevOps receipt status | main agent 動作 |
-   |-----------------------|----------------|
-   | `pass / end` | 輸出最終完成摘要，結束 |
-   | `fail / rollback` | 執行回滾，invoke developer |
-
-   > ⛔ 禁止在 Step 9c 後、Step 9d 前輸出任何「完成摘要」或「Done」。
-   > ⛔ 禁止在 Step 9d QA pass 後、執行 git merge main 前 invoke devops。
-   > 只有收到 DevOps receipt `status=pass, next_action=end` 後才可結束整條鏈。
+9. Reviewer 返回後，main agent 按 **`skills/post-review-handoff.md` → Protocol 1** 執行 handoff：
+   - 驗證 receipt 格式（fenced block）+ next_action 係合法 enum
+   - `pass` → ① git merge develop → ② invoke QA → ③ QA pass 後 git merge main → ④ invoke devops → ⑤ devops pass 才結束
+   - `fail/warn` → invoke developer 修正（main agent 禁止自己改代碼）
+   > ⛔ 禁止在 QA pass 後、git merge main 前 invoke devops。
+   > ⛔ 只有收到 DevOps receipt `status=pass, next_action=end` 後才可結束整條鏈。
 
 10. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```

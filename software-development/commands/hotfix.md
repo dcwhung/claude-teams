@@ -51,7 +51,8 @@
 7.  執行關鍵測試（最少：unit + smoke test）
 8.  Commit，透過 Agent tool 呼叫 code-reviewer agent 執行 /review（聚焦 Critical）
 9.  Reviewer 返回後，main agent 按 post-review-handoff.md → Protocol 3
-    依序 invoke：DevOps（部署） → QA（smoke test + back-merge）
+    依序 invoke：DevOps（部署） → QA（smoke test）
+    QA receipt status=pass 後，main agent 執行 back-merge（唔係 QA）
 10. QA smoke test 完成後，QA 建立 post-mortem 文件（見下方格式）
 11. 執行 /session-log
 12. ⚠️ 提示用戶：開新對話執行 /start ai-dev-team --task=postmortem

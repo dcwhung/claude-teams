@@ -38,7 +38,7 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
         "hooks": [
           {
             "type": "command",
-            "command": "FILE=\"${CLAUDE_TOOL_INPUT_FILE_PATH:-}\"; [[ \"$FILE\" == *.js ]] && node --check \"$FILE\" 2>&1 | head -5 || true"
+            "command": "file=$(jq -r '.tool_input.file_path // empty'); [[ \"$file\" == *.js ]] && node --check \"$file\" 2>&1 | head -5 || true"
           }
         ]
       }
@@ -47,7 +47,7 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
 }
 ```
 
-> 語法錯誤即時顯示於 Claude 嘅 tool result，Claude 立即修正，唔需要用戶介入。
+> Tool input 透過 stdin 以 JSON 傳入，用 `jq` 直接讀取。語法錯誤輸出至用戶終端。
 
 ---
 
@@ -65,7 +65,7 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"${CLAUDE_TOOL_INPUT_COMMAND:-}\" | grep -q 'git merge' && npm test 2>&1 | tail -30 || true"
+            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -q 'git merge' && npm test 2>&1 | tail -30 || true"
           }
         ]
       }
@@ -74,7 +74,27 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
 }
 ```
 
-> 偵測到 merge 後自動執行 `npm test`，輸出最後 30 行供 Claude 判斷是否有 regression。
+> 偵測到 merge 後自動執行 `npm test`，輸出最後 30 行至用戶終端。
+
+---
+
+## ⚠️ 重要：Tool Input 讀取方式
+
+Claude Code hooks **唔使用** `$CLAUDE_TOOL_INPUT_*` 環境變數。Tool input 透過 **stdin JSON** 傳入：
+
+```bash
+# ✅ 正確：jq 直接讀 stdin
+file=$(jq -r '.tool_input.file_path // empty')
+cmd=$(jq -r '.tool_input.command // empty')
+
+# ❌ 錯誤：環境變數不存在（永遠是空）
+FILE="${CLAUDE_TOOL_INPUT_FILE_PATH:-}"
+
+# ❌ 錯誤：echo "$var" 損毀長 JSON
+raw=$(cat); echo "$raw" | jq ...
+```
+
+stdin JSON 完整結構見 `shared-knowledge.md` → SK-003。
 
 ---
 
@@ -89,7 +109,7 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
         "hooks": [
           {
             "type": "command",
-            "command": "FILE=\"${CLAUDE_TOOL_INPUT_FILE_PATH:-}\"; [[ \"$FILE\" == *.js ]] && node --check \"$FILE\" 2>&1 | head -5 || true"
+            "command": "file=$(jq -r '.tool_input.file_path // empty'); [[ \"$file\" == *.js ]] && node --check \"$file\" 2>&1 | head -5 || true"
           }
         ]
       },
@@ -98,7 +118,7 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
         "hooks": [
           {
             "type": "command",
-            "command": "echo \"${CLAUDE_TOOL_INPUT_COMMAND:-}\" | grep -q 'git merge' && npm test 2>&1 | tail -30 || true"
+            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -q 'git merge' && npm test 2>&1 | tail -30 || true"
           }
         ]
       }

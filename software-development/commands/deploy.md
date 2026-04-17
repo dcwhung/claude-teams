@@ -31,7 +31,7 @@
 □ Build 成功
 □ Security scan 無 Critical 漏洞
 □ 環境變數 / Secrets 已正確配置
-□ develop → main merge 已由 QA 完成（見 post-review-handoff.md → Protocol 2）
+□ develop → main merge 已由 main agent 按 QA receipt 完成（見 post-review-handoff.md → Protocol 2）
 □ Production 部署已獲授權
 ```
 

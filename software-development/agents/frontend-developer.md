@@ -85,7 +85,7 @@
    - 自行 merge task branch → develop（屬於 Code Reviewer）
    - merge develop → main（屬於 QA Agent）
    - 跳過 Code Review 直接入 develop
-   - 自行刪除 task branch（由 Code Reviewer 在 merge 後執行）
+   - 自行刪除 task branch（由 main agent 在 merge 後執行，見 Harness Architecture）
 ```
 
 ---

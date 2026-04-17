@@ -77,3 +77,138 @@
 
 > 此區域存放跨 agent、跨 session 嘅共享知識。
 > 項目特有嘅技術規律應記錄於對應項目嘅 `CLAUDE.md` 或項目級 shared-knowledge，唔應存入此檔案。
+
+---
+
+## [SK-004] Coverage 數字唔等於 TDD 執行
+
+**日期**：2026-04-18
+**來源 Agent**：Engineering Manager（HF-001 Post-mortem）
+**類別**：錯誤模式
+**適用 Agent**：Code Reviewer、Developer
+**有效期至**：永久（直至 global-rules.md 正式納入為止）
+
+**內容**：
+測試覆蓋率 ≥ 80% 係 hard gate，但 **coverage 數字唔能證明 TDD 流程有執行**。開發者可以先寫實現、後補測試，照樣通過 coverage 門檻。HF-001 根本原因正是如此：錯誤邏輯在無失敗測試保護下合入代碼庫。
+
+**Code Reviewer 必須額外驗證**：
+- PR 中有失敗測試（Red）先於實現代碼的 commit 紀錄
+- 若無明確紀錄，應要求開發者說明 TDD 執行過程
+- 數學/計算邏輯必須覆蓋：正正、正負、負負、零值、浮點邊界
+
+**試行規則位置**：`agents/code-reviewer.md` → TDD 執行驗證 section（試行 2 個 sprint 後評估推至 `global-rules.md`）
+
+**適用場景**：
+- 所有涉及數值計算、條件邏輯、狀態轉換嘅 PR
+- 任何新功能/修復嘅 code review
+
+**參考**：
+- `.proj-docs/audits/2026-04-18_HF-001_postmortem_em.md`
+
+---
+
+## [SK-003] Claude Code Hooks 透過 stdin 傳入 JSON，唔係環境變數
+
+**日期**：2026-04-16 23:00
+**來源 Agent**：Main Agent（Hooks 實際觸發驗證 session）
+**類別**：技術規律
+**適用 Agent**：全部
+**有效期至**：永久（Claude Code 架構行為）
+
+**內容**：
+Claude Code hooks 唔使用 `$CLAUDE_TOOL_INPUT_*` 環境變數。Tool input 係透過 **stdin 以 JSON 格式**傳入 hook 進程。
+
+stdin JSON 結構：
+```json
+{
+  "session_id": "...",
+  "hook_event_name": "PostToolUse",
+  "tool_name": "Edit",
+  "tool_input": { "file_path": "...", "old_string": "...", "new_string": "..." },
+  "tool_response": { ... },
+  "tool_use_id": "...",
+  "cwd": "...",
+  "permission_mode": "..."
+}
+```
+
+環境變數只有三個：`CLAUDE_CODE_ENTRYPOINT`、`CLAUDE_PROJECT_DIR`、`PWD`。
+
+**正確讀取方式**（用 `jq` 直接讀 stdin）：
+```bash
+# ✅ 正確
+file=$(jq -r '.tool_input.file_path // empty')
+cmd=$(jq -r '.tool_input.command // empty')
+
+# ❌ 錯誤：環境變數不存在，永遠是空
+FILE="${CLAUDE_TOOL_INPUT_FILE_PATH:-}"
+
+# ❌ 錯誤：echo "$var" 會損毀長 JSON（含特殊字符時）
+raw=$(cat); echo "$raw" | jq ...
+```
+
+**Hook 輸出可見性**：
+- Hook 以 exit 0 退出時，輸出只顯示給用戶終端（Claude 看不到）
+- Claude Code TUI 佔用終端時，hook 輸出不可見
+- 驗證 hook 是否觸發：用 `>> /tmp/hook.log` 寫入 log 檔再讀取
+
+**適用場景**：
+- 編寫任何 PostToolUse hook 命令時
+- 調試 hook 唔觸發嘅問題時
+
+**參考**：
+- `skills/hooks.md`（已更新示例）
+- 項目 `.claude/settings.local.json`（已驗證配置）
+
+---
+
+## [SK-002] Hooks 只在對應項目目錄啟動嘅 Session 生效
+
+**日期**：2026-04-16 22:00
+**來源 Agent**：Main Agent（P1-B hooks 驗證 session）
+**類別**：環境注意
+**適用 Agent**：全部
+**有效期至**：永久（Claude Code 架構行為）
+
+**內容**：
+項目級 hooks（`.claude/settings.local.json` 或 `.claude/settings.json`）只喺 Claude Code session 從**該項目目錄**啟動時才載入同觸發。如果 session 嘅 working directory 係其他位置，hook 唔會自動執行。
+
+驗證方式：
+- Hook 命令本身邏輯正確（手動執行有效）
+- 但 `PostToolUse` hook 唔喺 tool result 出現
+- 原因：session 嘅 primary working directory 唔係項目根目錄
+
+**適用場景**：
+- 為項目配置 hooks 後，必須用 `claude` CLI 喺**項目根目錄**開啟 session 先能驗證
+- 跨目錄 session（如從 team config 目錄操作項目代碼）無法觸發項目級 hooks
+
+**參考**：
+- `skills/hooks.md`
+
+---
+
+## [SK-001] §9 Step Execution Integrity — Subagent Checkpoint 壓縮行為
+
+**日期**：2026-04-16 21:30
+**來源 Agent**：Main Agent（P0 驗證 session）
+**類別**：錯誤模式
+**適用 Agent**：全部
+**有效期至**：永久（直至 hook 層防護上線或規則更新）
+
+**內容**：
+§9 Step Execution Integrity 規則（`skills/agent-protocols.md`）成功防止 Ghost Referencing，但 subagent 有另一個系統性傾向：執行完所有步驟後，一次性輸出 summary table，而唔係每步完成後即時輸出 `✅ 步驟 [N] 完成：[可驗證結果]`。
+- Steps 9–10（最後幾步）有明確 checkpoint 輸出
+- Steps 1–8 被壓縮成一張 summary table
+
+呢個行為唔係 Ghost Referencing（工作確實有執行），而係「延遲 checkpoint 輸出」pattern。規則層防護唔足以強制逐步輸出，需要 hook 層補強。
+
+**適用場景**：
+- 審查 subagent 返回結果時，summary table 係合格但非理想輸出
+- 設計 hook 層防護時，目標係偵測缺失中間 checkpoint，唔單止最終結果
+- 評估 P1 hooks.md 配置優先順序
+
+**參考**：
+- `skills/agent-protocols.md` §9 Step Execution Integrity
+- `global-rules.md` Agent 行為準則
+
+---

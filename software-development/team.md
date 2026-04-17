@@ -75,6 +75,7 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 | `/test` | Quality Assurance | 執行測試計劃，輸出 QA 報告 |
 | `/deploy` | DevOps Engineer | 執行 CI/CD 部署流程 |
 | `/session-log` | 全體 | 記錄今次 session，儲存 log |
+| `/session-close` | 全體 | 記錄今次 session log 並自動關閉 session |
 | `--task=postmortem` | Engineering Manager | Hotfix 事後根源分析 |
 | `--task=retrospective` | Engineering Manager | Sprint 回顧 |
 | `--task=escalation` | Engineering Manager | 風險升級、重大決定仲裁 |

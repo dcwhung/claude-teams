@@ -36,12 +36,17 @@
 - [ ] **部署配置完整性**：有冇刪除或遷移 config 檔案（`.env.example`、CI config、框架配置等）但無同步更新 root-level 對應檔案，導致 build / deploy 失敗
 - [ ] 安全漏洞（SQL injection、XSS、CSRF、未授權訪問）
 - [ ] 業務邏輯錯誤（條件判斷、計算、狀態轉換）
+- [ ] **數學/計算邏輯邊界案例**：涉及數值運算嘅代碼必須覆蓋正正、正負、負負、零值、浮點邊界（HF-001 教訓）
 - [ ] 數據一致性問題（缺少 transaction、race condition）
 - [ ] 未處理嘅異常或 null/undefined 引用
 - [ ] Idempotency 違反（重複執行會造成數據異常）
 - [ ] 敏感資料洩露（hardcoded secret、log 輸出敏感資料）
 - [ ] 新增依賴有 Critical / High 安全漏洞
 - [ ] 新增依賴使用 GPL 或不兼容 license
+
+### TDD 執行驗證（試行期：HF-001 PM-1，2 個 sprint 後評估推至 global-rules）
+- [ ] PR 中有失敗測試先於實現代碼的 commit（或開發者提供 TDD 執行說明）
+- [ ] 若只見通過狀態的測試而無失敗記錄，詢問 TDD 執行情況
 
 ### 🟡 Warning 檢查項
 - [ ] Magic number / magic string（應抽取為命名常數）
@@ -130,42 +135,7 @@ Review 完成後，Reviewer 必須：
 2. 輸出報告 + handoff-receipt block（格式見下方）
 3. **唔執行任何 git 操作** — 由 main agent 按 receipt 決定
 
-### Receipt 格式（必須逐字跟從）
-
-````
-```handoff-receipt
-protocol: 1
-status: pass | warn | fail
-score: XX/100
-hard_gates:
-  lint: pass | fail | n/a
-  type_check: pass | fail | n/a
-  tests: pass | fail | n/a
-  coverage: "XX%"
-  no_critical: pass | fail
-  security_scan: pass | fail | n/a
-next_action: merge_develop | invoke_developer
-next_agent: quality-assurance | frontend-developer | backend-developer
-branch: "feature/..."
-context: "one-line summary"
-blockers:
-  - "描述（冇問題就省略此 key）"
-```
-````
-
-> ⚠️ **格式禁令**：禁止用 `---` YAML delimiter。必須係 `` ```handoff-receipt `` fenced block，否則 hook 無法偵測。
-
-### `next_action` 允許值（固定 enum，禁止自創）
-
-| `status` | `next_action` |
-|----------|--------------|
-| `pass`（≥90分，hard gates 全 pass） | `merge_develop` |
-| `warn`（75–89分，hard gates 全 pass） | `invoke_developer` |
-| `fail`（任何 hard gate fail 或 <75 分） | `invoke_developer` |
-
-> ⛔ `fix_and_rereview`、`rereview`、`fix` 等均**不合法**。唯一允許嘅 fail 分支 action 係 `invoke_developer`。
-
-完整 status 映射同 main agent 動作表 → `skills/post-review-handoff.md` → Protocol 1 / 3。
+Receipt 格式、`next_action` 允許值及完整 status 映射表 → **`skills/post-review-handoff.md`**（唯一來源，禁止本地重複定義）。
 通用行為規範 → `skills/agent-protocols.md`。
 
 ---
