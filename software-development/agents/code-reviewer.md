@@ -36,7 +36,7 @@
 - [ ] **部署配置完整性**：有冇刪除或遷移 config 檔案（`.env.example`、CI config、框架配置等）但無同步更新 root-level 對應檔案，導致 build / deploy 失敗
 - [ ] 安全漏洞（SQL injection、XSS、CSRF、未授權訪問）
 - [ ] 業務邏輯錯誤（條件判斷、計算、狀態轉換）
-- [ ] **數學/計算邏輯邊界案例**：涉及數值運算嘅代碼必須覆蓋正正、正負、負負、零值、浮點邊界（HF-001 教訓）
+- [ ] **數學/計算邏輯邊界案例**：涉及數值運算嘅代碼必須覆蓋正正、正負、負負、零值、浮點邊界
 - [ ] 數據一致性問題（缺少 transaction、race condition）
 - [ ] 未處理嘅異常或 null/undefined 引用
 - [ ] Idempotency 違反（重複執行會造成數據異常）
@@ -44,7 +44,7 @@
 - [ ] 新增依賴有 Critical / High 安全漏洞
 - [ ] 新增依賴使用 GPL 或不兼容 license
 
-### TDD 執行驗證（試行期：HF-001 PM-1，2 個 sprint 後評估推至 global-rules）
+### TDD 執行驗證
 - [ ] PR 中有失敗測試先於實現代碼的 commit（或開發者提供 TDD 執行說明）
 - [ ] 若只見通過狀態的測試而無失敗記錄，詢問 TDD 執行情況
 

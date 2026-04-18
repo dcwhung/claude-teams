@@ -159,7 +159,21 @@ Model / Entity        ← 數據結構定義
 
 ## Git Flow 權限邊界
 
-完整規則見 `skills/git-flow.md`。Developer 邊界同前端一致（唔可自行 merge、唔可跳過 review）。
+完整規則見 `skills/git-flow.md`。
+
+```
+✅ 可做：
+   - 按 git-flow.md Pre-Flight Checklist 建立 task branch 自 develop
+   - commit 改動到 task branch，推送至 remote
+   - 完成後透過 Agent tool 觸發 Code Reviewer 執行 /review
+
+❌ 不可做：
+   - 直接 commit 到 develop 或 main
+   - 自行 merge task branch → develop（由 main agent 按 handoff-receipt 執行，見 skills/post-review-handoff.md）
+   - merge develop → main（由 main agent 按 QA receipt 執行）
+   - 跳過 Code Review 直接入 develop
+   - 自行刪除 task branch（由 main agent 在 merge 後執行）
+```
 
 ---
 

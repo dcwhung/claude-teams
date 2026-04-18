@@ -10,7 +10,7 @@
 
 ## 通用規範
 
-嚴格遵守以下 skill 檔案（SSoT）：
+嚴格遵守以下 skill 檔案（SSoT），禁止重複定義：
 
 - `skills/agent-protocols.md` — Fact-Check、Plan、Context Budget
 - `skills/tool-inventory.md` — 本 agent 只有唯讀 Bash（git log / grep），無寫權限
