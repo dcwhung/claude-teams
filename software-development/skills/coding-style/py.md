@@ -25,6 +25,76 @@ description: Python naming, PEP 8, type hints, exception handling, context manag
 
 ---
 
+## Constants 檔案結構規範 🔴 Critical
+
+違反（在 route / service / model 內定義跨模組常數，或使用 magic value）視為 Critical。
+
+### 目錄結構
+
+```
+app/constants/
+├── __init__.py
+├── domain/         # 業務語意：entry type、status、emoji、labels
+│   └── *.py        # 例：entry.py, order.py
+├── infra/          # 基建 / 協議字串：RFC strings、DB prefix、external service keys
+│   └── *.py
+└── config.py       # 可調整配置值：timeout、year range、page size 等
+```
+
+> 小型 / 單模組 project（如 the_moments backend）：可用扁平結構 `constants/entry.py`、`constants/ics.py`、`constants/milestone.py`，唔強制建子資料夾。
+
+### 類型安全
+
+```python
+# ✅ 用 Literal + TypeAlias 約束常數 key 類型
+from typing import Final, Literal, TypeAlias
+
+EntryType: TypeAlias = Literal["birth", "dating", "wedding"]
+
+BIRTH: Final[EntryType] = "birth"
+DATING: Final[EntryType] = "dating"
+WEDDING: Final[EntryType] = "wedding"
+
+TYPE_EMOJI: Final[dict[EntryType, str]] = {
+    "birth": "🎂",
+    "dating": "😘",
+    "wedding": "💍",
+}
+
+# ❌ 裸 dict[str, str]（key 未約束）
+TYPE_EMOJI: dict[str, str] = {"birth": "🎂"}
+
+# ✅ 用 Final 防止重賦值
+YEAR_RANGE: Final[int] = 10
+
+# ❌ 普通變數（可被意外覆寫）
+YEAR_RANGE = 10
+```
+
+### type 比較規則 🔴 Critical
+
+```python
+# ✅ 透過常數比較
+from app.constants.entry import BIRTH
+if entry_type == BIRTH:
+    ...
+
+# ❌ 字面量比較（magic string）
+if entry_type == "birth":
+    ...
+```
+
+### 禁止事項
+
+```
+❌ 在 route / service / model 內定義跨模組常數
+❌ dict key 用裸 str（應用 Literal / TypeAlias 約束）
+❌ 可調整配置值（timeout、year range）直接 hardcode 在業務邏輯內
+❌ 常數命名用 camelCase 或 lowercase
+```
+
+---
+
 ## Python 規範（PEP 8 + Type Hints）
 
 ### Type Hints（Python 3.9+）

@@ -33,12 +33,27 @@ description: Coding style entry point — universal rules (function length, magi
 
 超過須拆分，每個函數只做一件事。
 
-### Magic Number / String
+### Magic Number / String 🔴 Critical（所有語言）
+
+違反視為 Critical，必須修正先可以 merge。
 
 ```
 ❌ 直接使用數字或字串字面量
-✅ 抽取為命名常數，放係模組頂部或常數檔案
+❌ type 比較使用字面量（if type == "birth"）
+✅ 抽取為命名常數，放係語言對應嘅 constants 檔案（見各語言 sub-skill）
+✅ type 比較必須透過常數（if entry_type == BIRTH）
 ```
+
+### Constants 命名規則 🔴 Critical（所有語言）
+
+違反視為 Critical，必須修正先可以 merge。
+
+```
+✅ 所有放於 constants/（或 Constants/）目錄下的常數，名稱一律 UPPER_SNAKE_CASE
+❌ camelCase、PascalCase、lowercase 常數名
+```
+
+> 語言專屬嘅 constants 目錄結構見各語言 sub-skill。
 
 ### Console / Log
 
@@ -47,12 +62,23 @@ description: Coding style entry point — universal rules (function length, magi
 ✅ 使用項目統一嘅 logger（logger.debug / logger.info / logger.error）
 ```
 
-### 注釋規範
+### Comments 規範（所有語言）
 
 ```
-✅ 複雜業務邏輯必須有注釋，說明「為何」，唔係「做乜」
-✅ 公開 API / 函數必須有 JSDoc / PHPDoc / docstring
+✅ Non-obvious 嘅 WHY 必須有 comment：隱藏約束、協議要求、設計選擇、會令讀者驚訝嘅行為
+✅ 一行最多，禁止多行 comment 塊
+❌ 禁止 WHAT comment（說明代碼已清楚表達嘅事）
 ❌ 唔好注釋掉嘅代碼留係 codebase，直接刪除，git 有記錄
+
+WHY ✅ 例子：
+  # RFC 5545 §3.1 mandates CRLF as the line separator.
+  # Use UTC to avoid DST transitions skewing the day count.
+  # 204 No Content has no body; calling res.json() would throw.
+
+WHAT ❌ 例子（禁止）：
+  # Connect to database
+  # Loop through all entries
+  # Return the result
 ```
 
 ### Critical / Warning 標記（所有語言）

@@ -26,6 +26,93 @@ description: PHP naming, PSR-12, type declarations, null handling, DI, and anti-
 
 ---
 
+## Constants 檔案結構規範 🔴 Critical
+
+違反（在 controller / service / model 內定義跨模組常數，或使用 magic value）視為 Critical。
+
+### 目錄結構（PSR-4，PascalCase 資料夾）
+
+```
+app/Constants/
+├── Domain/
+│   └── *.php       # 業務語意：Enum / final class，例：EntryType.php, OrderStatus.php
+├── Infra/
+│   └── *.php       # 協議 / 基建字串：RFC strings、API keys prefix
+└── Config/
+    └── *.php       # 可調整配置值：timeout、year range、page size
+```
+
+### PHP 8.1+ Enum（type-safe 有限值集合）
+
+```php
+// ✅ 用 Backed Enum 取代字串常數集合
+enum EntryType: string
+{
+    case BIRTH   = 'birth';
+    case DATING  = 'dating';
+    case WEDDING = 'wedding';
+}
+
+// 使用
+if ($type === EntryType::BIRTH) { ... }
+$label = EntryType::BIRTH->value;  // "birth"
+
+// ❌ 舊式 class constants（PHP < 8.1 或唔需 type-safety 時才用）
+class EntryType
+{
+    const BIRTH = 'birth';
+}
+```
+
+### 普通常數（非 Enum）
+
+```php
+// ✅ final class + const，命名 UPPER_SNAKE_CASE
+final class MilestoneConfig
+{
+    const YEAR_RANGE = 10;
+    const MAX_PAGE_SIZE = 100;
+}
+
+// ✅ ICS / 協議字串
+final class IcsProtocol
+{
+    const PRODID    = '-//The Moments//EN';
+    const TIMEZONE  = 'Asia/Hong_Kong';
+    const VERSION   = '2.0';
+}
+
+// ❌ 直接 hardcode 在 service 內
+$until = now()->addYears(10);
+
+// ❌ 常數用 camelCase
+const yearRange = 10;
+```
+
+### type 比較規則 🔴 Critical
+
+```php
+// ✅ Enum 比較
+if ($entryType === EntryType::BIRTH) { ... }
+
+// ✅ final class const 比較
+if ($lang === LangConfig::ZH) { ... }
+
+// ❌ 字面量比較（magic string）
+if ($entryType === 'birth') { ... }
+```
+
+### 禁止事項
+
+```
+❌ 在 controller / service / model 內定義跨模組常數
+❌ 可調整配置值直接 hardcode 在業務邏輯內
+❌ 常數命名用 camelCase 或 lowercase
+❌ PHP < 8.1 project 用 class const 取代 Enum 時，應在 comment 標注原因
+```
+
+---
+
 ## PHP 規範（PSR-12）
 
 ### 類型宣告（PHP 8+）

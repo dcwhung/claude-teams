@@ -356,9 +356,11 @@ git rebase -i HEAD~3
 ```
 □ Step 1：確認當前 branch
     git rev-parse --abbrev-ref HEAD
-    - /feature、/refactor、/fix → 必須 === "develop"
-    - /hotfix               → 必須 === "main"
-    ❌ 不符合 → 停止。輸出：「⛔ 當前 branch 為 [X]，請先執行 git checkout [develop/main]」
+    - /feature、/refactor、/fix → 目標 source branch = "develop"
+    - /hotfix               → 目標 source branch = "main"
+    ❌ 不符合，且 working tree 有未 commit 改動 → 停止。
+       輸出：「⛔ 當前 branch 為 [X]，且有未 commit 改動，請先 commit 或 stash 後再執行 git checkout [develop/main]」
+    ⚡ 不符合，但 working tree 乾淨 → 自動執行 git checkout [develop/main]，繼續流程，無需用戶介入
 
 □ Step 2：確認 working tree 乾淨
     git status --porcelain
