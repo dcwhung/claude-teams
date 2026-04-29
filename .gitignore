@@ -1,1 +1,8 @@
+
 session-logs/
+
+# Claude Code workspace
+.proj-docs/
+.tickets/
+.claude/
+CLAUDE.md
