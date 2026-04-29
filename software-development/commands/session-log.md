@@ -2,7 +2,7 @@
 
 ## 用途
 
-記錄今次 session 完成嘅工作、重要決定、待注意事項及下次任務，儲存為 log 檔案，供下次 session 參考。
+記錄今次 session 完成嘅工作、重要決定、待注意事項及下次任務，按權威 template 生成 log 檔案，供下次 session 參考。
 
 ## 負責 Agent
 
@@ -20,7 +20,8 @@
 5. 識別待注意事項及未完成工作
 6. 制定下次 session 建議任務
 7. 確認有冇 common knowledge 需要補充入 shared-knowledge.md
-8. 生成 log 檔案，儲存至指定位置
+8. 按 templates/session-log.md 生成 log 檔案
+9. 儲存至指定位置
 ```
 
 ---
@@ -30,96 +31,22 @@
 ```
 項目專屬 log（包括跨子項目工作）：
 [project-root]/.claude/session-logs/YYYY-MM-DD_HH-MM.md
+
+全局 team log（只限冇 project working directory 嘅 session）：
+{active-team-folder}/session-logs/YYYY-MM-DD_HH-MM.md
 ```
 
 > `project-root` 係當前工作目錄所屬嘅頂層項目資料夾（如 `GoogleAppScript/`），唔係 `~/.claude/`。
 
----
-
 ## Log 輸出格式
 
-```markdown
-# Session Log
+權威格式來源：
 
-**日期**：YYYY-MM-DD HH:MM
-**時間**：HH:MM
-**項目**：[項目名稱 / 全局]
-**參與 Agent**：[列出今次用到嘅 agents]
-**Session 目標**：[今次 session 開始時嘅目標]
-
----
-
-## 完成事項
-
-- [具體完成嘅工作，要清楚到下次可以繼續]
-- [包括：檔案改動、決定、輸出文件等]
-
----
-
-## 重要決定
-
-| 決定 | 原因 | 影響 |
-|------|------|------|
-| [做咗乜決定] | [點解] | [影響哪些部分] |
-
----
-
-## 代碼改動摘要
-
-| 檔案 | 改動類型 | 描述 |
-|------|----------|------|
-| | feat/fix/refactor/chore | |
-
----
-
-## 待注意事項
-
-> 呢度記錄嘅係下次 session 開始前必須了解嘅資訊
-
-- ⚠️ [重要注意事項]
-- 🔧 [技術細節需要留意]
-- ❓ [未解決問題或待確認事項]
-
----
-
-## 未完成工作
-
-| 任務 | 狀態 | 阻礙原因 | 下次繼續方式 |
-|------|------|----------|-------------|
-| | 進行中 / 待開始 | | |
-
----
-
-## 下次 Session 建議任務
-
-按優先順序排列：
-
-1. **[P0] [任務描述]**
-   - 背景：[為何要做]
-   - 建議方式：[點樣開始]
-
-2. **[P1] [任務描述]**
-   - 背景：...
-   - 建議方式：...
-
-3. **[P2] [可選] [任務描述]**
-   - 背景：...
-
----
-
-## Shared Knowledge 更新
-
-> 今次 session 新增或更新嘅 shared knowledge 條目
-
-- [SK-XXX] [標題]（[新增 / 更新]）
-- 無
-
----
-
-## 備注
-
-[其他值得記錄嘅觀察、想法或提醒]
 ```
+templates/session-log.md
+```
+
+> `/session-log` 負責收集內容並填入 template；如需修改欄位、章節次序或 header，應只更新 template，避免 command 文件同 template 漂移。
 
 ---
 
