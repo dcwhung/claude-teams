@@ -65,8 +65,8 @@ description: Universal agent behavior — Fact-Check before answer, Plan Before 
   「通知用戶」、「建議用戶執行」、「請確認是否繼續」、「要唔要叫下一個 agent」
 
 ⛔ 禁止等待用戶指令：
-  Subagent 完成自己職責後必須按 post-review-handoff.md 執行對應 git 操作
-  Main agent 收到 subagent 返回後必須立即 invoke 下一個 agent
+  Subagent 完成自己職責後必須輸出對應 report + handoff-receipt，唔可以停喺描述層
+  Main agent 收到 subagent 返回後必須按 post-review-handoff.md 解析 receipt、執行 git（如適用），並立即 invoke 下一個 agent
 
 ⛔ 禁止輸出「完成」而冇執行對應 handoff：
   每個 command 都有明確嘅下一步，唔存在「做完就停」嘅情況
@@ -229,7 +229,131 @@ Agent 定義檔案（`agents/*.md`）**禁止 inline** 以下內容：
 
 ---
 
-## 9. Senior Mindset（通用）
+## 9. Workflow Self-Check（Main Agent 強制）
+
+> 適用對象：**main agent**（同用戶直接對話嘅 agent）。
+> Subagent 唔受此節約束（subagent 收到任務即執行）。
+
+### 為何需要
+
+實戰觀察：用戶用 `/start ai-dev-team`（無 `--task` flag）開 session 後，再丟一個代碼修改任務（例如「跟進 X 加個 Y feature」），main agent 容易直接做嘢、跳過 `/feature` workflow，導致：
+
+- 直接 commit 入 main / develop（冇開 feature branch）
+- 完工後冇 invoke code-reviewer subagent
+- Reviewer LGTM 後冇自動接 QA → DevOps（需要用戶人手提示）
+- Compact 後 workflow 規則流失，重啟後依舊「直接做嘢」模式
+
+### 強制 Self-Check（每次接到新訊號）
+
+```
+觸發條件（任何一個）：
+  ✅ 用戶訊息含關鍵字：跟進 / fix / 修 / 改 / 修改 / 加 / 新增 / 移除 / 重構 / refactor / implement / bug / 部署 / deploy
+  ✅ 我（main agent）準備 call Edit / Write 工具
+  ✅ 我準備 call Bash 執行 git commit / git merge / git push
+  ✅ 上一個 task pipeline 結束（DevOps next_action=end）
+
+每次觸發必做：
+  □ 我有冇載入對應嘅 command 檔案？（feature.md / fix.md / refactor.md / hotfix.md 之一）
+  □ 我而家係咪喺 feature/* / fix/* / refactor/* branch（唔係 main / develop）？
+  □ 我有冇明確識別任務 type？歧義（如「跟進」「改」）有冇問用戶澄清？
+  □ 上一個 task 結束後，我有冇重新確認新任務 type，定假設同上一個係同類？
+
+任何一項答 NO → 立即停手：
+  1. 唔好 call Edit / Write / git
+  2. 識別關鍵字 → 對照 commands/start.md「關鍵字 → Task 對照表」
+  3. Read 對應 command 檔案
+  4. 由該 command step 1 開始重新執行
+```
+
+### 唔可繞過（Anti-Patterns）
+
+```
+❌ 「呢個改動好細，唔需要開 branch」 → 違規。哪怕一行改動都要行 workflow
+❌ 「用戶之前已經確認 plan，我直接做」 → 違規。Plan 確認 ≠ workflow 啟動
+❌ 「Compact 之後我繼續做就得」 → 違規。Compact 後必須重新 self-check
+❌ 「上一個 task 啱啱做完 deploy，呢個延續做」 → 違規。每個 task 獨立確認
+❌ 「我自己改埋 reviewer 提出嘅問題就算」 → 違規。Main agent 唔可改代碼，只 invoke developer subagent
+```
+
+### Reset 訊號（清晰標記任務邊界）
+
+```
+觸發 reset 嘅事件：
+  ✅ DevOps subagent receipt status=pass, next_action=end → 上一個 task 完結
+  ✅ Hotfix Protocol Step 4 完成
+  ✅ /test / /audit / /review 流程結束
+  ✅ 用戶話題明顯切換
+
+Reset 動作：
+  □ 向用戶輸出：「上一個 task（[名稱]）已完結。下一個任務係？」
+  □ 等用戶答 → 重新識別 task type → 載入對應 command
+  □ 唔可以 carry over 上一個 task 嘅 branch / context
+```
+
+詳細關鍵字對照表 + 處理流程見 `commands/start.md` → Task Type Enforcement。
+
+---
+
+## 10. Compact Protection（壓縮時保留 Workflow State）
+
+> 對象：執行 conversation compaction 嘅 LLM。
+> 觸發：context 接近上限、用戶執行 `/compact`、自動 compaction 啟動。
+
+### 為何需要
+
+實戰觀察：原本喺 `/feature` workflow 中嘅 main agent，被 compact 之後 workflow state（branch、pipeline stage、next handoff）流失，重啟後變回「直接做嘢」模式，跳過 reviewer / QA / DevOps 等步驟。
+
+### 強制要求
+
+執行 compaction 時，summary **必須喺最頂部**（喺其他內容之前）保留以下 block：
+
+```markdown
+## Active Workflow State
+
+- **Active command**: /feature | /fix | /refactor | /hotfix | /test | /audit | none
+- **Source branch**: <e.g. develop or main>
+- **Current branch**: <e.g. feature/foo/bar>
+- **Pipeline stage**: developer | reviewer | qa | devops | done
+- **Next required handoff**: <next agent + action, or "user input" / "n/a">
+- **Latest receipt**: <protocol N, status pass/warn/fail, or "none yet">
+- **Open blockers**: <list, or "none">
+```
+
+> 此 block 由 compaction agent 從原 transcript 推斷並填寫。
+> 唔可省略；唔可寫「(略)」。冇對應信息就填 `none` 或 `n/a`。
+
+### Reset 條件
+
+當 transcript 中最後 receipt 係 `protocol: 4, status: pass, next_action: end`（或 hotfix postmortem 已提示）：
+
+```markdown
+## Active Workflow State
+
+- **Active command**: none (last task completed)
+- **Pipeline stage**: done
+- **Next required handoff**: re-confirm new task type with user
+```
+
+### Compact 後 Main Agent 必做
+
+收到 compacted context 後，main agent 第一個動作：
+
+```
+□ 讀取 "Active Workflow State" block（喺 summary 頂部）
+□ 確認 Current branch == 實際 git 當前 branch（執行 git branch --show-current）
+  ↳ 唔一致 → 提示用戶並停手
+□ 按 Pipeline stage 決定下一步：
+  - developer → 繼續開發 / 等用戶 confirm plan
+  - reviewer → invoke code-reviewer subagent
+  - qa → invoke quality-assurance subagent
+  - devops → invoke devops-engineer subagent
+  - done → 觸發 §9 Workflow Self-Check Reset，問用戶下一個任務
+□ 唔可以「假設繼續上次做緊嘅嘢」直接 call Edit / Write / git
+```
+
+---
+
+## 11. Senior Mindset（通用）
 
 所有 agent 係 Senior level（8–15 年經驗），共同持有以下思維：
 

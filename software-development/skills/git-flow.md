@@ -9,6 +9,61 @@ description: Branch naming, commit format, pre-flight checklist, merge rules, On
 
 ---
 
+## Project Git 初始化
+
+每個新項目 `git init` 後，必須建立以下標準 `.gitignore`。此模板係所有項目嘅 baseline；可按實際 tech stack 追加（例如 Python 加 `__pycache__/`、`*.pyc`；GAS 項目加 `*.gs`），但以下條目**不可刪除**。
+
+```gitignore
+# OS
+.DS_Store
+
+# Node
+node_modules/
+package-lock.json
+dist/
+coverage/
+
+# Project docs & planning
+.proj-docs/
+.tickets/
+
+# Claude Code
+.claude/
+CLAUDE.md
+```
+
+建立指令：
+
+```bash
+# 初始化 git repo（已 init 則跳過）
+git init
+
+# 建立標準 .gitignore
+cat > .gitignore << 'EOF'
+# OS
+.DS_Store
+
+# Node
+node_modules/
+package-lock.json
+dist/
+coverage/
+
+# Project docs & planning
+.proj-docs/
+.tickets/
+
+# Claude Code
+.claude/
+CLAUDE.md
+EOF
+```
+
+> ⚠️ `CLAUDE.md` 及 `.claude/` 屬於本地 AI 工作資料，唔入 git。
+> `.proj-docs/` 及 `.tickets/` 屬於 AI team 內部文件，唔入 git。
+
+---
+
 ## Branch 策略
 
 ### 主要 Branch
@@ -21,8 +76,8 @@ description: Branch naming, commit format, pre-flight checklist, merge rules, On
 **核心規則**：
 - 所有工作 branch 必須 checkout 自 `develop`
 - **例外：`hotfix/` branch checkout 自 `main`**，修復後 merge to `main`，再 back-merge to `develop`
-- QA 通過後，`develop` → `main`，同時升版本
-- 禁止直接由工作 branch merge 入 `main`（hotfix 除外）
+- QA 通過後，由 **main agent** 執行 `develop` → `main`，同時升版本
+- 禁止直接由工作 branch merge 入 `main`（hotfix 除外；hotfix merge 亦由 **main agent** 執行）
 
 ---
 
@@ -117,11 +172,11 @@ git rebase origin/develop
 # 4. 完成後推送
 git push -u origin fix/frontend/CUI-0001_button_display_issue
 
-# 5. 建立 PR → develop
-# 6. Code Review 通過（≥90 分）→ merge to develop → 執行 /test（staging）
+# 5. 建立 PR / invoke reviewer
+# 6. Code Review receipt `status=pass` 後，由 main agent merge to develop → invoke /test（staging）
 
 # === QA 全部通過後 ===
-# 7. develop → main（升版本）
+# 7. QA receipt `status=pass` 後，由 main agent 執行 develop → main（升版本）
 git checkout main
 git merge --no-ff develop -m "chore: release v1.2.0"
 git tag v1.2.0
@@ -276,6 +331,7 @@ develop     → main       （QA 通過後升版本，需要 release note）
 □ 無 🔴 Critical 問題
 □ 所有 CI 檢查通過
 □ 至少一位 reviewer 批准
+□ main agent 已驗證 review receipt = status=pass
 ```
 
 ### Release 條件（develop merge to main）
@@ -286,6 +342,7 @@ develop     → main       （QA 通過後升版本，需要 release note）
 □ Staging 環境驗證完成
 □ Release note 已準備
 □ DevOps 確認部署計劃及回滾方案
+□ main agent 已驗證 QA receipt = status=pass
 ```
 
 ---
@@ -352,6 +409,8 @@ git rebase -i HEAD~3
 ## Branch 建立強制 Pre-Flight Checklist
 
 > **所有 `/feature`、`/refactor`、`/fix`、`/hotfix` 必須嚴格按順序執行以下步驟，任何一步失敗即停止，提示用戶處理後再繼續。禁止跳過或靜默忽略。**
+> **適用範圍**：呢份 checklist 只涵蓋 task-branch 準備動作（checkout source branch、建立新 branch、commit、push）。
+> **唔涵蓋** merge / branch delete / release tag / rollback 呢類 routing side effects；呢啲一律由 **main agent** 按 `skills/post-review-handoff.md` 執行。
 
 ```
 □ Step 1：確認當前 branch
@@ -398,6 +457,9 @@ git rebase -i HEAD~3
 
 > **所有 handoff 規則定義於 `skills/post-review-handoff.md`（Single Source of Truth）。**
 > 本檔案只負責 branch / commit / PR 規則，唔再重複 handoff 內容。
+> 用詞約定：
+> - **Developer 可做**：task-branch pre-flight、commit、push、自身分支 rebase / status / diff
+> - **Main agent 專責**：merge、branch delete、release tag、rollback、invoke 下一個 subagent
 >
 > 快速導引：
 > - `/feature`、`/fix`、`/refactor` 完成 → `post-review-handoff.md` → Protocol 1

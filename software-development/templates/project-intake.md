@@ -203,19 +203,27 @@ EOF
 # 4. 建立 .claude/session-logs（供 AI agent 讀寫）
 mkdir -p .claude/session-logs
 
-# 5. 更新 .gitignore（敏感內部文件唔 commit）
-cat >> .gitignore << 'EOF'
+# 5. 建立標準 .gitignore（見 skills/git-flow.md → "Project Git 初始化"）
+git init
+cat > .gitignore << 'EOF'
+# OS
+.DS_Store
 
-# AI team 內部文件
-.claude/session-logs/
+# Node
+node_modules/
+package-lock.json
+dist/
+coverage/
 
-# 敏感報告（含 audit / security / QA 詳情）
-.proj-docs/audits/
-.proj-docs/qa-reports/
+# Project docs & planning
+.proj-docs/
+.tickets/
 
-# 如需 commit diagrams、specs、plans，保留以下；否則可加入：
-# .proj-docs/
+# Claude Code
+.claude/
+CLAUDE.md
 EOF
+# 如有其他 tech stack 需要（Python、Java 等），在此基礎上追加
 ```
 
 Project `CLAUDE.md` 模板位置：`~/.claude/teams/software-development/templates/project-claude.md`

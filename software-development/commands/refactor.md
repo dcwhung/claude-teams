@@ -3,12 +3,12 @@
 ## 用途
 
 對現有代碼進行重構，改善設計質量、可讀性或性能，**不改變外部行為**。
-必須以測試保證行為不變，完成後觸發 code review。
+必須以測試保證行為不變，完成後透過 Agent tool invoke code review。
 
 ## 負責 Agent
 
 **Frontend Developer** 及/或 **Backend Developer**（視重構範圍）
-**Code Reviewer**（重構完成後自動執行 `/review`）
+**Code Reviewer**（由 Developer 完成後透過 Agent tool invoke `/review`）
 
 ---
 
@@ -107,7 +107,7 @@
 □ 無新增 magic number / magic string
 □ ESLint / Prettier 無錯誤
 □ Code Review 評分 ≥ 90 分，無 🔴 Critical
-□ 透過 Agent tool 觸發 /review，後續 handoff 由 Reviewer + main agent 自動執行
+□ 透過 Agent tool invoke /review，後續 handoff 由 Reviewer receipt + main agent 執行
 ```
 
 ---

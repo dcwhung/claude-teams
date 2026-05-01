@@ -127,7 +127,46 @@ stdin JSON 完整結構見 `shared-knowledge.md` → SK-003。
 }
 ```
 
-### Hook 3：Handoff Receipt Enforcement（Harness 強制）
+### Hook 3：Branch Policy（系統層 workflow 守衛）
+
+**解決問題**：main agent 繞過 `/feature` `/fix` workflow，直接 commit 入 `main` / `develop`
+**觸發時機**：每次 Bash tool 即將執行命令前（PreToolUse）
+**腳本位置**：`~/.claude/hooks/branch-policy.sh`
+
+**規則**（block exit code 2）：
+- 喺 `main` / `master` / `develop` 上執行 `git commit` → BLOCK
+- Force push 至 `main` / `master` / `develop` → BLOCK
+- 喺 protected branch 上 `git reset --hard` → BLOCK
+- merge 操作（含 `--no-ff`）→ 放行（handoff state 由 main agent 負責）
+
+**繞行方式**（合理情境下）：
+- `CLAUDE_HOOK_BYPASS_BRANCH_POLICY=1` 環境變數
+- `touch .claude-hotfix-active` 喺 git root（`/hotfix` Step 4 完成後自動移除）
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/Users/donald91103/.claude/hooks/branch-policy.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+> ⚠️ 此 hook 已配置喺 `~/.claude/settings.json`（global）— 影響所有 Claude Code session。
+> 設計原則：保守 — 寧願偶爾 block 合理操作（用戶按 bypass）也唔可放任 main agent 繞過 workflow。
+
+---
+
+### Hook 4：Handoff Receipt Enforcement（Harness 強制）
 
 **解決問題**：subagent 忘記輸出 `handoff-receipt` block → main agent 跳步
 **觸發時機**：subagent 任務結束（SubagentStop）

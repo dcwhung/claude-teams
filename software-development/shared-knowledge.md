@@ -80,6 +80,68 @@
 
 ---
 
+## [SK-005] Workflow Bypass — `/start` 無 task 時 main agent 跳過 /feature 流程
+
+**日期**：2026-05-01 13:08
+**來源 Agent**：Main Agent（自我覆盤）
+**類別**：錯誤模式 / 流程缺陷
+**適用 Agent**：Main Agent（所有開 ai-dev-team session 嘅 main agent）
+**有效期至**：永久（已加入四層守衛 A/B/C/D 至 2026-05-01）
+
+**內容**：
+
+實際 session 觀察到嘅 failure mode：
+
+1. 用戶用 `/start ai-dev-team`（無 `--task` argument），只 load `team.md` + digest
+2. 用戶後續訊息「跟進 X 加個 Y feature」— 含 feature 關鍵字但 main agent 冇識別
+3. Main agent 直接做嘢，**完全跳過 `/feature` workflow**：
+   - 喺 `main` branch 上開始改代碼（冇開 feature/* branch）
+   - 改完冇 invoke code-reviewer subagent
+   - Reviewer LGTM 後冇自動接 QA → DevOps，反而問用戶「要唔要 merge?」
+   - QA pass 後冇自動接 DevOps deploy
+4. Compact 觸發後，workflow 規則完全消失，重啟後 main agent 仍是「直接做嘢」模式
+
+**根本原因**：
+
+| 層級 | 缺失 |
+|---|---|
+| 入口 | `/start` 無 task 時冇關鍵字識別機制 |
+| 行為 | `agent-protocols.md` 無「接到改動任務前 self-check workflow 載入」嘅規則 |
+| 系統 | 冇 PreToolUse hook 攔截「直接 commit 入 main / develop」 |
+| 持續 | Compact instruction 冇要求保留 workflow state |
+
+**修正（已實施 2026-05-01）**：
+
+四層守衛：
+
+- **A（入口）**：`commands/start.md` 加「Task Type Enforcement」+「關鍵字 → Task 對照表」。Main agent 必須喺第一個回應內識別關鍵字、載入對應 command、由 step 1 開始執行。
+- **B（行為）**：`agent-protocols.md` §9 Workflow Self-Check — 接到任何改動訊號前，必須通過 4 項 checklist；任何一項 NO 立即停手。
+- **C（系統）**：`~/.claude/hooks/branch-policy.sh` PreToolUse hook — 阻擋直接 commit 入 main/develop、force push、reset --hard 等操作。繞行需明確 bypass。
+- **D（持續）**：`agent-protocols.md` §10 Compact Protection — compaction 時必須在 summary 頂部保留 `Active Workflow State` block。`~/.claude/CLAUDE.md` 同 `global-rules.digest.md` 都有 pointer。
+
+**適用場景**：
+
+- 任何 main agent 接到代碼修改任務嘅情境
+- Compact 之後重啟 — 必須讀 `Active Workflow State` 再行動
+- 一個 session 內連續做多個 task — 每個 task 邊界都要 reset 同 re-confirm
+
+**禁止行為**：
+
+- 「呢個改動好細，唔開 branch」→ 違規
+- 「用戶 confirm 咗 plan，我直接做」→ 違規（plan ≠ workflow 啟動）
+- 「上一個 task 啱啱完，呢個延續做」→ 違規（每個 task 獨立 self-check）
+- Main agent 自己改代碼回應 reviewer 提出嘅問題 → 違規（必須 invoke developer subagent）
+
+**參考**：
+
+- `commands/start.md` § Task Type Enforcement
+- `skills/agent-protocols.md` §9（Workflow Self-Check）+ §10（Compact Protection）
+- `~/.claude/hooks/branch-policy.sh`
+- `~/.claude/CLAUDE.md` § Compact Protection
+- 觸發此知識嘅 session：UK_Salary_Summary v1.3.0 + P0 bonus % feature flow
+
+---
+
 ## [SK-004] Coverage 數字唔等於 TDD 執行
 
 **日期**：2026-04-18

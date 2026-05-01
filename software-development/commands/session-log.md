@@ -26,17 +26,47 @@
 
 ---
 
-## 儲存位置
+## 儲存位置（強制分流）
+
+> **規範**：一次 session 入面嘅工作必須按性質分入兩類，**唔可以混入同一 log**。
+
+### 分類標準
+
+| 類別 | 內容定義 | 儲存位置 |
+|---|---|---|
+| **Project Log** | 改動目標係**項目代碼/配置**：feature 開發、bug fix、refactor、deploy、項目 spec、項目 audit、項目特有知識 | `[project-root]/.claude/session-logs/YYYY-MM-DD_HH-MM.md` |
+| **Team Log** | 改動目標係 **ai-dev-team 自身基建**：agent 規範、command 流程、skills、hooks、shared-knowledge（跨項目通用部分）、template、workflow guards | `{active-team-folder}/session-logs/YYYY-MM-DD_HH-MM_team.md` |
+
+> `project-root` 係當前 working directory 所屬嘅頂層項目資料夾。
+> `team` 後綴用嚟同同日 project log 區分。
+
+### 分流規則
 
 ```
-項目專屬 log（包括跨子項目工作）：
-[project-root]/.claude/session-logs/YYYY-MM-DD_HH-MM.md
-
-全局 team log（只限冇 project working directory 嘅 session）：
-{active-team-folder}/session-logs/YYYY-MM-DD_HH-MM.md
+□ 一次 session 內混合做兩類工作 → 必須生成兩份 log
+□ Project log 只記項目相關內容（branch、code 改動、PR、deploy 結果）
+□ Team log 只記 team infrastructure 改動（哪個 .md / hook / skill 改咗、為何）
+□ 兩份 log 互相 cross-reference（filename 引用對方）
+□ 純項目工作：只生成 project log
+□ 純 team 工作 / 冇項目 working directory：只生成 team log
 ```
 
-> `project-root` 係當前工作目錄所屬嘅頂層項目資料夾（如 `GoogleAppScript/`），唔係 `~/.claude/`。
+### Cross-Reference 格式
+
+兩份 log 嘅「備注」section 互相指向：
+
+```markdown
+> 本次 session 同時包含 [team / project] 工作，相關改動見：
+> [filename](relative/path)
+```
+
+### 例子
+
+| Session 內容 | 生成檔案 |
+|---|---|
+| UK_Salary_Summary feature 開發 | 只生成 `UK_Salary_Summary/.claude/session-logs/2026-05-01_HH-MM.md` |
+| 修改 agent-protocols.md + 加 hook | 只生成 `{team}/session-logs/2026-05-01_HH-MM_team.md` |
+| UK_Salary_Summary feature + 修改 start.md（兩類混合） | 兩份都要生成，互相 cross-reference |
 
 ## Log 輸出格式
 

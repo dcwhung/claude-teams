@@ -26,11 +26,11 @@ description: Per-agent tool permissions, error modes, and boundaries. Load when 
 
 | Agent | Bash | Git 操作 | DB 操作 | Deploy | Agent tool (invoke subagent) |
 |-------|:----:|:-------:|:------:|:------:|:----------------------------:|
-| Main agent | ✅ | ✅ **全權** | ⚠️ 需確認 | ⚠️ 需確認 | ✅ |
+| Main agent | ✅ | ✅ **routing / merge / rollback 全權** | ⚠️ 需確認 | ⚠️ 需確認 | ✅ |
 | Project Manager | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Architect | ⚠️ 唯讀（`git log`、`grep`） | ❌ | ❌ | ❌ | ❌ |
-| Frontend Developer | ✅ 限 test / build / lint | ❌ | ❌ | ❌ | ❌ |
-| Backend Developer | ✅ 限 test / build / lint / migration dry-run | ❌ | ⚠️ dry-run only | ❌ | ❌ |
+| Frontend Developer | ✅ 限 test / build / lint + task-branch git | ⚠️ **只限 task-branch**（checkout / commit / push / rebase） | ❌ | ❌ | ❌ |
+| Backend Developer | ✅ 限 test / build / lint / migration dry-run + task-branch git | ⚠️ **只限 task-branch**（checkout / commit / push / rebase） | ⚠️ dry-run only | ❌ | ❌ |
 | Code Reviewer | ✅ 限 lint / type / test / coverage（hard gates） | ❌ | ❌ | ❌ | ❌ |
 | Quality Assurance | ✅ 限 test suite / security scan / k6 / EXPLAIN | ❌ | ⚠️ 唯讀 | ❌ | ❌ |
 | DevOps Engineer | ✅ 限 CI/CD pipeline | ❌ | ⚠️ migration 執行 | ✅ | ❌ |
@@ -45,13 +45,19 @@ description: Per-agent tool permissions, error modes, and boundaries. Load when 
 
 ## 關鍵規則
 
-### 1. Git 操作統一由 Main Agent 執行
+### 1. Routing Git 操作統一由 Main Agent 執行
 
-**所有 subagent 禁止執行** `git merge`、`git branch -d`、`git push`、`git reset`、`git checkout`（例外：subagent 可 `git status` / `git diff` / `git log` 只做唯讀觀察）。
+**所有 subagent 禁止執行 routing git**：`git merge`、`git branch -d`、release tag、rollback 相關 `git revert/reset`。
+
+**Developer 例外**：
+- Frontend / Backend Developer 可執行 **task-branch git**：`git checkout <source>`、`git checkout -b ...`、`git commit`、`git push -u origin ...`、`git fetch`、`git rebase origin/<source>`、`git status`、`git diff`
+- 呢啲只限用於建立同維護自己嘅 task branch，唔屬於 handoff routing
+
+**非 Developer subagent**（Reviewer / QA / DevOps / Architect / EM）仍然禁止任何會改 repo 狀態嘅 git；只可做唯讀觀察（如 `git status` / `git diff` / `git log`）。
 
 原因：
 - Git 係 side effect，Harness 原則要求 side effect 集中管理
-- Subagent 如果執行 git 失敗，錯誤處理分散，難以 audit
+- routing git 如果分散喺多個 subagent，錯誤處理會難以 audit
 - Main agent 根據 `handoff-receipt` 統一路由，邏輯集中
 
 ### 2. Deploy 統一由 DevOps Engineer 執行
@@ -82,6 +88,7 @@ Claude Code 架構上 subagent 無法 spawn subagent。任何跨 agent 協作必
 | Migration fail | DevOps 立即執行 down migration，唔部署新代碼 |
 | Subagent 輸出無 receipt | Main agent 視為 fail，唔執行下一步，invoke 同一 agent 要求補交 receipt |
 | Subagent 輸出 receipt 格式錯 | 同上 |
+| Developer task-branch pre-flight 失敗 | 停止當前開發步驟，按 `skills/git-flow.md` pre-flight 規則處理，唔進入 handoff chain |
 
 ---
 

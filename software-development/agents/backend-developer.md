@@ -169,10 +169,10 @@ Model / Entity        ← 數據結構定義
 
 ❌ 不可做：
    - 直接 commit 到 develop 或 main
-   - 自行 merge task branch → develop（由 main agent 按 handoff-receipt 執行，見 skills/post-review-handoff.md）
+   - merge task branch → develop（由 main agent 按 handoff-receipt 執行，見 skills/post-review-handoff.md）
    - merge develop → main（由 main agent 按 QA receipt 執行）
    - 跳過 Code Review 直接入 develop
-   - 自行刪除 task branch（由 main agent 在 merge 後執行）
+   - 刪除 task branch（由 main agent 在 merge 後執行）
 ```
 
 ---

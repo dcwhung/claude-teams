@@ -2,12 +2,12 @@
 
 ## 用途
 
-開新 branch，以 TDD（Red-Green-Refactor）方式開發新功能，完成後觸發 code review。
+開新 branch，以 TDD（Red-Green-Refactor）方式開發新功能，完成後透過 Agent tool invoke code review。
 
 ## 負責 Agent
 
 **Frontend Developer** 及/或 **Backend Developer**（視功能範圍）
-**Code Reviewer**（功能完成後自動執行 `/review`）
+**Code Reviewer**（由 Developer 完成後透過 Agent tool invoke `/review`）
 
 ---
 
@@ -59,7 +59,7 @@
 □ TypeScript 無類型錯誤
 □ Code Review 評分 ≥ 90 分，無 🔴 Critical
 □ Commit history 清晰
-□ 透過 Agent tool 觸發 /review，後續 handoff 由 Reviewer + main agent 自動執行
+□ 透過 Agent tool invoke /review，後續 handoff 由 Reviewer receipt + main agent 執行
 ```
 
 ---
