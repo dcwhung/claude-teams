@@ -55,6 +55,18 @@ description: Coding style entry point — universal rules (function length, magi
 
 > 語言專屬嘅 constants 目錄結構見各語言 sub-skill。
 
+### Statement Terminator（語句結尾）
+
+| 語言 | 規則 |
+|------|------|
+| TypeScript / JavaScript | 🔴 **必須**加 `;`，Prettier `semi: true` 強制執行 |
+| PHP | 🔴 **必須**加 `;`，PSR-12 + PHP 語法要求 |
+| Python | 🔴 **禁止**加 `;`，PEP 8 視為反模式（除非同行多 statement，亦不鼓勵） |
+
+> 詳細規則見各語言 sub-skill。
+
+---
+
 ### Console / Log
 
 ```

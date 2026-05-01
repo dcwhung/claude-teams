@@ -130,6 +130,37 @@ if (isUserData(data)) {
 }
 ```
 
+### Semicolon 規範 🔴 Critical
+
+每句 statement 必須以 `;` 作結，透過 Prettier 強制執行。
+
+```typescript
+// ✅ 正確
+const name = 'Donald';
+import { useEffect } from 'react';
+export default UserCard;
+
+// ❌ 錯誤（缺少 ;）
+const name = 'Donald'
+import { useEffect } from 'react'
+```
+
+Prettier 設定（`.prettierrc`）：
+
+```json
+{
+    "semi": true,
+    "singleQuote": true,
+    "trailingComma": "all",
+    "tabWidth": 4,
+    "printWidth": 100
+}
+```
+
+> `semi: true` 係必填，唔可省略或設為 `false`。
+
+---
+
 ### 嚴格模式
 
 - `tsconfig.json` 必須啟用 `"strict": true`

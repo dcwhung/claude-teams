@@ -95,6 +95,27 @@ if entry_type == "birth":
 
 ---
 
+## Semicolon 規範 🔴 Critical
+
+Python **禁止**使用 `;` 作語句結尾，PEP 8 明確視為反模式。
+
+```python
+# ✅ 正確
+user = user_service.find(user_id)
+return response
+
+# ❌ 錯誤（PEP 8 E703 / E702）
+user = user_service.find(user_id);
+return response;
+
+# ❌ 錯誤：同行多 statement（即使語法合法，亦禁止）
+x = 1; y = 2
+```
+
+> Linter 設定：`flake8` / `ruff` 會報 `E703`（statement ends with semicolon）及 `E702`（multiple statements on one line）。
+
+---
+
 ## Python 規範（PEP 8 + Type Hints）
 
 ### Type Hints（Python 3.9+）

@@ -115,6 +115,25 @@ if ($entryType === 'birth') { ... }
 
 ## PHP 規範（PSR-12）
 
+### Semicolon 規範 🔴 Critical
+
+每句 statement 必須以 `;` 作結，係 PHP 語法強制要求（PSR-12）。
+
+```php
+// ✅ 正確
+$name = 'Donald';
+return $this->userRepository->find($id);
+throw new UserNotFoundException("User {$id} not found");
+
+// ❌ 錯誤（缺少 ;，PHP parse error）
+$name = 'Donald'
+return $this->userRepository->find($id)
+```
+
+> PHP 缺少 `;` 係 parse error，直接導致 fatal error。Code Review 時若出現此問題，視為 🔴 Critical。
+
+---
+
 ### 類型宣告（PHP 8+）
 
 ```php
