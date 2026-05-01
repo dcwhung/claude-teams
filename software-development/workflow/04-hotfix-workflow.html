@@ -97,17 +97,17 @@ flowchart TD
     end
 
     subgraph REVIEW_DEPLOY["⚡ Review + 部署"]
-        FAST_REVIEW["快速 Code Review<br/>執行者：另一位 Developer 或 Code Reviewer<br/>⚠️ 唔可自我 review<br/>聚焦：正確性 + 安全性 + Side effects"]
-        REVIEW_SCORE{"Review ≥ 75 分?<br/>無 🔴 Critical?"}
+        FAST_REVIEW["invoke /review（hotfix mode）<br/>👁️ Code Reviewer<br/>聚焦：正確性 + 安全性 + Side effects"]
+        REVIEW_SCORE{"Reviewer receipt<br/>status=pass ?"}
         REJECT["❌ 不合格<br/>修正後重新 review"]
         COMMIT_HF["Commit：<br/>fix: CUI-0099 | 修復 payment service 503 錯誤"]
-        MERGE_MAIN["merge hotfix → main<br/>（--no-ff）"]
-        DEPLOY_PROD["🔧 DevOps /deploy --env=production<br/>即時部署"]
-        SMOKE["Smoke Test<br/>確認修復"]
+        MERGE_MAIN["main agent：merge hotfix → main<br/>（--no-ff）"]
+        DEPLOY_PROD["main agent invoke DevOps<br/>/deploy --env=production"]
+        SMOKE["main agent invoke QA smoke test"]
     end
 
     subgraph SYNC["🔄 同步 + 收尾"]
-        BACK_MERGE["Back-merge to develop（必須執行）<br/>git checkout develop<br/>git merge --no-ff main<br/>git push origin develop"]
+        BACK_MERGE["QA receipt pass 後<br/>main agent back-merge to develop"]
         CONFLICT{"有 Conflict?"}
         RESOLVE_CONFLICT["手動解決 conflict<br/>優先保留 hotfix 改動<br/>如涉複雜業務邏輯 → 通知 PM + Developer"]
         POST_MORTEM["🧪 QA 建立 Post-mortem 文件<br/>.proj-docs/audits/<br/>YYYY-MM-DD_HH-MM_postmortem_[描述].md"]
@@ -119,7 +119,7 @@ flowchart TD
     BRANCH --> RCA --> RED_TEST --> GREEN_FIX --> MIN_TEST
     MIN_TEST --> FAST_REVIEW
     FAST_REVIEW --> REVIEW_SCORE
-    REVIEW_SCORE -->|"❌"| REJECT --> FAST_REVIEW
+    REVIEW_SCORE -->|"❌ fail"| REJECT --> FAST_REVIEW
     REVIEW_SCORE -->|"✅"| COMMIT_HF
     COMMIT_HF --> MERGE_MAIN --> DEPLOY_PROD --> SMOKE
     SMOKE --> BACK_MERGE

@@ -24,7 +24,7 @@
 <body>
 
 <h1>AI Dev Team</h1>
-<p class="tagline">Workflow Diagrams — 所有 Agent 工作流、Skills 使用、Commands 觸發的可視化流程圖</p>
+<p class="tagline">Workflow Diagrams — 所有 Agent 工作流、Receipt Handoff、Main Agent Routing、Commands 觸發的可視化流程圖</p>
 
 <p class="section-label">所有流程圖</p>
 <hr class="divider">
@@ -34,7 +34,7 @@
   <a href="00-overview.html" class="card" style="--accent: #2563eb">
     <div class="card-icon">🗺️</div>
     <div class="card-title">團隊總覽</div>
-    <div class="card-desc">所有 Agents 結構、Commands 對應 Agent、Skills 使用範圍、Engineering Manager 觸發條件</div>
+    <div class="card-desc">所有 Agents 結構、Harness Architecture、Commands 對應 Agent、Skills 使用範圍、Engineering Manager 觸發條件</div>
     <div class="card-tags">
       <span class="tag">全體 Agents</span>
       <span class="tag">Commands 對應</span>
@@ -46,7 +46,7 @@
   <a href="01-new-project.html" class="card" style="--accent: #0891b2">
     <div class="card-icon">🚀</div>
     <div class="card-title">新項目開發流程</div>
-    <div class="card-desc">從用戶需求到生產部署的完整流程：Spec → Plan → 功能開發 → QA 測試 → 部署。包含 Agent 時序圖及文件輸出路徑。</div>
+    <div class="card-desc">從用戶需求到生產部署的完整流程：Spec → Plan → 功能開發 → Review Receipt → QA Receipt → Deploy Receipt。包含 Agent 時序圖及文件輸出路徑。</div>
     <div class="card-tags">
       <span class="tag">/spec</span>
       <span class="tag">/plan</span>
@@ -59,7 +59,7 @@
   <a href="02-feature-tdd.html" class="card" style="--accent: #059669">
     <div class="card-icon">🔴🟢🔵</div>
     <div class="card-title">功能開發 TDD 流程</div>
-    <div class="card-desc">Red-Green-Refactor 詳細循環、Branch 命名規則、Commit 格式、完成標準 Checklist</div>
+    <div class="card-desc">Red-Green-Refactor 詳細循環、Branch 命名規則、Commit 格式、完成標準 Checklist，以及 main agent handoff chain</div>
     <div class="card-tags">
       <span class="tag">/feature</span>
       <span class="tag">TDD</span>
@@ -83,7 +83,7 @@
   <a href="04-hotfix-workflow.html" class="card" style="--accent: #dc2626">
     <div class="card-icon">🚨</div>
     <div class="card-title">緊急修復 Hotfix</div>
-    <div class="card-desc">生產緊急事故判斷 → 快速修復 → Back-merge to develop → Post-mortem。含 Git Flow 圖及 EM 主導的根源分析。</div>
+    <div class="card-desc">生產緊急事故判斷 → 快速修復 → Reviewer/DevOps/QA receipt chain → Back-merge to develop → Post-mortem。</div>
     <div class="card-tags">
       <span class="tag">/hotfix</span>
       <span class="tag">back-merge</span>
@@ -107,7 +107,7 @@
   <a href="06-review-deploy.html" class="card" style="--accent: #d97706">
     <div class="card-icon">🚢</div>
     <div class="card-title">Review → 部署 Pipeline</div>
-    <div class="card-desc">/review 詳細流程 + 評分系統、Git Flow develop→main、CI/CD Pipeline 步驟、DB Migration 規範、回滾方案</div>
+    <div class="card-desc">/review 詳細流程 + hard gates、handoff-receipt、Protocol 1/2/4 release chain、CI/CD Pipeline、DB Migration 規範、回滾方案</div>
     <div class="card-tags">
       <span class="tag">/review</span>
       <span class="tag">/deploy</span>
@@ -130,6 +130,7 @@
   <br>
   <div style="color:#64748b;margin-bottom:12px"># 開發循環</div>
   <div><span style="color:#6ee7b7">/spec</span> → <span style="color:#6ee7b7">/plan</span> → <span style="color:#6ee7b7">/feature</span> → <span style="color:#6ee7b7">/review</span> → <span style="color:#6ee7b7">/test</span> → <span style="color:#6ee7b7">/deploy</span></div>
+  <div><span style="color:#94a3b8">subagent 出 receipt</span> <span style="color:#475569">→ main agent 解析 receipt + 執行 git + invoke 下一個 agent</span></div>
   <br>
   <div style="color:#64748b;margin-bottom:12px"># 評分門檻</div>
   <div><span style="color:#86efac">≥ 90 分</span> <span style="color:#475569">→ 可以 merge（/feature, /fix, /refactor）</span></div>

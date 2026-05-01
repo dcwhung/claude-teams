@@ -98,10 +98,14 @@ flowchart TD
         COMMIT_RV["Commit（Review Item Fix）<br/>fix: W-003 | 修正 token 過期後返回 500"]
         COMMIT_QA["Commit（QA Ticket Fix）<br/>fix: CUI-0001 | 修正 button 顯示問題"]
         COMMIT_GEN["Commit（一般 Bug Fix）<br/>fix: 修正 dd/MM/yyyy 日期解析錯誤"]
-        REVIEW["/review（切換至 Code Reviewer 角色）"]
-        SCORE{"Review ≥ 90 分?<br/>無 🔴 Critical?"}
+        REVIEW["invoke /review<br/>👁️ Code Reviewer"]
+        SCORE{"Reviewer receipt<br/>status=pass ?"}
         FIX_RV["修正 Review 問題"]
-        MERGE["提示可以 merge to develop"]
+        MERGE["main agent：merge fix → develop"]
+        QA_STAGE["main agent invoke /test（staging）"]
+        QA_PASS{"QA receipt<br/>status=pass ?"}
+        MERGE_MAIN["main agent：merge develop → main"]
+        DEPLOY["main agent invoke /deploy"]
     end
 
     subgraph POST["🔚 收尾"]
@@ -134,10 +138,13 @@ flowchart TD
     COMMIT_GEN --> REVIEW
 
     REVIEW --> SCORE
-    SCORE -->|"❌"| FIX_RV --> REVIEW
+    SCORE -->|"❌ warn / fail"| FIX_RV --> REVIEW
     SCORE -->|"✅"| MERGE
+    MERGE --> QA_STAGE --> QA_PASS
+    QA_PASS -->|"❌ 建立新 QA Ticket"| REVIEW
+    QA_PASS -->|"✅"| MERGE_MAIN --> DEPLOY
 
-    MERGE --> SK_CHK
+    DEPLOY --> SK_CHK
     SK_CHK -->|"是"| SK_YES --> TICKET_UPDATE
     SK_CHK -->|"否"| TICKET_UPDATE
 

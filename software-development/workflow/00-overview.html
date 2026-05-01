@@ -71,20 +71,54 @@ graph TB
     PM <-->|"需求 ↔ 技術可行性"| ARCH
     ARCH -->|"Technical Spec"| FE
     ARCH -->|"Technical Spec"| BE
-    FE -->|"完成開發 → /review"| CR
-    BE -->|"完成開發 → /review"| CR
-    CR -->|"Review 通過 → merge to develop"| QA
-    QA -->|"QA 通過 → /deploy"| DO
+    FE -->|"透過 Agent tool invoke /review"| CR
+    BE -->|"透過 Agent tool invoke /review"| CR
+    CR -->|"輸出 review report + handoff-receipt"| PM
+    PM -->|"main agent: merge develop + invoke QA"| QA
+    QA -->|"輸出 QA report + handoff-receipt"| PM
+    PM -->|"main agent: merge main + invoke DevOps"| DO
+    DO -->|"輸出 deploy receipt"| PM
     QA -->|"發現 Bug → QA Ticket"| FE
     QA -->|"發現 Bug → QA Ticket"| BE
-    CR -->|"Code Review 問題 → Review Item ID"| FE
-    CR -->|"Code Review 問題 → Review Item ID"| BE
+    CR -->|"Review Item ID + blockers"| FE
+    CR -->|"Review Item ID + blockers"| BE
 
     style EM_LAYER fill:#1a1a2e,stroke:#7c3aed,color:#e2e8f0
     style PM_ARCH fill:#0f1a2e,stroke:#1d4ed8,color:#e2e8f0
     style DEV_LAYER fill:#0a1f1a,stroke:#059669,color:#e2e8f0
     style QA_LAYER fill:#1a1a0f,stroke:#d97706,color:#e2e8f0
     style OPS_LAYER fill:#1a0f0f,stroke:#dc2626,color:#e2e8f0
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h2>Harness Architecture</h2>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','fontSize': '14px'}}}%%
+flowchart LR
+    USER["👤 User / Main Thread"]
+    MAIN["🧭 Main Agent Harness<br/>唯一負責：解析 receipt<br/>執行 git / merge / rollback<br/>invoke 下一個 agent"]
+
+    subgraph SUBAGENTS["Subagents（無 git side effects）"]
+        REV["👁️ Code Reviewer<br/>判斷 + report + handoff-receipt"]
+        QAH["🧪 Quality Assurance<br/>判斷 + report + handoff-receipt"]
+        DOP["🔧 DevOps Engineer<br/>判斷 + deploy result + receipt"]
+        DEV["💻 Developer<br/>實作修正 / 功能開發"]
+    end
+
+    USER --> MAIN
+    MAIN --> DEV
+    DEV -->|"完成後 invoke /review"| REV
+    REV --> MAIN
+    MAIN -->|"Protocol 1 / 2 / 3 / 4"| QAH
+    QAH --> MAIN
+    MAIN --> DOP
+    DOP --> MAIN
+
+    style MAIN fill:#1d4ed8,stroke:#2563eb,color:#fff
+    style SUBAGENTS fill:#0f1117,stroke:#334155
     </div>
   </div>
 </div>

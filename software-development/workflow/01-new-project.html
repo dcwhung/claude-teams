@@ -57,20 +57,20 @@ flowchart TD
 
     subgraph PHASE2["💻 Phase 2：開發（循環）"]
         FEATURE["/feature [功能名]<br/>🎨 Frontend + ⚙️ Backend<br/>TDD 開發"]
-        REVIEW["/review<br/>👁️ Code Reviewer<br/>輸出評分報告"]
-        REVIEW_PASS{"Review ≥ 90 分?<br/>無 🔴 Critical?"}
+        REVIEW["invoke /review<br/>👁️ Code Reviewer<br/>輸出報告 + receipt"]
+        REVIEW_PASS{"Reviewer receipt<br/>status=pass ?"}
         FIX_REVIEW["修正 Review 問題<br/>re-submit /review"]
-        MERGE_DEV["merge feature → develop<br/>（--no-ff）"]
-        TEST["/test（staging）<br/>🧪 QA<br/>執行測試計劃<br/>輸出 QA 報告"]
-        QA_PASS{"QA 通過?<br/>無 🔴 Critical?"}
+        MERGE_DEV["main agent：merge feature → develop<br/>（--no-ff）"]
+        TEST["main agent invoke /test（staging）<br/>🧪 QA<br/>輸出 QA 報告 + receipt"]
+        QA_PASS{"QA receipt<br/>status=pass ?"}
         CREATE_TICKET["🧪 QA 建立 QA Ticket<br/>→ pending<br/>Developer 認領 /fix"]
         MORE_FEATURES{"還有<br/>功能點?"}
     end
 
     subgraph PHASE3["🚀 Phase 3：部署"]
-        CR_MERGE["👁️ Code Reviewer<br/>merge develop → main"]
-        DEPLOY["/deploy --env=production<br/>🔧 DevOps<br/>CI/CD Pipeline"]
-        DEPLOY_OK{"部署成功?"}
+        CR_MERGE["main agent：merge develop → main"]
+        DEPLOY["main agent invoke /deploy --env=production<br/>🔧 DevOps"]
+        DEPLOY_OK{"DevOps receipt<br/>status=pass ?"}
         ROLLBACK["執行回滾方案"]
         SMOKE["Smoke Test<br/>監察部署後指標"]
         SESSION_LOG["/session-log<br/>👥 全體<br/>記錄 session"]
@@ -87,7 +87,7 @@ flowchart TD
     SPRINT --> FEATURE
     FEATURE --> REVIEW
     REVIEW --> REVIEW_PASS
-    REVIEW_PASS -->|"❌ 不合格"| FIX_REVIEW
+    REVIEW_PASS -->|"❌ warn / fail"| FIX_REVIEW
     FIX_REVIEW --> REVIEW
     REVIEW_PASS -->|"✅ 合格"| MERGE_DEV
     MERGE_DEV --> TEST
@@ -150,19 +150,18 @@ sequenceDiagram
 
     loop 每個功能點
         Dev->>Dev: TDD 開發（Red-Green-Refactor）
-        Dev->>CR: 完成開發 → /review
-        CR->>Dev: Review 報告（含評分）
-        Dev->>Dev: 修正問題（如有）
-        CR->>CR: merge develop
-        CR->>QA: 通知測試
-        QA->>QA: /test（staging）
-        QA->>PM: QA 報告
+        Dev->>CR: invoke /review
+        CR->>PM: Review report + handoff-receipt
+        PM->>Dev: 若 warn/fail，invoke developer 修正
+        PM->>PM: 若 pass，merge develop
+        PM->>QA: invoke /test（staging）
+        QA->>PM: QA report + handoff-receipt
     end
 
-    CR->>CR: merge develop → main
-    DO->>DO: /deploy --env=production
-    DO->>QA: 通知 Smoke Test
-    QA->>User: 確認功能正常
+    PM->>PM: merge develop → main
+    PM->>DO: invoke /deploy --env=production
+    DO->>PM: deploy receipt
+    PM->>User: 匯報最終結果
     </div>
   </div>
 </div>

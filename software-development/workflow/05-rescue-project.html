@@ -70,15 +70,15 @@ flowchart TD
         PLAN_REPAIR["/plan<br/>制定修復計劃<br/>任務分解 + 優先順序"]
         SPRINT_REPAIR["/plan --sprint<br/>Sprint Planning"]
         FIX_LOOP["循環：/fix 各問題<br/>按 Review Item ID 或 QA Ticket"]
-        TEST_REPAIR["/test（staging）<br/>🧪 QA 驗證修復"]
-        DEPLOY_REPAIR["/deploy<br/>🔧 DevOps 部署"]
+        TEST_REPAIR["main agent invoke /test（staging）<br/>🧪 QA receipt 驗證修復"]
+        DEPLOY_REPAIR["main agent invoke /deploy<br/>🔧 DevOps receipt 部署"]
     end
 
     subgraph REBUILD["🏗️方案 B：重建"]
         NEW_SPEC["/spec<br/>📊 PM → Functional Spec<br/>🏛️ Architect → Technical Spec<br/>（基於舊系統洞察）"]
         NEW_PLAN["/plan<br/>重建計劃"]
-        NEW_FEATURES["循環：/feature 逐功能重建<br/>TDD 開發"]
-        NEW_TEST["/test + /deploy<br/>完整驗證 + 部署"]
+        NEW_FEATURES["循環：/feature 逐功能重建<br/>TDD 開發 + review receipt chain"]
+        NEW_TEST["/test + /deploy<br/>由 main agent 串起完整驗證 + 部署"]
     end
 
     subgraph SESSION["📝 Session 記錄"]

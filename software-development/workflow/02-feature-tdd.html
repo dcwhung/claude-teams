@@ -40,7 +40,7 @@
 <div class="section">
   <h2>/feature 完整執行流程</h2>
   <div class="info-box">
-    每個功能點都必須完整執行 TDD 循環。禁止跳步。完成所有功能點後，觸發 Code Review，Review 通過才可 merge to develop。
+    每個功能點都必須完整執行 TDD 循環。禁止跳步。完成所有功能點後，透過 Agent tool invoke `/review`，之後由 main agent 按 receipt 執行 merge / QA / deploy chain。
   </div>
   <div class="diagram-card">
     <div class="mermaid">
@@ -65,13 +65,16 @@ flowchart TD
     subgraph COMPLETE_PHASE["✅ 完成階段"]
         FULL_TEST["執行完整測試套件<br/>覆蓋率 ≥ 80%（核心邏輯）"]
         COMMIT["Commit<br/>feat: CUI-0015 | 新增用戶頭像上傳功能<br/>feat: CUI-0020 | 實現 JWT refresh token"]
-        REVIEW["/review<br/>👁️ 切換至 Code Reviewer 角色"]
-        REVIEW_SCORE{"Review 評分<br/>≥ 90 分?<br/>無 🔴 Critical?"}
+        REVIEW["invoke /review<br/>👁️ Code Reviewer"]
+        REVIEW_SCORE{"Reviewer receipt<br/>status=pass ?"}
         FIX_ISSUES["修正 Review 問題<br/>各 fix commit 帶 Review Item ID<br/>fix: W-007 | 提取常數至 module-level"]
-        MERGE["merge feature → develop<br/>（--no-ff）<br/>👁️ Code Reviewer 執行"]
-        TEST_STAGING["/test（staging）<br/>🧪 QA Agent 主導"]
-        QA_PASS{"QA 通過?"}
+        MERGE["main agent：merge feature → develop<br/>（--no-ff）"]
+        TEST_STAGING["main agent invoke /test（staging）<br/>🧪 QA Agent 主導"]
+        QA_PASS{"QA receipt<br/>status=pass ?"}
         QA_TICKET["🧪 建立 QA Ticket<br/>/fix [CUI-XXXX]"]
+        MERGE_MAIN["main agent：merge develop → main"]
+        DEPLOY["main agent invoke /deploy<br/>🔧 DevOps"]
+        DEPLOY_PASS{"DevOps receipt<br/>status=pass ?"}
         SK_UPDATE["記錄 Common Knowledge<br/>入 shared-knowledge.md"]
     end
 
@@ -83,7 +86,7 @@ flowchart TD
     MORE_POINTS -->|"否"| FULL_TEST
     FULL_TEST --> COMMIT --> REVIEW
     REVIEW --> REVIEW_SCORE
-    REVIEW_SCORE -->|"❌ 不合格"| FIX_ISSUES
+    REVIEW_SCORE -->|"❌ warn / fail"| FIX_ISSUES
     FIX_ISSUES --> REVIEW
     REVIEW_SCORE -->|"✅ 合格"| MERGE
     MERGE --> TEST_STAGING
@@ -91,7 +94,9 @@ flowchart TD
     QA_PASS -->|"❌ 發現問題"| QA_TICKET
     QA_TICKET --> FIX_BRANCH["開 /fix branch<br/>修復 bug"]
     FIX_BRANCH --> REVIEW
-    QA_PASS -->|"✅ 通過"| SK_UPDATE
+    QA_PASS -->|"✅ 通過"| MERGE_MAIN --> DEPLOY --> DEPLOY_PASS
+    DEPLOY_PASS -->|"❌ rollback"| FIX_BRANCH
+    DEPLOY_PASS -->|"✅ end"| SK_UPDATE
 
     style PREP_PHASE fill:#0f1a2e,stroke:#1d4ed8,color:#e2e8f0
     style TDD_LOOP fill:#0a1a0f,stroke:#16a34a,color:#e2e8f0
@@ -208,12 +213,13 @@ graph TD
         C2["□ 核心邏輯測試覆蓋率 ≥ 80%"]
         C3["□ ESLint / Prettier 無錯誤"]
         C4["□ TypeScript 無類型錯誤"]
-        C5["□ Code Review 評分 ≥ 90 分"]
-        C6["□ 無 🔴 Critical 問題"]
-        C7["□ Commit history 清晰"]
+        C5["□ Review receipt = status=pass"]
+        C6["□ QA receipt = status=pass"]
+        C7["□ DevOps receipt = status=pass / end"]
+        C8["□ Commit history 清晰"]
     end
 
-    C1 --> C2 --> C3 --> C4 --> C5 --> C6 --> C7 --> DONE["✅ 可以 merge to develop"]
+    C1 --> C2 --> C3 --> C4 --> C5 --> C6 --> C7 --> C8 --> DONE["✅ 完成 end-to-end release chain"]
 
     style DONE fill:#052e16,stroke:#16a34a,color:#86efac
     </div>
