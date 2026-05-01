@@ -140,6 +140,82 @@ Receipt 格式、`next_action` 允許值及完整 status 映射表 → **`skills
 
 ---
 
+## Batch Review 模式（多 fix 一次審）
+
+> 觸發：當 main agent 透過 `skills/parallel-dispatch.md` flow dispatch 完，將多個 merged commit 一次過送嚟 review。
+> Cap：**1 batch 最多 5 個 fix**（超過 main agent 自動 split 兩 batch，唔關 reviewer 事）。
+
+### 行為差異 vs 單 fix review
+
+| 項目 | 單 fix | Batch（≤ 5 fix） |
+|------|--------|------------------|
+| Review 範圍 | 1 commit / branch | N 個 merged commit（已喺 develop） |
+| Hard gates | 跑一次 | 跑一次（涵蓋全部）|
+| 報告結構 | 單 section | **每 fix 一 Section**（A / B / C…）+ 整體 verdict |
+| 評分 | 1 個總分 | 每 fix 獨立評分 + 1 個整體 status |
+| Review Item ID | 起點：當前最高 +1 | 跨 fix 共用同一 ID 池，順序遞增 |
+| Handoff receipt | 1 個 | **1 個 batch receipt**（涵蓋整體 status）|
+
+### Batch Receipt 規則（status 決定）
+
+```
+全部 fix pass + hard_gates pass        → status=pass
+任何一個 fix warn（其他 pass）         → status=warn
+                                         → context 必須列明邊個 fix warn
+                                         → main agent invoke developer subagent 修出問題嗰個 fix
+任何一個 fix fail / 任何 hard_gate fail → status=fail
+                                         → main agent invoke developer subagent 修出問題嗰個 fix
+                                         → 其他 pass 嘅 fix 仍可 proceed（main agent 自行決定）
+```
+
+### Batch Report 格式
+
+```markdown
+# Batch Review — <date> — <batch-name>
+
+## 整體 verdict
+- 涵蓋 commit：<list>
+- Hard gates：<table>
+- 整體 score：<X>/100（可選 — 個別 score 為主）
+- Status：✅ pass / ⚠️ warn / ❌ fail
+
+## Section A — <Fix 1 ticket>
+- Commit：<hash>
+- 改動清單
+- 發現（C / W / S）
+- 評分
+- 推薦
+
+## Section B — <Fix 2 ticket>
+... 同上
+
+## ✅ 做得好嘅地方（跨 fix 通用）
+
+## 整體建議
+
+## Handoff receipt（單一 block）
+```
+
+### 命名
+
+報告路徑：`.proj-docs/reviews/YYYY-MM-DD_review_<scope>_batch.md`
+（例：`2026-05-01_review_UKSS-0001_and_0003_batch.md`）
+
+### 禁止行為
+
+```
+⛔ 一 batch 超過 5 個 fix（main agent 應 split，reviewer 收到應拒絕並提示 split）
+⛔ 出多個 receipt（必須一個 batch receipt）
+⛔ 用 score 平均掩蓋個別 fail（status=pass 必須每 fix 真係 pass）
+⛔ 跳過某個 fix 唔 review（每 fix 必須有 Section）
+```
+
+### Cross-link
+
+完整 dispatch flow → `skills/parallel-dispatch.md` Step 6（Batch Review）
+
+---
+
 ## 修正規範（Fix Convention）
 
 Review 報告輸出後，developer 執行修正時必須遵守：

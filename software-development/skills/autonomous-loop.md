@@ -52,6 +52,10 @@ description: Self-healing fix loop + parallel subagent dispatch + edge case enum
 
 ## 模式二：Parallel Agents（平行 Agent）
 
+> ⚠️ **本節係低層機制描述**（同 response 多 Agent call）。
+> 對 multi-fix / multi-feature 嘅**決策層**（要唔要 parallel、conflict matrix、lane clustering、batch review/QA/release）→ 見 `skills/parallel-dispatch.md`（Single Source of Truth）。
+> Main agent 收到 N ≥ 2 個 task 時應**先載 parallel-dispatch.md**，再決定要唔要用本節嘅機制。
+
 ### 適用場景
 - 跨模組重構（3+ 個獨立模組需要同步修改）
 - 大型功能（前後端可以平行開發）

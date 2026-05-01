@@ -162,6 +162,105 @@ QA 完成後必須：
 
 ---
 
+## Batch QA 模式（多 fix 一次驗）
+
+> 觸發：當 main agent 透過 `skills/parallel-dispatch.md` flow 完成 batch review pass 後，將多個已 merge 入 develop 嘅 fix 一次過送嚟 QA。
+> Cap：**1 batch 最多 5 個 fix**（同 reviewer batch 一致；超過由 main agent 自動 split）。
+
+### 行為差異 vs 單 fix QA
+
+| 項目 | 單 fix | Batch（≤ 5 fix）|
+|------|--------|-----------------|
+| QA 範圍 | 單一改動 | N 個已 merge 嘅 fix（develop 整體狀態）|
+| Hard gates | 跑一次 | 跑一次（涵蓋全部 — npm test 一次）|
+| 主動測試（補 ≥ 3 edge case）| 強制 | 強制，但**逐 fix** 評估，唔需要每 fix 都補 3 個 |
+| 報告結構 | 單 section | **每 fix 一 Section** + 整體 verdict |
+| Edge case gap 評估 | 1 段 | **逐 fix 1 段** + 整體 cross-fix 互動評估 |
+| Regression test | 1 次 | 1 次涵蓋（整個 develop） |
+| Ticket 建立（如 fail）| 失敗 fix 開 ticket | 失敗 fix **獨立** 開 ticket，唔影響其他 fix |
+| Handoff receipt | 1 個 protocol 2 | **1 個 batch receipt** |
+
+### 主動測試 — Batch 適配
+
+對 batch 入面每個 fix：
+
+```
+□ 識別該 fix 嘅 potential blind spot（同單 fix 一樣嘅檢查清單）
+□ 評估「補 ≥ 3 個 edge case」嘅性價比：
+  - 高風險（business logic / 計算 / state machine）→ 強制補
+  - 低風險（pure visual styling / formatter / inline comment）→ 喺報告解釋並標 ✅ no edge case gap，**唔當 P1 violation**（同單 fix 一致規則）
+□ 補新 test 唔可由 QA 直接 commit（QA 不可 git operations）
+  - 改用：列入 batch QA 報告嘅「建議補測」section
+  - 由 main agent invoke developer subagent 跟進
+```
+
+### 跨 fix 互動評估（batch 獨有）
+
+```
+□ 兩 fix 改咗同一 file 嘅唔同 function — 確認 import / global 順序仍正確
+□ 兩 fix 引入新 helper / 新 constant — 確認無 symbol collision
+□ Batch 整體會否觸發 GAS-001/002/003 知識條目嘅其中一個（每個 fix 單獨睇可能漏，合起睇可能撞）
+□ Batch 整體 file 改動數量 / 行數，確認 hard gate 嘅 coverage threshold 仍達標
+```
+
+### Batch Receipt 規則（Protocol 2）
+
+```
+全部 fix pass + hard_gates 全 pass + 無 🔴 Critical → status=pass, next_action=merge_main
+任何一個 fix fail / 任何 hard_gate fail / 🔴 Critical → status=fail, next_action=invoke_developer
+                                                       → context 必須列明邊個 fix fail
+                                                       → main agent invoke developer 修出問題嗰個
+                                                       → 其他 pass 嘅 fix 仍可保留喺 develop（main agent 自行決定 release 範圍）
+```
+
+### Batch Report 格式
+
+```markdown
+# Batch QA — <date> — <batch-name>
+
+## 整體 verdict
+- 涵蓋 fix：<list with ticket + commit>
+- Hard gates：<table>
+- Edge case gap：<integer count，逐 fix 統計>
+- Regression：<pass/fail>
+- Status：✅ pass / ❌ fail
+
+## Section A — <Fix 1 ticket>
+- Verdict
+- Edge case 評估
+- 補測建議（如有）
+
+## Section B — <Fix 2 ticket>
+... 同上
+
+## 跨 fix 互動評估
+
+## Regression 結論
+
+## Handoff receipt（單一 block）
+```
+
+### 命名
+
+報告路徑：`.proj-docs/qa-reports/YYYY-MM-DD_qa_<scope>_batch.md`
+（例：`2026-05-01_qa_UKSS-0001_and_0003_batch.md`）
+
+### 禁止行為
+
+```
+⛔ 一 batch 超過 5 個 fix（要求 main agent split）
+⛔ 出多個 receipt（必須一個 batch receipt）
+⛔ 用 batch 嘅整體 pass 掩蓋個別 fix fail（每 fix Section 必須真實）
+⛔ Cross-fix 互動評估略過（batch 模式必須做）
+⛔ QA 自己 commit 補測（必須由 developer subagent 做）
+```
+
+### Cross-link
+
+完整 dispatch flow → `skills/parallel-dispatch.md` Step 7（Batch QA）
+
+---
+
 ## 阻止部署條件
 
 以下情況 QA 必須阻止進入部署流程：

@@ -94,7 +94,8 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 | Tool × Agent 權限矩陣、Git/Deploy 歸屬 | `skills/tool-inventory.md` |
 | Git flow（branch、commit、pre-flight、merge 規則） | `skills/git-flow.md` |
 | TDD Red-Green-Refactor 循環 | `skills/tdd.md` |
-| Autonomous Loop + Parallel Agents + Edge Case 枚舉 | `skills/autonomous-loop.md` |
+| Autonomous Loop + Parallel Agents（低層機制）+ Edge Case 枚舉 | `skills/autonomous-loop.md` |
+| Multi-task Parallel Dispatch（決策層：conflict matrix、lane clustering、batch review/QA/release） | `skills/parallel-dispatch.md` |
 | CI/CD pipeline 階段、環境變數、回滾 | `skills/ci-cd.md` |
 | Review Item ID（C/W/S-NNN）vs QA Ticket（CUI-XXXX） | `skills/ticket-management.md` |
 | Review hard gates、評分維度、門檻 | `agents/code-reviewer.md` |
