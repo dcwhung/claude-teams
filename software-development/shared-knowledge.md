@@ -80,6 +80,55 @@
 
 ---
 
+## [SK-007] PreToolUse Hook `permissionDecision: ask` 無效——唯一可靠 block 係 `exit 2`
+
+**日期**：2026-05-02 01:00
+**來源 Agent**：Main Agent（project-boundary.sh 修復 session，2026-05-02 00:52）
+**類別**：技術規律 / Claude Code 架構行為
+**適用 Agent**：全部
+**有效期至**：永久（Claude Code 架構行為，除非官方加入 permissionDecision 支持）
+
+**核心發現**：
+
+PreToolUse hook 透過 stdout 輸出 `{"hookSpecificOutput":{"permissionDecision":"ask",...}}` + exit 0，**Claude Code 不響應呢個 JSON 字段，直接放行操作**。
+
+呢個行為係 Claude Code 架構層面嘅限制，唔係 hook 腳本邏輯錯誤。
+
+**可靠的 block 方式**：
+
+```bash
+# ✅ 唯一可靠：exit 2 硬 block
+echo "BLOCKED: [reason]" >&2
+exit 2
+
+# ❌ 無效：permissionDecision: ask（+ exit 0）
+echo '{"hookSpecificOutput":{"permissionDecision":"ask","message":"..."}}'
+exit 0
+```
+
+**含義**：
+
+Hook 系統唔支持「軟性詢問用戶」模式。設計 hook 時只有兩種選擇：
+1. **放行**：exit 0
+2. **硬 block**：exit 2（Claude Code 停止操作，顯示 stderr 訊息）
+
+**已實施**：
+
+`project-boundary.sh` 已由 `permissionDecision: ask` + exit 0 改為 exit 2 硬 block（2026-05-02 00:47），並加入 `CLAUDE_HOOK_BYPASS_BRANCH_POLICY=1` bypass 選項。
+
+**適用場景**：
+
+- 設計任何 PreToolUse hook 時，唔好嘗試用 `permissionDecision` 做「軟性」攔截
+- 如需阻止操作，直接用 exit 2；如唔需阻止，用 exit 0
+- 需要「詢問用戶」效果時，喺 hook 錯誤訊息內提示用戶手動設置 bypass 變數
+
+**參考**：
+
+- `~/.claude/hooks/project-boundary.sh`（已實施 exit 2 block）
+- Session log：`2026-05-02_00-52_team.md` §備注（SK-007 建議）
+
+---
+
 ## [SK-006] `~/.claude/` 寫入嘅「editing its own settings」hardcoded guard
 
 **日期**：2026-05-01 23:55
