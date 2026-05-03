@@ -25,6 +25,20 @@ description: TypeScript / React naming, types, hooks, folder structure, i18n, st
 | 事件處理函數 | `handle` 開頭 | `handleSubmit()`, `handleInputChange()` |
 | 布林值 | `is` / `has` / `can` 開頭 | `isLoading`, `hasError`, `canEdit` |
 
+### 變數命名：禁止使用縮寫 / 單字母名 🟡 Warning
+
+業務邏輯中禁止使用難以理解嘅縮寫或單字母變數名。
+
+```
+❌ ds, isT, evs, hasEv, typeCls, evCls, m, e, d（當呢啲代表業務物件時）
+✅ dateStr, isToday, milestones, hasMilestone, typeClass, eventClass, month, milestone, date
+
+例外：標準迴圈計數器（i, j, k）和廣泛接受嘅縮寫（id, url, api）可以使用。
+DOM event 參數（ev, e）喺事件處理函數中可以使用（例如 ev.stopPropagation()）。
+```
+
+違反視為 🟡 Warning，review 時須提出，merge 前建議修正。
+
 ---
 
 ## React Folder Structure（基礎）
@@ -77,6 +91,46 @@ src/
 | Feature 專屬 interfaces/constants | `features/{feature_name}/interfaces/`、`features/{feature_name}/constants/` |
 | 全域 Context | `context/` |
 | Feature Context | `features/{feature_name}/context/` |
+
+### Component 目錄結構規範（🔴 必須遵守）
+
+每個 component 必須放入 **按功能分類的子資料夾**，並且 CSS + interfaces 必須與 component **同目錄 co-locate**：
+
+```
+components/
+  {feature-group}/                    # kebab-case 功能分組（calendar, moments, milestone…）
+    {component-name}/                 # kebab-case 組件資料夾
+      ComponentName.tsx               # PascalCase component 檔
+      ComponentName.css               # 同名 CSS 檔（唔放 src/styles/）
+      ComponentName.interfaces.ts     # 同名 interfaces 檔
+```
+
+**Life-Moments-Suite 實例：**
+
+```
+components/
+  calendar/
+    calendar-view/    CalendarView.tsx + .css + .interfaces.ts
+    calendar-grid/    CalendarGrid.tsx + .css + .interfaces.ts
+    tool-bar/         ToolBar.tsx + .css + .interfaces.ts
+  moments/
+    moments-card/     MomentsCard.tsx + .css + .interfaces.ts
+    new-moment-card/  NewMomentCard.tsx + .css + .interfaces.ts
+  milestone/
+    milestone-timeline/  MilestoneTimeline.tsx + .css + .interfaces.ts
+  banner/
+    error-banner/     ErrorBanner.tsx + .css + .interfaces.ts
+  layout/
+    top-bar/          TopBar.tsx + .css + .interfaces.ts
+  misc/
+    Icon.tsx          （無 CSS / interfaces 嘅純工具組件可放 misc/）
+```
+
+**規則：**
+- CSS 檔必須放在組件同一資料夾，**禁止**放 `src/styles/` 共用目錄
+- interfaces 檔必須放在組件同一資料夾，命名 `ComponentName.interfaces.ts`
+- CSS import 用相對路徑 `'./ComponentName.css'`（唔用 `'../../styles/...'`）
+- 跨 feature 引用組件用相對路徑（例如 `'../../misc/Icon'`、`'../calendar-grid/CalendarGrid'`）
 
 ### Constants 命名與分層規範
 
