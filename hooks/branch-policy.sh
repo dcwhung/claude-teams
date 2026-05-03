@@ -142,6 +142,11 @@ case "$TOOL_NAME" in
       fi
     }
 
+    # Gitignored 檔案唔係 git-tracked → 放行（符合 hook 設計意圖：只 block tracked file）
+    if git -C "$GIT_ROOT" check-ignore -q "$ABS_FILE" 2>/dev/null; then
+      exit 0
+    fi
+
     # 只有當 target file 喺當前 protected git repo 內至 block
     # （file 喺其他 repo / 非 git 目錄 → 唔關呢個 repo 事，由 project-boundary.sh 處理）
     if [[ -n "$GIT_ROOT" && ( "$ABS_FILE" == "$GIT_ROOT/"* || "$ABS_FILE" == "$GIT_ROOT" ) ]]; then
