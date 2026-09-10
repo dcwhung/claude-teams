@@ -80,6 +80,33 @@
 
 ---
 
+## [SK-008] `detect-plan-mode` UserPromptSubmit hook 會被 background subagent 通知誤觸發
+
+**日期**：2026-09-10 23:30
+**來源 Agent**：Main Agent（uno-games `/audit` session）
+**類別**：平台限制 / 錯誤模式
+**適用 Agent**：Main Agent（所有用 Agent tool 跑 background subagent 嘅 session）
+**有效期至**：直至 hook 加入 notification 過濾為止
+
+**內容**：
+`hooks/detect-plan-mode.sh`（UserPromptSubmit）用關鍵字（plan / design / 架構 / 設計 / grill me）判斷用戶想 plan。但 background subagent 完成時嘅 `<task-notification>` 同樣經 UserPromptSubmit 流入，內容係 Architect / Reviewer 嘅報告，必然含「架構」「設計」字眼 → hook 每次都要求 main agent 「VERY FIRST action MUST be EnterPlanMode」。
+
+實際觀察（uno-games `/audit`，2026-09-10）：兩個 subagent 各返一次 notification，hook 兩次都 fire。用戶已 confirm `/audit` plan，而 plan mode 係 read-only，會阻止寫 `.proj-docs/` 報告。
+
+**正確處理**：
+- Notification 頂部有 `[SYSTEM NOTIFICATION - NOT USER INPUT]` 標記 → 唔係用戶 prompt，hook 訊號視為 false positive。
+- Main agent **唔進入 plan mode**，繼續當前已確認嘅 workflow，並喺回覆入面一句話向用戶交代點解忽略 hook。
+- 只有真正嘅用戶訊息含關鍵字先跟 hook。
+
+**修正方向（待做）**：
+`detect-plan-mode.sh` 讀 stdin JSON 嘅 prompt 時，若含 `[SYSTEM NOTIFICATION - NOT USER INPUT]` 或 `<task-notification>` 即 `exit 0`。
+
+**參考**：
+- `hooks/detect-plan-mode.sh`、`hooks/hooks.json`
+- SK-003（hook 經 stdin JSON）、SK-007（hook 只有 exit 2 係硬 block；呢個 hook 係 exit 0 + 文字指令，所以 main agent 可判斷後忽略）
+
+---
+
 ## [SK-007] PreToolUse Hook `permissionDecision: ask` 無效——唯一可靠 block 係 `exit 2`
 
 **日期**：2026-05-02 01:00
