@@ -82,7 +82,7 @@
 
 ## [SK-009] Cloud session 裝 plugin 要求 marketplace repo 公開可達——private repo 一律靜默失敗
 
-**日期**：2026-09-10 23:55
+**日期**：2026-09-10 23:28
 **來源 Agent**：Main Agent（claude-teams `/fix` session）
 **類別**：平台限制
 **適用 Agent**：全部（尤其 DevOps / 任何維護 plugin marketplace 嘅 agent）
@@ -112,7 +112,7 @@ Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/setting
 
 ## [SK-008] `detect-plan-mode` UserPromptSubmit hook 會被 background subagent 通知誤觸發
 
-**日期**：2026-09-10 23:30
+**日期**：2026-09-10 23:28（原 uno-games session 發現，carry-over 時補記）
 **來源 Agent**：Main Agent（uno-games `/audit` session）
 **類別**：平台限制 / 錯誤模式
 **適用 Agent**：Main Agent（所有用 Agent tool 跑 background subagent 嘅 session）
