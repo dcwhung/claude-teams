@@ -25,7 +25,7 @@ cat <<HDR
 - Full global rules:      ${ROOT}/rules/global-rules.md
 - Shared knowledge (SK-*): ${ROOT}/shared-knowledge.md
 - Start a scoped session:  /ai-dev-team:start [--task=feature|fix|review|...]
-Agents are native subagents (ai-dev-team:code-reviewer etc.). Skills load via the Skill tool (sw-tdd, sw-git-flow, ...).
+Agents are native subagents (ai-dev-team:code-reviewer etc.). Skills load via the Skill tool, namespaced as ai-dev-team:sw-tdd, ai-dev-team:sw-git-flow, ... (bare sw-* names may not resolve).
 
 HDR
 cat "${ROOT}/rules/hard-rules.md"

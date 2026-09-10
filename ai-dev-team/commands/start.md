@@ -45,7 +45,7 @@ Activate the ai-dev-team with optional task scope to minimise token usage. Works
 
 2. Team folder = `${CLAUDE_PLUGIN_ROOT}` (this plugin's root; the SessionStart hook prints the absolute path as "Team loaded from:"). No `.active-team` file is used — the plugin is the team.
 
-3. Skill files are native plugin skills: prefer the **Skill tool** (`sw-tdd`, `sw-git-flow`, ...) over `Read`. The table above lists them by short name (`tdd.md` = skill `sw-tdd`, `coding-style.md` = `sw-coding-style`, etc.). Agents are native subagents (`ai-dev-team:frontend-developer` etc.) — invoke them with the Agent tool instead of reading their `.md` into context.
+3. Skill files are native plugin skills: prefer the **Skill tool** (namespaced: `ai-dev-team:sw-tdd`, `ai-dev-team:sw-git-flow`, ...) over `Read`. The table above lists them by short name (`tdd.md` = skill `sw-tdd`, `coding-style.md` = `sw-coding-style`, etc.). Agents are native subagents (`ai-dev-team:frontend-developer` etc.) — invoke them with the Agent tool instead of reading their `.md` into context.
 
 4. Load files based on task scope:
    - **Always load**: project `CLAUDE.md` (if exists in cwd), `${CLAUDE_PLUGIN_ROOT}/rules/global-rules.digest.md`（SessionStart hook 已注入，唔使再 Read）
