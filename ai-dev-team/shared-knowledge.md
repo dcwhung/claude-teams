@@ -23,7 +23,7 @@
 
 **日期**：YYYY-MM-DD HH:MM
 **來源 Agent**：[agent 名稱]
-**類別**：技術規律 / 錯誤模式 / 業務規則 / 環境注意 / 其他
+**類別**：技術規律 / 錯誤模式 / 業務規則 / 環境注意 / 平台限制 / 其他
 **適用 Agent**：全部 / [指定 agent]
 **有效期至**：YYYY-MM-DD / 永久（技術升級或問題解決後請更新）
 
@@ -77,6 +77,69 @@
 
 > 此區域存放跨 agent、跨 session 嘅共享知識。
 > 項目特有嘅技術規律應記錄於對應項目嘅 `CLAUDE.md` 或項目級 shared-knowledge，唔應存入此檔案。
+
+---
+
+## [SK-009] Cloud session 裝 plugin 要求 marketplace repo 公開可達——private repo 一律靜默失敗
+
+**日期**：2026-09-10 23:28
+**來源 Agent**：Main Agent（claude-teams `/fix` session）
+**類別**：平台限制
+**適用 Agent**：全部（尤其 DevOps / 任何維護 plugin marketplace 嘅 agent）
+**有效期至**：永久（proxy repo-scope 行為官方明載；靜默失敗症狀為 2026-09-10 實測）
+
+**內容**：
+Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 喺 session start 自動裝 plugin，**但 clone marketplace 用嘅係 session-scoped GitHub proxy**：
+- **（官方文檔明載）** Proxy 只可到達 **attach 喺該 session 嘅 repo**，其他 repo 嘅 GitHub API / release-asset 請求一律 403。
+- **（實測，文檔未載）** 即使 Claude GitHub App 已設 "All repositories"，未 attach 嘅 marketplace repo 仍然失敗。
+- 文檔容許喺 cloud environment 設 `GH_TOKEN` / `GITHUB_TOKEN`（原樣傳入 container），但能否令 marketplace clone 越過 proxy repo-scope **未驗證**；未驗證前以 public 為準。
+- **（實測，文檔未載）** 失敗係**靜默**嘅：唯一症狀係 `Unknown command: /ai-dev-team:start`；cloud 冇 `/plugin` command，睇唔到 Errors tab，只可展開「Initialized session」訊息。
+
+實際觀察（2026-09-10，實測項目：Run365Days，PR #10）：`dcwhung/claude-teams` 建立時係 private → cloud 全部 project 都用唔到 plugin；本機因用自己嘅 git credential 完全正常，所以本機測試**唔會**暴露呢個問題。
+
+**適用場景**：
+維護 plugin marketplace repo、為項目設定 cloud session `extraKnownMarketplaces` 時。
+
+**正確處理**：
+- Marketplace repo 必須 **public**（2026-09-10 已將 `dcwhung/claude-teams` 轉 public，匿名 fetch `marketplace.json` HTTP 200）。
+- 保持 private 嘅文檔路徑係 Organization settings > Plugins（org sync 經 Claude GitHub App 讀 marketplace；App 認證唔到嘅 source 先要 public）；個人 Pro/Max 帳戶層 synced plugins 對 private repo 嘅行為文檔未講，視為未驗證。
+- 驗證 cloud 可達性：`curl -sI https://raw.githubusercontent.com/<owner>/<repo>/main/.claude-plugin/marketplace.json` 必須回 200。
+- 新開 marketplace repo 時 `gh repo create` 預設 private，記得加 `--public`。
+
+**參考**：
+- https://code.claude.com/docs/en/cloud-environments#github-proxy
+- https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup
+- https://code.claude.com/docs/en/plugin-marketplaces#private-repositories
+
+---
+
+## [SK-008] `detect-plan-mode` UserPromptSubmit hook 會被 background subagent 通知誤觸發
+
+**日期**：2026-09-10 23:28（原 uno-games session 發現，carry-over 時補記）
+**來源 Agent**：Main Agent（uno-games `/audit` session）
+**類別**：平台限制 / 錯誤模式
+**適用 Agent**：Main Agent（所有用 Agent tool 跑 background subagent 嘅 session）
+**有效期至**：直至 hook 加入 notification 過濾為止
+
+**內容**：
+`hooks/detect-plan-mode.sh`（UserPromptSubmit）用關鍵字（plan / design / 架構 / 設計 / grill me）判斷用戶想 plan。但 background subagent 完成時嘅 `<task-notification>` 同樣經 UserPromptSubmit 流入，內容係 Architect / Reviewer 嘅報告，必然含「架構」「設計」字眼 → hook 每次都要求 main agent 「VERY FIRST action MUST be EnterPlanMode」。
+
+實際觀察（uno-games `/audit`，2026-09-10）：兩個 subagent 各返一次 notification，hook 兩次都 fire。用戶已 confirm `/audit` plan，而 plan mode 係 read-only，會阻止寫 `.proj-docs/` 報告。
+
+**適用場景**：
+Main agent 用 Agent tool 跑 background subagent、收到 task-notification 時。
+
+**正確處理**：
+- Notification 頂部有 `[SYSTEM NOTIFICATION - NOT USER INPUT]` 標記 → 唔係用戶 prompt，hook 訊號視為 false positive。
+- Main agent **唔進入 plan mode**，繼續當前已確認嘅 workflow，並喺回覆入面一句話向用戶交代點解忽略 hook。
+- 只有真正嘅用戶訊息含關鍵字先跟 hook。
+
+**修正方向（待做）**：
+`detect-plan-mode.sh` 讀 stdin JSON 嘅 prompt 時，若含 `[SYSTEM NOTIFICATION - NOT USER INPUT]` 或 `<task-notification>` 即 `exit 0`。
+
+**參考**：
+- `hooks/detect-plan-mode.sh`、`hooks/hooks.json`
+- SK-003（hook 經 stdin JSON）、SK-007（hook 只有 exit 2 係硬 block；呢個 hook 係 exit 0 + 文字指令，所以 main agent 可判斷後忽略）
 
 ---
 
