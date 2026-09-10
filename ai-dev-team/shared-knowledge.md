@@ -86,13 +86,14 @@
 **來源 Agent**：Main Agent（claude-teams `/fix` session）
 **類別**：平台限制
 **適用 Agent**：全部（尤其 DevOps / 任何維護 plugin marketplace 嘅 agent）
-**有效期至**：永久（Claude Code cloud 架構行為，官方文檔明載）
+**有效期至**：永久（proxy repo-scope 行為官方明載；靜默失敗症狀為 2026-09-10 實測）
 
 **內容**：
 Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 喺 session start 自動裝 plugin，**但 clone marketplace 用嘅係 session-scoped GitHub proxy**：
-- Proxy 只可到達 **attach 喺該 session 嘅 repo**，其他 repo 一律 403，即使 Claude GitHub App 已設 "All repositories" 亦然。
+- **（官方文檔明載）** Proxy 只可到達 **attach 喺該 session 嘅 repo**，其他 repo 嘅 GitHub API / release-asset 請求一律 403。
+- **（實測，文檔未載）** 即使 Claude GitHub App 已設 "All repositories"，未 attach 嘅 marketplace repo 仍然失敗。
 - 唔支援自訂 `GITHUB_TOKEN` / credential helper。
-- 失敗係**靜默**嘅：唯一症狀係 `Unknown command: /ai-dev-team:start`；cloud 冇 `/plugin` command，睇唔到 Errors tab，只可展開「Initialized session」訊息。
+- **（實測，文檔未載）** 失敗係**靜默**嘅：唯一症狀係 `Unknown command: /ai-dev-team:start`；cloud 冇 `/plugin` command，睇唔到 Errors tab，只可展開「Initialized session」訊息。
 
 實際觀察（2026-09-10，Python-Project-Run365Days PR #10 已 merge、settings 正確）：`dcwhung/claude-teams` 建立時係 private → cloud 全部 project 都用唔到 plugin；本機因用自己嘅 git credential 完全正常，所以本機測試**唔會**暴露呢個問題。
 
