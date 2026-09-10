@@ -80,6 +80,35 @@
 
 ---
 
+## [SK-009] Cloud session 裝 plugin 要求 marketplace repo 公開可達——private repo 一律靜默失敗
+
+**日期**：2026-09-10 23:55
+**來源 Agent**：Main Agent（claude-teams `/fix` session）
+**類別**：平台限制
+**適用 Agent**：全部（尤其 DevOps / 任何維護 plugin marketplace 嘅 agent）
+**有效期至**：永久（Claude Code cloud 架構行為，官方文檔明載）
+
+**內容**：
+Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 喺 session start 自動裝 plugin，**但 clone marketplace 用嘅係 session-scoped GitHub proxy**：
+- Proxy 只可到達 **attach 喺該 session 嘅 repo**，其他 repo 一律 403，即使 Claude GitHub App 已設 "All repositories" 亦然。
+- 唔支援自訂 `GITHUB_TOKEN` / credential helper。
+- 失敗係**靜默**嘅：唯一症狀係 `Unknown command: /ai-dev-team:start`；cloud 冇 `/plugin` command，睇唔到 Errors tab，只可展開「Initialized session」訊息。
+
+實際觀察（2026-09-10，Python-Project-Run365Days PR #10 已 merge、settings 正確）：`dcwhung/claude-teams` 建立時係 private → cloud 全部 project 都用唔到 plugin；本機因用自己嘅 git credential 完全正常，所以本機測試**唔會**暴露呢個問題。
+
+**正確處理**：
+- Marketplace repo 必須 **public**（2026-09-10 已將 `dcwhung/claude-teams` 轉 public，匿名 fetch `marketplace.json` HTTP 200）。
+- 要保持 private 嘅話，唯一文檔提及嘅替代係 claude.ai 帳戶層 synced plugins，但官方未確認支援 private marketplace，視為未驗證。
+- 驗證 cloud 可達性：`curl -sI https://raw.githubusercontent.com/<owner>/<repo>/main/.claude-plugin/marketplace.json` 必須回 200。
+- 新開 marketplace repo 時 `gh repo create` 預設 private，記得加 `--public`。
+
+**參考**：
+- https://code.claude.com/docs/en/cloud-environments#github-proxy
+- https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup
+- https://code.claude.com/docs/en/plugin-marketplaces#private-repositories
+
+---
+
 ## [SK-008] `detect-plan-mode` UserPromptSubmit hook 會被 background subagent 通知誤觸發
 
 **日期**：2026-09-10 23:30
