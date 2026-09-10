@@ -99,7 +99,7 @@ Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/setting
 
 **正確處理**：
 - Marketplace repo 必須 **public**（2026-09-10 已將 `dcwhung/claude-teams` 轉 public，匿名 fetch `marketplace.json` HTTP 200）。
-- 要保持 private 嘅話，唯一文檔提及嘅替代係 claude.ai 帳戶層 synced plugins，但官方未確認支援 private marketplace，視為未驗證。
+- 保持 private 嘅文檔路徑係 Organization settings > Plugins（org sync 經 Claude GitHub App 讀 marketplace；App 認證唔到嘅 source 先要 public）；個人 Pro/Max 帳戶層 synced plugins 對 private repo 嘅行為文檔未講，視為未驗證。
 - 驗證 cloud 可達性：`curl -sI https://raw.githubusercontent.com/<owner>/<repo>/main/.claude-plugin/marketplace.json` 必須回 200。
 - 新開 marketplace repo 時 `gh repo create` 預設 private，記得加 `--public`。
 
