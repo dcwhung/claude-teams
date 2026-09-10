@@ -1,0 +1,16 @@
+{
+  "name": "claude-teams",
+  "owner": { "name": "Donald Hung" },
+  "metadata": {
+    "description": "Donald's Claude Code AI teams. Currently: ai-dev-team (software development)."
+  },
+  "plugins": [
+    {
+      "name": "ai-dev-team",
+      "source": "./ai-dev-team",
+      "description": "AI software-development team: role agents, workflow commands, TDD / git-flow / coding-style skills, branch-policy hooks.",
+      "version": "1.0.0",
+      "category": "workflow"
+    }
+  ]
+}
