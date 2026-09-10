@@ -104,7 +104,28 @@
 | 問題 | 負責人 | 截止日期 |
 |------|--------|----------|
 | | | |
+
+## Design Source（UI 功能必填，backend-only 可免）
+
+- **Design Origin**：mockup | baseline | proposal | library | none-required
+- **詳情**（按 origin 類型填寫）：
+  - `mockup` → mockup file 路徑 + 引用 sections + tokens.css 路徑
+  - `baseline` → 當前 component 路徑（spec 階段要附 screenshot）
+  - `proposal` → 跳去下面 `## Design Proposal` 寫提案
+  - `library` → library 名 + 版本 + component 名 + docs URL
+  - `none-required` → 一句話解釋（例：純 API wiring，無視覺輸出）
+
+## Design Proposal（只有 origin = proposal 時填）
+
+- Wireframe / ASCII / Figma URL / 文字描述
+- 色系、字體、layout 大方向
+- 必須得到 reviewer 嘅 design sign-off 先可以入 /plan
 ```
+
+**Spec reject 條件（reviewer 喺 spec review 時強制檢查）：**
+- UI feature 揀 `none-required` 但功能描述有「show / display / render / 加 button / 加 page」等視覺字眼 → reject
+- `proposal:` 但 `## Design Proposal` section 空白 → reject
+- `mockup:` 但引用路徑唔存在 → reject
 
 ---
 

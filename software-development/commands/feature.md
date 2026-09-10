@@ -25,6 +25,18 @@
 ## 執行流程
 
 ```
+0. Design Origin Check（所有 UI / 涉及 *.tsx|css|jsx 嘅任務強制執行）
+   ✅ 確認 spec 有 `## Design Source` section 且 Origin 已填（5 種之一）
+   ✅ Branch description 第一行寫：Design Origin: <origin>: <詳情>
+   ✅ 按 Origin 類型做準備：
+        mockup    → 完整讀 mockup file 先動 code（tokens.css + component CSS + HTML）
+        baseline  → 開 dev server 截現有 UI screenshot 做 reference
+        proposal  → 確認 reviewer design sign-off 已 record；ship 後截 baseline screenshot
+        library   → 讀 library doc + 試裝 minimal example 對齊 props
+        none-required → 自我審：今次 diff 真係零視覺變化？如有任何 className / 新 layout 即 stop
+   ❌ Origin 缺 / spec 未 sign-off → 停低，return /spec（唔可繼續）
+   ❌ 純 backend / logic 改動 → 標 none-required + Why 一句說明，跳過此 check
+
 1. 讀取 shared-knowledge.md（全局 + 項目）
 2. 讀取 spec 及 plan（確認功能需求及驗收標準）
 3. 輸出執行計劃，等待確認（見 agent-protocols.md）

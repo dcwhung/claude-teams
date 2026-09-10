@@ -37,6 +37,7 @@ description: Red-Green-Refactor cycle for /feature and /fix. Load before writing
 - 執行測試，**確認係失敗（Fail）而非錯誤（Error）**
   - Fail = 測試執行但結果唔符預期 ✅
   - Error = 代碼無法執行（例如 import 錯誤）❌ 先修正
+- ✅ 確認 Fail 後，**立即** 執行 `npx prettier --write <test-file-path>` 格式化 test file
 - 唔好一次寫多個測試
 
 **測試命名格式**：
@@ -83,6 +84,40 @@ it('should not create duplicate when request sent twice')
 - 每次只做**一個**重構動作
 - 重構後立即執行測試，確認全綠
 - 如測試失敗，立即 revert，再重新嘗試
+
+---
+
+## 測試執行範圍（Scoped Test Runs — 強制）
+
+> **核心規則**：TDD 循環中，任何時候只跑與當前改動直接相關嘅 test file。唔好跑 full suite。
+
+### 規則
+
+| 階段 | 執行範圍 |
+|------|----------|
+| 🔴 Red | 只跑新寫嘅 test file：`npx vitest run <test-file-path>` |
+| 🟢 Green | 只跑同一個 test file，確認變綠 |
+| 🔵 Refactor | 只跑直接相關嘅 test file（通常同 Green 一樣） |
+| 多個改動 | 每個改動只跑自己對應嘅 test file，例如 `npx vitest run src/utils/foo.test.ts src/pages/bar/Bar.test.tsx` |
+
+### 禁止行為
+
+```
+❌ Developer subagent 跑 full suite（`pnpm vitest run` / `pnpm test`）作 regression check
+❌ 將 full suite 寫入 subagent prompt 嘅任何步驟
+❌ 以「確保冇 regression」為由在 Green 後立即跑全部 test
+```
+
+### Full suite 責任歸屬
+
+```
+✅ CI pipeline — 每次 push / merge 自動跑
+✅ Code Reviewer — Hard Gates 階段跑 full suite 作為 review gate
+✅ Developer — 只有當改動涉及 shared utility 且懷疑有廣泛影響先自行考慮
+```
+
+> **Why**：每次 Red→Green 跑 457 個 test 浪費 ~8 分鐘，對單一 component 改動毫無意義。
+> 觀察到嘅失敗 pattern：subagent prompt 含「full suite regression check」→ 每個 agent 各多跑 8 分鐘。
 
 ---
 

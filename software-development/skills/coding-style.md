@@ -15,8 +15,23 @@ description: Coding style entry point — universal rules (function length, magi
 | 語言 | Sub-Skill 檔案 | 何時 Load |
 |------|---------------|---------|
 | TypeScript / React | `skills/coding-style/ts.md` | 寫或 review TS / TSX 代碼時 |
+| CSS / Styling | `skills/coding-style/css.md` | 寫或 review CSS / styled-jsx / Tailwind 樣式時，**任何 UI task 都要 load** |
 | PHP | `skills/coding-style/php.md` | 寫或 review PHP 代碼時 |
 | Python | `skills/coding-style/py.md` | 寫或 review Python 代碼時 |
+
+---
+
+### Design Source Citation 🔴 Critical（所有語言）
+
+違反視為 Critical，Reviewer 必須 reject PR。
+
+```
+✅ 寫 / 改任何 UI component / page（*.tsx / *.jsx / *.css / *.scss）前，
+   PR description 必須有 `Design Origin:` 行（5 種 origin 之一）
+✅ 詳細規則見 ~/.claude/global-rules.md §Design-Source Binding Rule
+❌ 冇 Design Origin → Reviewer 必須 reject，唔可 merge
+❌ Origin 係 `none-required` 但 diff 有新 className / layout → reject
+```
 
 ---
 

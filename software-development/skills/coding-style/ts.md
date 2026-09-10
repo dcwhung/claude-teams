@@ -25,19 +25,25 @@ description: TypeScript / React naming, types, hooks, folder structure, i18n, st
 | 事件處理函數 | `handle` 開頭 | `handleSubmit()`, `handleInputChange()` |
 | 布林值 | `is` / `has` / `can` 開頭 | `isLoading`, `hasError`, `canEdit` |
 
-### 變數命名：禁止使用縮寫 / 單字母名 🟡 Warning
+### 變數命名：禁止使用縮寫 / 單字母名 🔴 Critical
 
 業務邏輯中禁止使用難以理解嘅縮寫或單字母變數名。
 
 ```
 ❌ ds, isT, evs, hasEv, typeCls, evCls, m, e, d（當呢啲代表業務物件時）
+❌ CONT_COLORS, ROW_H, BTN_W, NAV_H（大寫常數同樣不可縮寫）
 ✅ dateStr, isToday, milestones, hasMilestone, typeClass, eventClass, month, milestone, date
+✅ CONTINENT_COLORS, ROW_HEIGHT, BUTTON_WIDTH, NAV_HEIGHT
 
-例外：標準迴圈計數器（i, j, k）和廣泛接受嘅縮寫（id, url, api）可以使用。
-DOM event 參數（ev, e）喺事件處理函數中可以使用（例如 ev.stopPropagation()）。
+例外（業界廣泛接受，可保留）：
+  i / j / k — 迴圈 index
+  id, url, api, ui, css, html, px, db — 業界標準縮寫
+  fn — callback function param（如 onClick: fn）
+  ev / e — DOM event handler param（如 onClick: (e) => ...）
 ```
 
-違反視為 🟡 Warning，review 時須提出，merge 前建議修正。
+違反視為 🔴 Critical，reviewer 必須 flag，merge 前必須修正。
+重構 trigger：見到縮寫 → 改完整名 + 更新所有 reference。
 
 ---
 
@@ -583,3 +589,184 @@ const fetchUser = async (id: string) => {
   }
 };
 ```
+
+---
+
+## React Component Organization（🔴 Critical）
+
+> 以下 4 項規則由 2026-05-17 生效，來自 life-travels 前端重建標準。
+
+### 1. Component Folder 必須按類型分類
+
+禁止 component 散落 `components/` 頂層。必須按功能類型放入子資料夾：
+
+```
+✅ 正確結構：
+components/
+  modal/
+    auth-modal/           AuthModal.tsx + index.ts
+    continent-modal/      ContinentModal.tsx + index.ts
+    itinerary-modal/      ItineraryModal.tsx + index.ts
+  panel/
+    memories-panel/       MemoriesPanel.tsx + index.ts
+    now-flying-panel/     NowFlyingPanel.tsx + index.ts
+  overlay/
+    coord-ticker-overlay/ CoordTickerOverlay.tsx + index.ts
+  layout/
+    nav/                  Nav.tsx + index.ts
+    top-bar/              TopBar.tsx + index.ts
+  globe/
+    globe-canvas/         GlobeCanvas.tsx + index.ts
+    bg-globe/             BgGlobe.tsx + index.ts
+  card/
+    trip-card/            TripCard.tsx + index.ts
+
+❌ 禁止：
+components/AuthModal.tsx       (散落頂層)
+components/ContinentModal.tsx  (散落頂層)
+```
+
+| 類型 | 路徑 | 例子 |
+|------|------|------|
+| Modal / Dialog | `components/modal/<name>-modal/` | `auth-modal/`, `continent-modal/` |
+| Side panel / Drawer | `components/panel/<name>-panel/` | `memories-panel/` |
+| Overlay / HUD | `components/overlay/<name>-overlay/` | `coord-ticker-overlay/` |
+| Layout chrome | `components/layout/<name>/` | `nav/`, `top-bar/`, `sidebar/` |
+| Globe / Map | `components/globe/<name>/` | `globe-canvas/`, `bg-globe/` |
+| Card / Tile | `components/card/<name>-card/` | `trip-card/` |
+| Page section | `pages/<page>/sections/<name>/` | `pages/landing/sections/hero/` |
+
+Folder 內必須有：`<Name>.tsx`（PascalCase）+ `index.ts`（re-export）。
+Reviewer check：`find src/components -maxdepth 1 -name "*.tsx"` — 任何頂層 `.tsx` 一律 flag。
+
+### 2. Module-scope Constants 必須從 TSX 抽離
+
+TSX file 頂層禁止 declare business constants（除 component function 本身、React import、type alias）：
+
+```typescript
+// ❌ 禁止：在 component file 內 declare 常數
+const ROW_H = 48;
+const CONTINENT_COLORS = { Asia: '#d4a574', Europe: '#8a9e7e' };
+
+// ✅ 正確：抽到 src/constants/ 對應位置
+// src/constants/ui/dimensions.ts
+export const ROW_HEIGHT = 48;
+
+// src/constants/ui/colors.ts
+export const CONTINENT_COLORS = { Asia: '#d4a574', Europe: '#8a9e7e' };
+```
+
+| Constants 類型 | 路徑 |
+|----------------|------|
+| UI 尺寸（height / width / z-index / duration） | `src/constants/ui/dimensions.ts` |
+| Color map / theme | `src/constants/ui/colors.ts` |
+| Animation timing | `src/constants/ui/animation.ts` |
+| API endpoint / URL | `src/constants/api/endpoints.ts` |
+| Routing path | `src/constants/routes.ts` |
+| Domain enum（如 continent list） | `src/constants/domain/<topic>.ts` |
+
+Reviewer check：搵 TSX file top-level `const` declaration（不含 component function 及 type）。
+
+### 3. Naming — 唔可用縮寫（見命名規範 §Critical）
+
+（已在命名規範 section 詳細說明，此處只作 critical flag reminder）
+
+Reviewer check：grep `const [A-Z_]+_[A-Z]` — 含 `_H` / `_W` / `_N` 結尾嘅常數名須確認係否縮寫。
+
+### 4. Inline SVG 必須抽出到 assets/svg/（🔴 Critical）
+
+TSX file **完全禁止** inline `<svg>...</svg>` JSX，包括 path 字串常數（`const PLANE_PATH = 'M...'`）：
+
+```typescript
+// ❌ 禁止：inline SVG（任何大小、任何使用次數）
+const PLANE_PATH = 'M 14,0 L 12,-1.4 ...';
+const PlaneIcon = () => (
+  <svg viewBox="-15 -11 30 22" fill="currentColor">
+    <path d={PLANE_PATH} />
+  </svg>
+);
+
+// ✅ 正確：抽到 assets/svg/icons/ 並 import
+import PlaneSvg from '../../assets/svg/icons/plane.svg?react';
+// 用 props 控制 size / className，唔係在 SVG file 寫死
+<PlaneSvg className="cta-plane" width={22} height={16} aria-hidden="true" />
+```
+
+SVG 分類路徑（life-travels 專案，plural naming）：
+
+| 類型 | 路徑 | 例子 |
+|------|------|------|
+| UI icon | `src/assets/svg/icons/` | `plane.svg`, `lock.svg`, `close.svg` |
+| Continent / map | `src/assets/svg/continents/` | `africa.svg`, `asia.svg` |
+| Flag | `src/assets/svg/flags/` | `us.svg`, `jp.svg` |
+| Logo / brand | `src/assets/svg/logos/` | `life-travels-logo.svg` |
+| Illustration | `src/assets/svg/illustrations/` | `empty-state.svg` |
+
+Import 方式（Vite）：`import PlaneSvg from '../../assets/svg/icons/plane.svg?react'`（`?react` 轉做 React component，寬高由 props 傳入）。
+
+唯一例外：**D3-driven SVG container**（程式在 runtime 向 SVG 寫入子元素，例如 BgGlobe 嘅 D3 canvas）——呢類 SVG 係 canvas 唔係 icon，可以留係 TSX 入面。
+
+Reviewer check：搵 TSX 入面 `<svg ` 開頭嘅 inline JSX 同 `const.*PATH.*=.*'M` 形式嘅 path string，一律 flag 抽出。
+
+### 5. 平行 Array — 禁止重覆定義，用 master array + exclude map（🔴 Critical）
+
+禁止為同一 list 的不同子集定義多份平行 array。適用場景：auth state、role、feature flag、plan tier 等任何 context 下顯示不同子集的情況。
+
+**三個核心規則：**
+
+1. **Item 物件只含純數據**（id、label 等），禁止在 item 內放 visibility / permission metadata（如 `visibleIn`、`allowedRoles`）
+2. **Exclude 邏輯集中成獨立 constant**，以 context key 為索引，值為要隱藏的 ID 陣列
+3. **ID 必須抽成 constants**（SSoT），同時供 array 定義、exclude map、及所有 consumer 引用
+
+```typescript
+// ✅ 正確：src/constants/domain/navigation.ts
+
+// Step 1 — ID SSoT
+export const SECTION_ID = {
+    DEPARTURE: 'departure',
+    COMPASS: 'compass',
+    ATLAS: 'atlas',
+    EPILOGUE: 'epilogue',
+} as const;
+export type SectionId = (typeof SECTION_ID)[keyof typeof SECTION_ID];
+
+export type NavAuthContext = 'out' | 'in' | 'in-empty';
+
+// Step 2 — master array，item 只含純數據
+export interface NavItem { id: SectionId; label: string; }
+export const NAV_ITEMS: NavItem[] = [
+    { id: SECTION_ID.DEPARTURE, label: 'Departure' },
+    { id: SECTION_ID.COMPASS,   label: 'The Compass' },
+    { id: SECTION_ID.ATLAS,     label: 'The Atlas' },
+    { id: SECTION_ID.EPILOGUE,  label: 'Epilogue' },
+];
+
+// Step 3 — exclude map（nav + section 兩用，統一 SSoT）
+export const CONTEXT_EXCLUDE: Record<NavAuthContext, SectionId[]> = {
+    out:      [SECTION_ID.COMPASS],
+    'in-empty': [SECTION_ID.COMPASS, SECTION_ID.ATLAS],
+    in:       [],
+};
+```
+
+```typescript
+// ✅ Consumer（LandingPage）— derive once, apply to nav + sections
+const excluded = CONTEXT_EXCLUDE[authKey];
+const navItems = NAV_ITEMS.filter(i => !excluded.includes(i.id));
+
+// Section rendering reuses same exclude map — no duplication
+{!excluded.includes(SECTION_ID.COMPASS) && <Compass data={data} />}
+{!excluded.includes(SECTION_ID.ATLAS)   && <Atlas data={data} />}
+```
+
+```typescript
+// ❌ 禁止：多份平行 array + item 內嵌 visibility
+const NAV_ITEMS_SIGNED_OUT = [...];
+const NAV_ITEMS_SIGNED_IN  = [...];
+// 更差：item 帶 visibleIn metadata
+{ id: 'compass', label: 'The Compass', visibleIn: ['in'] }
+// 更差：consumer 手動 filter by id string literal
+NAV_ITEMS_SIGNED_IN.filter(item => item.id !== 'compass')
+```
+
+Reviewer check：在 `src/constants/` 搜尋名稱含 `_SIGNED_` / `_LOGGED_` / `_AUTHED_` / `_ADMIN` / `_USER` 結尾嘅 array export，一律 flag 重構。亦須 grep `visibleIn` / `allowedRoles` / `showFor` 等 item-level visibility field。

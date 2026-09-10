@@ -113,6 +113,85 @@ blockers:
 
 ---
 
+## UI Visual Confirmation Gate（前端 UI 改動強制插入步驟）
+
+> **適用條件**：developer subagent 完成任何涉及視覺輸出嘅前端改動後（JSX 結構、CSS/Tailwind class、layout、新組件）。
+> **插入位置**：Protocol 1 — 開始 invoke Code Reviewer **之前**。
+> **Design Origin 分流**：問法同對比物按 Design Origin 類型決定（見下方各分支）。
+
+### Step V-1：啟動 dev server
+
+```
+□ 到對應 frontend 目錄：pnpm dev &
+□ 等 server 就緒（port 輸出後），記下實際 port
+□ 用 mcp__plugin_playwright_playwright__browser_navigate 訪問 localhost:<port>
+□ 用 mcp__plugin_playwright_playwright__browser_take_screenshot 截圖
+```
+
+### Step V-2：按 Design Origin 分流確認
+
+**origin = mockup:**
+```
+□ 同時展示：
+    left：mockup 截圖（讀 _mockups_/<path> 對應 section）
+    right：當前 UI 截圖
+□ 問用戶：「Mockup @ <path> vs 當前 UI — 視覺一致嗎？Y / N / 列出 delta」
+□ 用戶確認 Y → 繼續
+□ 用戶列出 delta → invoke developer 修正，完成後重回 Step V-1
+```
+
+**origin = baseline:**
+```
+□ 展示 before / after 截圖（before 從 git stash 或 archive 取）
+□ 問用戶：「Baseline vs 改後 — 視覺變化只係 spec 預期嗰啲嗎？Y / N / 列出 unexpected delta」
+□ 用戶確認 Y → 繼續
+□ 有 unexpected delta → invoke developer 修正
+```
+
+**origin = proposal:**
+```
+□ 展示：spec 入面嘅 Design Proposal 描述 + 當前 UI 截圖
+□ 問用戶：「Proposal vs 實作 — 符合 design intent？Y / N」
+□ 用戶確認 Y：
+    ⚠️ QA 必須截 final screenshot 入 .proj-docs/design-baselines/<feature>-<date>.png
+    ⚠️ 更新 spec 將 origin 升級成 baseline:（下次同一 component 用 baseline origin）
+□ 用戶 N → invoke developer 修正
+```
+
+**origin = library:**
+```
+□ 展示：library 官方 demo（讀 docs / copy URL）+ 當前 UI 截圖
+□ 問用戶：「跟 library 默認樣？有無無謂 override？Y / N」
+```
+
+**origin = none-required:**
+```
+□ 展示 git diff --stat（改咗幾個 file）
+□ 問用戶：「實質視覺變化 = 0？確認後 skip 視覺 check。Y / N」
+□ 若 N（即有視覺變化）→ Developer 必須補 Design Origin（唔可以 none-required）
+```
+
+### Step V-3：結束 dev server
+
+```
+□ pkill -f "vite" 2>/dev/null
+□ 進入 Protocol 1 invoke Code Reviewer
+```
+
+### 例外（唔需要 Visual Confirmation Gate）
+
+```
+⬜ 純 TypeScript 工具函數改動（無 .tsx 組件改動）
+⬜ 純測試檔案改動
+⬜ 配置、常數、類型定義改動（唔影響視覺輸出）
+⬜ Backend-only 改動
+⬜ Developer 標注 UI_VISUAL_CONFIRMATION_REQUIRED: false
+```
+
+> ⛔ **禁止跳過此 gate**：main agent 唔可以以「tests 全過」或「reviewer 會核」為由省略視覺確認步驟。
+
+---
+
 ## Protocol 1：Post-Review（`/feature`、`/fix`、`/refactor`）
 
 ### Reviewer Subagent

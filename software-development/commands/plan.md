@@ -94,11 +94,16 @@ Architect 必須從以下維度評估：
 
 ## 任務分解
 
-| 任務編號 | 任務描述 | 類型 | 負責 Agent | 預計工作量 | 依賴任務 | 優先級 |
-|----------|----------|------|-----------|-----------|----------|--------|
-| T-001 | | feature/fix/chore | | | - | P0 |
-| T-002 | | | | | T-001 | P0 |
-| T-003 | | | | | T-001 | P1 |
+| 任務編號 | 任務描述 | 類型 | 負責 Agent | Mockup Binding | 預計工作量 | 依賴任務 | 優先級 |
+|----------|----------|------|-----------|----------------|-----------|----------|--------|
+| T-001 | | feature/fix/chore | | mockup: / baseline: / none-required | | - | P0 |
+| T-002 | | | | | | T-001 | P0 |
+| T-003 | | | | | | T-001 | P1 |
+
+> ⚠️ **Mockup Binding 欄規則**：
+> - UI 任務：必須填 `mockup: <path>` / `baseline: <path>` / `proposal: <spec-section>` / `library: <name@ver>`
+> - 後端 / logic 任務：填 `none-required`
+> - Binding 空白嘅 UI 任務 → flag 返去 `/spec` 補 Design Source 先可以 plan
 
 **任務類型說明**：
 - `feature`：新功能開發

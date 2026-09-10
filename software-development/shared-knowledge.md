@@ -198,6 +198,39 @@ Do you want to overwrite .active-team?
 
 ---
 
+## [SK-006] 設計原則 — UI Logic 必須先問 utils/service 層有冇
+
+**日期**：2026-05-07 00:45
+**來源 Agent**：Main Agent
+**類別**：業務規則 / 設計原則
+**適用 Agent**：全部（尤其 frontend-developer, code-reviewer）
+**有效期至**：永久
+
+**內容**：
+新增 UI component logic 前，必須先問：「呢個 grouping / ordering / transformation / computation 係咪已經喺 utils 或 service layer 存在？」
+
+Data 嘅 grouping、ordering、prefix stripping、label formatting 等屬 **domain logic**，應住喺 `utils/` 或 `services/`，唔係 component。
+
+**實際案例（Life-Moments-Suite）**：
+`UpcomingMilestonesCard` 最初直接喺 component 內用 `entryMap` 手動做 entryId grouping + kind ordering + prefix stripping，結果：
+- 邏輯重複（`mergeSameDay` 在 `utils/milestones.ts` 已實現相同邏輯）
+- 輸出唔一致（component 用 `rawMilestones` 排序，`MilestoneTimeline` 用 `allMilestones`）
+- Bug：label 順序錯誤（`#48 months | #4 years` 而非 `#4 years | #48 months`）
+
+正確做法：component 接收已由 utils 處理好嘅 `Milestone[]`，直接讀 `subLabelsZh/En`。
+
+**適用場景**：
+- 喺 UI component 寫任何超過 2 行嘅 data transformation 前
+- Code review 見到 component 內有 sorting / grouping / string manipulation 時，問：「呢個邏輯係咪應該喺 utils 度？」
+- 設計新 component interface 時，優先問 upstream 可否提供已處理好嘅 data，而唔係由 component 自己處理 raw data
+
+**參考**：
+- `the_moments/frontend/src/utils/milestones.ts` — `mergeSameDay()`, `finalizeMilestone()`, `stripSharedPrefix()`
+- `the_moments/frontend/src/components/milestone/upcoming-milestones-card/UpcomingMilestonesCard.tsx`
+- CUI-0014 / CUI-0015 session (2026-05-07)
+
+---
+
 ## [SK-005] Workflow Bypass — `/start` 無 task 時 main agent 跳過 /feature 流程
 
 **日期**：2026-05-01 13:08

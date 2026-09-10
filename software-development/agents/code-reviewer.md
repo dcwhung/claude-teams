@@ -67,6 +67,32 @@
 - [ ] 代碼風格是否符合 ESLint / Prettier 規範
 - [ ] Accessibility：語意 HTML、ARIA、鍵盤導航、色彩對比（前端改動必查）
 
+### Design Fidelity 檢查（前端 UI 改動強制）
+
+> 適用條件：diff 包含 `*.tsx` / `*.jsx` / `*.css` / `*.scss` 改動時。
+
+- [ ] **Design Origin 存在**：PR description 第一行有 `Design Origin:` + 合法 origin（5 種之一）— 冇此行 → 🔴 Critical，必須 reject
+- [ ] **Origin 配對實際改動**：
+  - 標 `none-required` 但 diff 有新 className / 新 layout → 🔴 Critical
+  - 標 `mockup:` 但路徑唔存在 → 🔴 Critical
+  - 標 `proposal:` 但 spec 入面無 `## Design Proposal` section → 🔴 Critical
+- [ ] **mockup origin**：載入 PR description 引用嘅 mockup path，驗以下：
+  - DOM landmark / class name 同 mockup 一致（如 `.now-card`、`.compass-section`）
+  - Typography：font-family 係 CSS variable（唔係 hardcoded string）
+  - Color：全部用 `var(--token-name)`，無 hardcoded hex / rgb
+  - SVG element 有 explicit fill / stroke（唔係 default black）
+  - Layout direction 同 mockup 一致（flex direction、grid structure）
+- [ ] **baseline origin**：改動範圍唔超過 spec 描述嘅 delta（冇意外嘅 layout 大改）
+- [ ] **ClassName / ID 唔可無故改名**（mockup origin 時，rename 係 🔴 Critical）
+- [ ] **Component folder 結構符合 ts.md §Component Folder 規範**：
+  - 冇 components/*.tsx 頂層 file（必須係 folder）
+  - Folder 按類型分類（modal/auth-modal/ 唔係 AuthModal/）
+- [ ] **Module-scope const 已抽離 TSX**（唔可係 component file 頂層 business constant）
+- [ ] **Inline SVG 已抽到 assets/svg/**（inline `<svg>` 超過 5 行 → flag）
+- [ ] **naming 唔含縮寫**（`CONT_COLORS` / `ROW_H` 等 → 🔴 Critical）
+
+任何 Design Fidelity deviation → 喺 review 報告嘅 `## Design Fidelity` section 逐條列出。
+
 ---
 
 ## Hard Gates（強制 block 條件，binary pass/fail）

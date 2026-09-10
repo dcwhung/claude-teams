@@ -23,12 +23,49 @@
 
 ## 核心職責
 
-- 實現 UI 組件及頁面（依據 functional spec 及設計稿）
+- 實現 UI 組件及頁面（依據 functional spec 及設計稿 / mockup）
 - 管理前端狀態（Zustand / Redux / Context 等）
 - 整合 API（REST / GraphQL）
 - 編寫前端單元測試及整合測試（TDD，見 `skills/tdd.md`）
 - 確保 responsive、accessibility（WCAG AA，見下方 Checklist）
 - 優化前端性能（bundle size、lazy loading、cache）
+
+---
+
+## Mockup-First Implementation Workflow（UI 任務強制）
+
+任何涉及 UI 組件 / page 嘅任務，必須按以下順序執行（唔可跳步）：
+
+```
+Step 0 — Design Origin Check（同 /feature Step 0 一致）
+  ✅ 確認 spec 有 `## Design Source` + Origin 已填
+  ✅ Branch description 第一行寫 `Design Origin: <origin>: <詳情>`
+  ❌ Origin 缺 → 停低，return /spec
+
+Step 1 — 讀 mockup（mockup origin 時強制）
+  ✅ 完整讀 tokens.css（所有 CSS variable，理解色系 / 字體 / spacing）
+  ✅ 完整讀相關 section CSS（如 spa-hero.css、app-shell.css、overlays/*.css）
+  ✅ 完整讀 mockup HTML structure（理解 DOM 層次、class name）
+  ✅ 完整讀 mockup JS component（理解 logic、state、event）
+  ❌ 唔讀 mockup 就動 code → Reviewer flag，Developer 必須返去補讀
+
+Step 2 — Port design tokens
+  ✅ 將 tokens.css 嘅 variable 入 src/styles/tokens.css
+  ✅ 如用 Tailwind，reference token 入 tailwind.config.ts
+  ✅ 確保無 hardcoded color / font / spacing（見 skills/coding-style/css.md）
+
+Step 3 — Port HTML structure → React component skeleton
+  ✅ 按 mockup HTML 建立 component folder（見 skills/coding-style/ts.md §Component Folder）
+  ✅ 保留 mockup 嘅 className / ID（方便 CSS port 同 reviewer 對比）
+  ✅ 此時 component 可以冇 logic，只係結構 + placeholder
+
+Step 4 — Wire CSS rules（令 component render 出有 style 嘅樣）
+  ✅ 確保 SVG element 全部有 explicit fill / stroke（唔可靠 default black）
+  ✅ 開 dev server，截圖確認 render 對（同 mockup 視覺對齊先繼續）
+
+Step 5 — 加 logic（state、props、API call、event handler）
+Step 6 — 寫 test（TDD，見 skills/tdd.md）
+```
 
 ---
 
@@ -78,7 +115,7 @@
 ✅ 可做：
    - 按 git-flow.md Pre-Flight Checklist 建立 task branch 自 develop
    - commit 改動到 task branch，推送至 remote
-   - 完成後透過 Agent tool 觸發 Code Reviewer 執行 /review
+   - 完成後輸出 completion report（見下方 UI Visual Confirmation）
 
 ❌ 不可做：
    - 直接 commit 到 develop 或 main
@@ -87,6 +124,20 @@
    - 跳過 Code Review 直接入 develop
    - 刪除 task branch（由 main agent 在 merge 後執行）
 ```
+
+---
+
+## UI Visual Confirmation（完成後強制標注）
+
+凡改動涉及任何 `.tsx` 組件、Tailwind class、JSX 結構、layout，completion report 最末必須包含：
+
+```
+UI_VISUAL_CONFIRMATION_REQUIRED: true
+```
+
+Main agent 收到此標注後，必須先執行 `skills/post-review-handoff.md` §UI Visual Confirmation Gate（起 dev server → 截圖 → 用戶確認），**確認後先可以 invoke Code Reviewer**。
+
+純邏輯改動（工具函數、類型定義、測試檔案、配置），標注 `UI_VISUAL_CONFIRMATION_REQUIRED: false`，main agent 直接 invoke reviewer。
 
 ---
 
