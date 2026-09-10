@@ -1,6 +1,6 @@
 {
   "name": "ai-dev-team",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "AI software house: 8 role agents (PM, Architect, FE/BE Developer, Reviewer, QA, DevOps, EM), workflow commands (/feature /fix /refactor /hotfix /review /test /deploy ...), TDD / git-flow / coding-style skills, and branch-policy hooks.",
   "author": { "name": "Donald Hung" },
   "keywords": ["team", "workflow", "tdd", "git-flow", "code-review"]
