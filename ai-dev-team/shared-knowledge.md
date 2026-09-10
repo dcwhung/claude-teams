@@ -97,6 +97,9 @@ Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/setting
 
 實際觀察（2026-09-10，Python-Project-Run365Days PR #10 已 merge、settings 正確）：`dcwhung/claude-teams` 建立時係 private → cloud 全部 project 都用唔到 plugin；本機因用自己嘅 git credential 完全正常，所以本機測試**唔會**暴露呢個問題。
 
+**適用場景**：
+維護 plugin marketplace repo、為項目設定 cloud session `extraKnownMarketplaces` 時。
+
 **正確處理**：
 - Marketplace repo 必須 **public**（2026-09-10 已將 `dcwhung/claude-teams` 轉 public，匿名 fetch `marketplace.json` HTTP 200）。
 - 保持 private 嘅文檔路徑係 Organization settings > Plugins（org sync 經 Claude GitHub App 讀 marketplace；App 認證唔到嘅 source 先要 public）；個人 Pro/Max 帳戶層 synced plugins 對 private repo 嘅行為文檔未講，視為未驗證。
@@ -122,6 +125,9 @@ Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/setting
 `hooks/detect-plan-mode.sh`（UserPromptSubmit）用關鍵字（plan / design / 架構 / 設計 / grill me）判斷用戶想 plan。但 background subagent 完成時嘅 `<task-notification>` 同樣經 UserPromptSubmit 流入，內容係 Architect / Reviewer 嘅報告，必然含「架構」「設計」字眼 → hook 每次都要求 main agent 「VERY FIRST action MUST be EnterPlanMode」。
 
 實際觀察（uno-games `/audit`，2026-09-10）：兩個 subagent 各返一次 notification，hook 兩次都 fire。用戶已 confirm `/audit` plan，而 plan mode 係 read-only，會阻止寫 `.proj-docs/` 報告。
+
+**適用場景**：
+Main agent 用 Agent tool 跑 background subagent、收到 task-notification 時。
 
 **正確處理**：
 - Notification 頂部有 `[SYSTEM NOTIFICATION - NOT USER INPUT]` 標記 → 唔係用戶 prompt，hook 訊號視為 false positive。
