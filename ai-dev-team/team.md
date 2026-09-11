@@ -107,7 +107,7 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 - 所有 `skills/*.md` 檔案頭部有 YAML frontmatter（`name: sw-*` + `description`），符合 Claude Code Skill 格式
 - 所有 skill 以 `skills/<name>/SKILL.md` 形式打包喺 `ai-dev-team` plugin 內，Claude Code（Local 同 Cloud session）可透過原生 Skill tool lazy load（名稱帶 namespace：`ai-dev-team:sw-<name>`）
 - Agent 唔應 inline skill 內容；任務需要時透過 **Skill tool** 或 Read `skills/<name>.md` 載入（見 `agent-protocols.md` §6 Context Budget）
-- 更新 skill 檔案後 push 上 marketplace repo，cloud session 開始時會自動裝最新版（前提：marketplace repo 必須 public，見 SK-009）；Local 模式用 `claude plugin update ai-dev-team`
+- 更新 skill 檔案後 push 上 marketplace repo，cloud session 要靠 environment setup script 安裝，唔可靠 project settings 自動裝（見 SK-009）；Local 模式用 `claude plugin update ai-dev-team`
 
 **維護規則**：
 - 修改規則時只改權威檔案，其他檔案自動同步

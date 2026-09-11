@@ -9,7 +9,7 @@
       "name": "ai-dev-team",
       "source": "./ai-dev-team",
       "description": "AI software-development team: role agents, workflow commands, TDD / git-flow / coding-style skills, branch-policy hooks.",
-      "version": "1.0.3",
+      "version": "1.0.4",
       "category": "workflow"
     }
   ]

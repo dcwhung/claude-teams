@@ -156,36 +156,48 @@ Observed sequence：
 
 ---
 
-## [SK-009] Cloud session 裝 plugin 要求 marketplace repo 公開可達——private repo 一律靜默失敗
+## [SK-009] Cloud session 唔會自動裝 project 聲明嘅 plugin——唯一可靠解法係 environment setup script
 
-**日期**：2026-09-10 23:28
+**日期**：2026-09-11 00:20
 **來源 Agent**：Main Agent（claude-teams `/fix` session）
 **類別**：平台限制
 **適用 Agent**：全部（尤其 DevOps / 任何維護 plugin marketplace 嘅 agent）
-**有效期至**：永久（proxy repo-scope 行為官方明載；靜默失敗症狀為 2026-09-10 實測）
+**有效期至**：直至 Claude Code 修正 cloud session start 嘅 plugin 自動安裝為止
 
 **內容**：
-Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 喺 session start 自動裝 plugin，**但 clone marketplace 用嘅係 session-scoped GitHub proxy**：
-- **（官方文檔明載）** Proxy 只可到達 **attach 喺該 session 嘅 repo**，其他 repo 嘅 GitHub API / release-asset 請求一律 403。
-- **（實測，文檔未載）** 即使 Claude GitHub App 已設 "All repositories"，未 attach 嘅 marketplace repo 仍然失敗。
-- 文檔容許喺 cloud environment 設 `GH_TOKEN` / `GITHUB_TOKEN`（原樣傳入 container），但能否令 marketplace clone 越過 proxy repo-scope **未驗證**；未驗證前以 public 為準。
-- **（實測，文檔未載）** 失敗係**靜默**嘅：唯一症狀係 `Unknown command: /ai-dev-team:start`；cloud 冇 `/plugin` command，睇唔到 Errors tab，只可展開「Initialized session」訊息。
+官方文檔寫明 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 會喺 cloud session start 自動裝 plugin。**實測唔成立。** 症狀係 `/ai-dev-team:start` 回 `Unknown command`。
 
-實際觀察（2026-09-10，實測項目：Run365Days，PR #10）：`dcwhung/claude-teams` 建立時係 private → cloud 全部 project 都用唔到 plugin；本機因用自己嘅 git credential 完全正常，所以本機測試**唔會**暴露呢個問題。
+2026-09-10 至 09-11 喺 Python-Project-Run365Days 逐項排除（全部實測）：
+- Repo 由 private 轉 public、開全新 session → **仍然失敗**。private 唔係原因；文檔亦明講 cloud session 可存取「連接嘅 GitHub 帳戶睇到嘅任何 repo」。
+- 喺 cloud session 內手動跑 `claude plugin marketplace add` + `claude plugin install` → **成功**（HTTPS clone 正常）。即網絡、認證、marketplace 可達性全部冇問題。
+- 但 session 中途安裝**唔會令 slash command 生效**：command / hooks / subagent 只喺 session 啟動時註冊，而且該次安裝唔會帶入下一個 session。
+- claude.ai 帳戶層加 marketplace + plugin（synced plugins，Customize → Plugins → Add → Add marketplace，再喺 Discover 撳 Add）→ 加得成功，但開全新 session **仍然失敗**。
+- 加 environment **setup script** → **成功**。Team folder 解析為 `/root/.claude/plugins/cache/claude-teams/ai-dev-team/1.0.3`，即係 marketplace 安裝生效，唔係 synced 路徑。
+
+前後兩次都係全新 session，唯一變數係 setup script，所以 setup script 係決定性因素。
 
 **適用場景**：
-維護 plugin marketplace repo、為項目設定 cloud session `extraKnownMarketplaces` 時。
+為任何 project 設定 cloud session 使用 ai-dev-team（或任何自有 plugin）時。
 
 **正確處理**：
-- Marketplace repo 必須 **public**（2026-09-10 已將 `dcwhung/claude-teams` 轉 public，匿名 fetch `marketplace.json` HTTP 200）。
-- 保持 private 嘅文檔路徑係 Organization settings > Plugins（org sync 經 Claude GitHub App 讀 marketplace；App 認證唔到嘅 source 先要 public）；個人 Pro/Max 帳戶層 synced plugins 對 private repo 嘅行為文檔未講，視為未驗證。
-- 驗證 cloud 可達性：`curl -sI https://raw.githubusercontent.com/<owner>/<repo>/main/.claude-plugin/marketplace.json` 必須回 200。
-- 新開 marketplace repo 時 `gh repo create` 預設 private，記得加 `--public`。
+- 喺 cloud environment 加 setup script（claude.ai/code 訊息輸入框上面嗰行嘅環境 chip → 齒輪；**Settings 入面冇呢個位，亦冇直接 URL**）：
+
+```bash
+claude plugin marketplace add <owner>/<repo>
+claude plugin install <plugin>@<marketplace>
+```
+
+- Setup script 喺 Claude Code 啟動**之前**執行，寫落磁碟嘅嘢會入環境快取，所以 plugin 喺 command 註冊嗰刻已經存在。
+- 改 setup script 亦會迫環境快取重建；`resume` 一個現有 session 永遠唔會重跑 setup script，所以驗證必須開**全新** session。
+- Project `.claude/settings.json` 嘅聲明可以保留（本機有效），但**唔可以當佢喺 cloud 會生效**。
+- 診斷：cloud 冇 `/plugin` command，睇唔到 Errors tab；只可展開「Initialized session」面板，入面 `Run setup script` 一行亦係加 setup script 嘅入口。
+- Marketplace repo 是否必須 public **未驗證**——今次修好時 repo 已經係 public。
 
 **參考**：
-- https://code.claude.com/docs/en/cloud-environments#github-proxy
+- https://code.claude.com/docs/en/cloud-environments#setup-scripts
+- https://code.claude.com/docs/en/cloud-environments#environment-caching
 - https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup
-- https://code.claude.com/docs/en/plugin-marketplaces#private-repositories
+- https://code.claude.com/docs/en/plugins-reference#synced-plugins
 
 ---
 
