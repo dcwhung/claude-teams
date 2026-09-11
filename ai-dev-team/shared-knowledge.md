@@ -172,6 +172,8 @@ Observed sequence：
 
 即係話：本條目觀察到嘅行為**唔係 bug、唔係 cloud 專屬缺陷**，而係 v2.1.195 起嘅 documented intended behavior——external source（GitHub repo / npm）嘅 plugin 只由 project settings 啟用時，喺**任何**載入 plugin 嘅路徑都唔會自動裝，要等使用者自己 install。我哋當初當成「文檔寫明會自動裝但實測唔成立」，其實係讀錯咗權威文檔。症狀係 `/ai-dev-team:start` 回 `Unknown command`。
 
+**實測環境（重要前提）**：cloud environment 嘅 network access level 係 **Trusted**。下面所有結論只喺呢個 level 下成立——如果環境設為 `None`，setup script 內嘅 `claude plugin marketplace add` / `claude plugin install` 本身就出唔到網、會失敗，連「setup script 係解法」都唔成立。為別人 project 抄呢個解法前，先確認 network access level。
+
 2026-09-10 至 09-11 喺 Python-Project-Run365Days 逐項排除（全部實測）：
 - Repo 由 private 轉 public、開全新 session → **仍然失敗**。private 唔係原因（此結論受下面「因果強度」段落嘅舊 snapshot 前提限制）。順帶更正上一版對文檔嘅誇大描述——cloud repo 存取範圍係**有條件**嘅，官方 *GitHub authentication options* 只講：
     - GitHub App：「Any public repository, and private repositories that the Claude GitHub App is installed on」
