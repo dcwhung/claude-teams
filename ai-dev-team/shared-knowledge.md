@@ -205,9 +205,15 @@ Observed sequence：
 - 喺 cloud environment 加 setup script（claude.ai/code 訊息輸入框上面嗰行嘅環境 chip → 齒輪；**Settings 入面冇呢個位，亦冇直接 URL**）：
 
 ```bash
-claude plugin marketplace add <owner>/<repo>
-claude plugin install <plugin>@<marketplace>
+# `|| true` 係必要嘅：setup script 一旦 exit 非零，session 就開唔到
+# （cloud-environments #setup-scripts：「if the script exits non-zero, the
+# session fails to start」）。而快取重建後 marketplace / plugin 可能已經存在，
+# 呢類「已存在」情況有機會回非零，唔想因此炸咗整個 session。
+claude plugin marketplace add <owner>/<repo> || true
+claude plugin install <plugin>@<marketplace> || true
 ```
+
+> ⚠️ 代價：`|| true` 會連真正嘅失敗都靜默掉。所以裝完之後必須自己驗證（開全新 session 睇 slash command 有冇出現，或喺 session 內 `claude plugin list`），唔可以「script 跑完就當成功」。
 
 - Setup script 喺 Claude Code 啟動**之前**執行，寫落磁碟嘅嘢會入環境快取，所以 plugin 喺 command 註冊嗰刻已經存在。
 - 改 setup script 亦會迫環境快取重建；`resume` 一個現有 session 永遠唔會重跑 setup script，所以驗證必須開**全新** session。
