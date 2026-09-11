@@ -80,6 +80,82 @@
 
 ---
 
+## [SK-012] Rate limit（429）中斷 subagent 後：worktree + branch 完整保留，用 SendMessage 續返原 agent
+
+**日期**：2026-09-11 15:40
+**來源 Agent**：Main Agent（uno-games parallel-dispatch Round 1 / Round 2）
+**類別**：平台限制 / 恢復流程
+**適用 Agent**：Main Agent（任何用 Agent tool + `isolation: worktree` 跑 lane 嘅 session）
+**有效期至**：永久
+
+**內容**：
+Session usage limit 觸發時，所有 background subagent 同時收到 429 並以 `status=failed` 結束，但：
+- `.claude/worktrees/agent-<id>/` 同佢 checkout 咗嘅 task branch **唔會被清**（Agent tool 只自動清「無改動」worktree）
+- Subagent 嘅 transcript 保留，`SendMessage({to: '<agentId>'})` 可以帶住完整 context 續返（實測：Lane A 由 Red spec commit + 未 commit 嘅 Green 改動位置繼續，零重覆工作）
+
+**恢復流程（main agent）**：
+```
+□ git worktree list + git branch --list → 對每個 failed lane 判斷：
+    有 commit / 有未 commit 改動 → SendMessage 續原 agent（prompt 講明 worktree path、branch、已有 commit、未 commit 檔案）
+    branch 同 develop tip 一樣（零進度）→ git worktree remove --force + git branch -D，全新 Agent call
+□ 同一 response 發晒全部 SendMessage + Agent call，保持並行
+□ Compact Protection block 要列出每個 lane 嘅 branch + 最後 commit，reset 後先可以做上面判斷
+```
+
+**禁止**：
+- 唔檢查就全部重新 dispatch（會撞 One-Task-One-Branch pre-flight，且浪費已完成嘅 Red spec）
+- 用 `git worktree prune` 一刀切（會連有進度嘅 worktree 都清走）
+
+**參考**：uno-games session 2026-09-10 / 09-11：兩次 429，第一次 5 lane 全部重來（只 Lane A 有進度 → resume），第二次 3 agent（2 個 resume + 1 個重開）。
+
+---
+
+## [SK-011] branch-policy hook 對 compound Bash command 按「當前 branch」判斷，`checkout -b X && git commit` 會被誤 block
+
+**日期**：2026-09-11 00:30
+**來源 Agent**：Main Agent（uno-games）
+**類別**：平台限制 / hook 行為
+**適用 Agent**：Main Agent、所有 developer subagent
+**有效期至**：直至 hook 改為解析 command 內嘅 `checkout` 為止
+
+**內容**：
+`hooks/branch-policy.sh` 喺 PreToolUse 讀 `git rev-parse --abbrev-ref HEAD`（執行**前**嘅 branch）再 grep command string 有冇 `git commit`。所以喺 `develop` 上發一條 `git checkout -b chore/x develop && ... && git commit ...` 會被 block（exit 2），即使 commit 實際會落喺 `chore/x`。
+
+**正確做法**：
+- 拆兩個 Bash call：第一個只 `git checkout -b <branch>`，第二個先做改動 + commit
+- 或 subagent 喺 worktree 內用 `git checkout -b <branch> develop`（worktree 初始 branch 係 `worktree-agent-*`，唔係 protected，所以唔會撞）
+
+**相關**：merge 入 protected branch 用 `git merge --no-ff <branch> -m "..."` 唔會被 block（command 無 `git commit` 字串），呢個係 main agent sync 嘅正常路徑。
+
+---
+
+## [SK-010] 由 protected branch untrack 檔案（`git rm --cached`）後 merge 會將檔案從 working tree 刪走
+
+**日期**：2026-09-11 00:35
+**來源 Agent**：Main Agent（uno-games，跟 sw-git-flow `.gitignore` baseline untrack `CLAUDE.md` / `.claude/` / `.proj-docs/`）
+**類別**：錯誤模式 / git 行為
+**適用 Agent**：Main Agent（任何執行 git-flow 初始化嘅 agent）
+**有效期至**：永久
+
+**內容**：
+Observed sequence：
+1. `develop` 上 `CLAUDE.md` 係 tracked
+2. `git checkout -b chore/gitignore` → `git rm -r --cached CLAUDE.md .claude .proj-docs` + 加 `.gitignore` → commit（檔案仍喺 disk ✅）
+3. `git checkout develop`：develop 仍 track 呢啲檔案，git 由 develop tree 還原（仍喺 disk）
+4. `git merge --no-ff chore/gitignore`：merge 帶入「刪除 tracked 檔案」嘅 diff → git **從 working tree 刪走** `CLAUDE.md`、`.claude/settings.json`、成個 `.proj-docs/`
+
+`--cached` 只保護 step 2 嗰次操作，唔保護之後嘅 merge。
+
+**恢復**：`git restore --source=<有檔案嘅 commit> --worktree -- <paths>`（唔 stage；之後 `git status --ignored` 應顯示 `!!`）。
+
+**正確流程**：untrack 前先 `cp -r` 備份到 repo 外，或 merge 後即刻由 `main` / 舊 commit restore；`.proj-docs/` 入面嘅 audit / review / QA 報告係唯一副本，冇備份就會永久丟失（今次因為 `main` 上仲有 PR #2 嘅版本先救得返）。
+
+**第二次發生（2026-09-11 15:35，同一 session）**：untrack 只喺 `develop` 做咗，`main` 仍 track 住。Release `git checkout main && git merge --no-ff develop` 再次刪走 `CLAUDE.md`、`.claude/settings.json`、`.proj-docs/audits/*`、`diagrams/*`、`index.md`（連帶 W-030 對 CLAUDE.md 嘅本地改動、reviewer / QA append 入 index.md 嘅條目）。**規則：untrack 之後，每個仍 track 住呢啲檔案嘅 long-lived branch（`main`）第一次收到 merge 都會刪；merge 完必須即刻 `git restore --source=<舊 commit> --worktree` 並重做本地改動。** 更穩妥係喺 `.gitignore` chore 同一日 release 到 `main`，或者先備份成個 `.proj-docs/` + `CLAUDE.md` 到 repo 外。
+
+**後果要同用戶講清楚**：untrack `CLAUDE.md` + `.claude/settings.json` 之後，(a) subagent worktree 唔會有 `CLAUDE.md`（要喺 prompt 指定主 checkout 絕對路徑），(b) cloud session 唔會自動裝 plugin（`.claude/settings.json` 唔入 repo）。
+
+---
+
 ## [SK-009] Cloud session 裝 plugin 要求 marketplace repo 公開可達——private repo 一律靜默失敗
 
 **日期**：2026-09-10 23:28
