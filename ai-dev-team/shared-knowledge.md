@@ -173,7 +173,11 @@ Observed sequence：
 即係話：本條目觀察到嘅行為**唔係 bug、唔係 cloud 專屬缺陷**，而係 v2.1.195 起嘅 documented intended behavior——external source（GitHub repo / npm）嘅 plugin 只由 project settings 啟用時，喺**任何**載入 plugin 嘅路徑都唔會自動裝，要等使用者自己 install。我哋當初當成「文檔寫明會自動裝但實測唔成立」，其實係讀錯咗權威文檔。症狀係 `/ai-dev-team:start` 回 `Unknown command`。
 
 2026-09-10 至 09-11 喺 Python-Project-Run365Days 逐項排除（全部實測）：
-- Repo 由 private 轉 public、開全新 session → **仍然失敗**。private 唔係原因；文檔亦明講 cloud session 可存取「連接嘅 GitHub 帳戶睇到嘅任何 repo」。
+- Repo 由 private 轉 public、開全新 session → **仍然失敗**。private 唔係原因（此結論受下面「因果強度」段落嘅舊 snapshot 前提限制）。順帶更正上一版對文檔嘅誇大描述——cloud repo 存取範圍係**有條件**嘅，官方 *GitHub authentication options* 只講：
+    - GitHub App：「Any public repository, and private repositories that the Claude GitHub App is installed on」
+    - `/web-setup`：「Any repository your gh token can access, whether or not the App is installed」
+
+  即唔係「連接嘅 GitHub 帳戶睇到嘅任何 repo」，而係視乎用邊種認證方式同 App 裝喺邊。
 - 喺 cloud session 內手動跑 `claude plugin marketplace add` + `claude plugin install` → **成功**（HTTPS clone 正常）。即網絡、認證、marketplace 可達性全部冇問題。
 - 但 session 中途安裝**當時唔會令 slash command 生效**。官方口徑（`discover-plugins` → *Install plugins*）：「The `claude plugin install` shell command doesn't run in a session, so Claude Code loads the plugins it installs the next time you start Claude Code, or when you run `/reload-plugins` in a session that's already open.」即係要下次啟動、或者喺當前 session 跑 `/reload-plugins`。我哋當時冇試 `/reload-plugins`，所以以下關於 `/reload-plugins` 嘅內容係**引文檔、未實測**：
     - 需要 Claude Code v2.1.260+；可喺無 interactive terminal 嘅 session 用（desktop app、Agent SDK、`-p` 非互動模式）。
@@ -217,6 +221,7 @@ claude plugin install <plugin>@<marketplace>
 - https://code.claude.com/docs/en/cloud-environments#environment-caching
 - https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup
 - https://code.claude.com/docs/en/plugins-reference#synced-plugins
+- https://code.claude.com/docs/en/claude-code-on-the-web#github-authentication-options（cloud repo 存取範圍嘅實際條件）
 
 ---
 
