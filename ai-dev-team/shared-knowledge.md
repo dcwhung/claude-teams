@@ -225,10 +225,11 @@ Observed sequence：
 ```bash
 # ── Cloud environment setup script（完整版，可直接 copy-paste）──────────
 #
-# `|| true` 係必要嘅：setup script 一旦 exit 非零，session 就開唔到
+# `|| true` 係保險做法：setup script 一旦 exit 非零，session 就開唔到
 # （cloud-environments #setup-scripts：「if the script exits non-zero, the
-# session fails to start」）。而快取重建後 marketplace / plugin 可能已經存在，
-# 呢類「已存在」情況有機會回非零，唔想因此炸咗整個 session。
+# session fails to start」——呢點有文檔）。而快取重建後 marketplace / plugin
+# 可能已經存在，呢類「已存在」情況**有機會**回非零（未驗證嘅推測），
+# 唔想因此炸咗整個 session，所以先加 `|| true`。
 
 # 清 plugin cache：只喺「plugin 裝咗但 skill / command 唔出現」時才解註。
 # 必須排喺 install 之前 —— 排喺 install 後面會刪走啱啱裝好嘅 plugin，
