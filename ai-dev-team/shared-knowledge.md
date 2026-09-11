@@ -168,9 +168,23 @@ Observed sequence：
 
 **內容**：
 
-**先講清楚文檔狀態：兩頁官方文檔互相矛盾，以 `discover-plugins` 為權威。** 部分文檔（含本條目上一版所依據嘅段落）令人以為 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 會喺 session start 自動裝 plugin；但 `discover-plugins` → *Configure team marketplaces* 明確講相反：
+**先講清楚文檔狀態：兩頁官方文檔互相矛盾，以 `discover-plugins` 為權威。** 兩頁都已定位，以下並列對照。
+
+**矛盾嘅一方** — `cloud-environments` → *What carries over from your setup*
+（https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup）
+該頁「What carries over from your setup」表格其中一行斷言 cloud session 會自動裝：
+
+> | Plugins declared in `.claude/settings.json` | Yes | Installed at session start from the marketplace you declared. Requires network access to reach the marketplace source |
+
+本條目上一版正正係只讀咗呢張表（`Yes / Installed at session start`），所以以為「文檔寫明會自動裝但實測唔成立」。
+
+**權威嘅一方** — `discover-plugins` → *Configure team marketplaces*
+（https://code.claude.com/docs/en/discover-plugins#configure-team-marketplaces）
+明確講相反：
 
 > "As of Claude Code v2.1.195, adding the marketplace doesn't install plugins that come from an external source, on any path that loads plugins. A plugin that only the project's `.claude/settings.json` enables, and that comes from an external source such as a GitHub repository or npm package, doesn't load until the team member installs it. Until then, Claude Code reports the plugin as not installed and shows the `claude plugin install` command to run."
+
+**為何以 `discover-plugins` 為權威**：佢有明確版本號（`As of Claude Code v2.1.195`）同明確適用條件（external source、只由 project 嘅 `.claude/settings.json` 啟用、`on any path that loads plugins`）；`cloud-environments` 嗰張表只係一格無版本、無條件嘅 `Yes` 摘要，粒度粗過前者。因此 `有效期至` 嘅覆核條件（「若官方統一兩頁矛盾文檔再覆核」）而家係可操作嘅：覆核時分別重讀上面兩個 anchor，睇 `#what-carries-over-from-your-setup` 表格嗰行有冇改成 `No` 或補上條件，以及 `#configure-team-marketplaces` 嘅 v2.1.195 段落有冇被新版本取代。
 
 即係話：本條目觀察到嘅行為**唔係 bug、唔係 cloud 專屬缺陷**，而係 v2.1.195 起嘅 documented intended behavior——external source（GitHub repo / npm）嘅 plugin 只由 project settings 啟用時，喺**任何**載入 plugin 嘅路徑都唔會自動裝，要等使用者自己 install。我哋當初當成「文檔寫明會自動裝但實測唔成立」，其實係讀錯咗權威文檔。症狀係 `/ai-dev-team:start` 回 `Unknown command`。
 
@@ -232,7 +246,7 @@ claude plugin install <plugin>@<marketplace> || true
 - https://code.claude.com/docs/en/cloud-environments#setup-scripts
 - https://code.claude.com/docs/en/cloud-environments#environment-caching
 - https://code.claude.com/docs/en/cloud-environments#github-proxy（repo-scope 只限 API + release asset，唔包 git clone）
-- https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup
+- https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup（矛盾嘅另一方：表格斷言 `Yes / Installed at session start`；已被 `#configure-team-marketplaces` 嘅 v2.1.195 段落推翻）
 - https://code.claude.com/docs/en/plugins-reference#synced-plugins
 - https://code.claude.com/docs/en/claude-code-on-the-web#github-authentication-options（cloud repo 存取範圍嘅實際條件）
 
