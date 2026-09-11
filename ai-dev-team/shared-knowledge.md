@@ -161,7 +161,9 @@ Observed sequence：
 
 ## [SK-009] Cloud session 唔會自動裝 project 聲明嘅 external-source plugin——已驗證解法：environment setup script
 
-> ⚠️ 已更新：2026-09-11 18:00，原因：官方文檔覆核後大幅修正——(a) 呢個行為係 v2.1.195 起嘅 documented intended behavior，唔係 bug（原文誤稱「文檔寫明會自動裝但實測唔成立」）；(b) 移除「唯一變數係 setup script」嘅過度歸因；(c) 補 environment cache 版本 staleness 警示；(d) synced plugin 一項降級為「未確定」；(e) 更正 GitHub repo 存取範圍同 github-proxy 適用範圍。
+> ⚠️ 已更新：2026-09-11 22:43（實際修正 commit 時間，`git log` commit range `6545afa..7a88ef7`；原標嘅 `18:00` 係估算值，早於實際修正時間）。原因：官方文檔覆核後大幅修正——(a) 呢個行為係 v2.1.195 起嘅 documented intended behavior，唔係 bug（原文誤稱「文檔寫明會自動裝但實測唔成立」）［C-002］；(b) 移除「唯一變數係 setup script」嘅過度歸因［C-001］；(c) 補 environment cache 版本 staleness 警示［C-003 / S-005］；(d) synced plugin 一項降級為「未確定」［W-004］；(e) 更正 GitHub repo 存取範圍同 github-proxy 適用範圍［W-001 / W-002］；(f) 補「實測環境 network access level 係 Trusted」呢個前提——`None` 之下連「setup script 係解法」都唔成立［W-005］；(g) 標題去絕對化［W-006］。
+>
+> ⚠️ 再更新：2026-09-11 22:55（`git log` commit range `71d9095..a68f240`）。原因：第二輪 review——(h) 補入矛盾嘅另一頁官方文檔（`cloud-environments#what-carries-over-from-your-setup` 表格斷言 `Yes / Installed at session start`）並列對照，說明以 `discover-plugins` 為權威嘅理由［W-007］；(i) 標明「documented 嘅 not-installed 提示喺 cloud 從未出現」係未對帳 delta，保住「失敗係靜默嘅」呢項實測［W-008］；(j) 清 plugin cache 指引改為完整可 copy-paste 嘅 cloud snippet，`rm -rf` 固定排喺 install 之前，末加 `claude plugin list`［W-009 / S-007］；(k) snippet 內 `|| true` 由「必要」改為「保險做法」［S-006］。
 
 **日期**：2026-09-11 00:20
 **來源 Agent**：Main Agent（claude-teams `/fix` session）
