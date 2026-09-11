@@ -377,7 +377,7 @@ Do you want to overwrite .active-team?
 
 ---
 
-## [SK-006] 設計原則 — UI Logic 必須先問 utils/service 層有冇
+## [SK-013] 設計原則 — UI Logic 必須先問 utils/service 層有冇
 
 **日期**：2026-05-07 00:45
 **來源 Agent**：Main Agent
