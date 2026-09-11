@@ -223,12 +223,27 @@ Observed sequence：
 - 喺 cloud environment 加 setup script（claude.ai/code 訊息輸入框上面嗰行嘅環境 chip → 齒輪；**Settings 入面冇呢個位，亦冇直接 URL**）：
 
 ```bash
+# ── Cloud environment setup script（完整版，可直接 copy-paste）──────────
+#
 # `|| true` 係必要嘅：setup script 一旦 exit 非零，session 就開唔到
 # （cloud-environments #setup-scripts：「if the script exits non-zero, the
 # session fails to start」）。而快取重建後 marketplace / plugin 可能已經存在，
 # 呢類「已存在」情況有機會回非零，唔想因此炸咗整個 session。
+
+# 清 plugin cache：只喺「plugin 裝咗但 skill / command 唔出現」時才解註。
+# 必須排喺 install 之前 —— 排喺 install 後面會刪走啱啱裝好嘅 plugin，
+# 而且刪錯嘅後果會被 `|| true` 靜默，表面上一切正常。
+# 註：cloud 通常唔需要呢一行 —— 改 setup script 本身已觸發環境快照重建
+# （見下面 #environment-caching），效果等同清 cache。
+# rm -rf ~/.claude/plugins/cache
+
 claude plugin marketplace add <owner>/<repo> || true
 claude plugin install <plugin>@<marketplace> || true
+
+# 驗證證據直接落喺 setup script log：「Initialized session」面板 →
+# 「Run setup script」一行可展開，即場睇到 plugin 有冇裝到、係邊個版本，
+# 唔需要另開 session 摸黑撞。
+claude plugin list || true
 ```
 
 > ⚠️ 代價：`|| true` 會連真正嘅失敗都靜默掉。所以裝完之後必須自己驗證（開全新 session 睇 slash command 有冇出現，或喺 session 內 `claude plugin list`），唔可以「script 跑完就當成功」。
@@ -238,7 +253,10 @@ claude plugin install <plugin>@<marketplace> || true
 - ⚠️ **版本 staleness（cloud 會靜默用舊 plugin 版本）**：按 `#environment-caching`，setup script 只喺第一次 session 跑，跑完影快照，之後**新** session 直接 skip setup script step；只有 (a) 改 setup script、(b) 改 allowed network hosts、(c) 快照約七日過期，三者之一才會重建。**「push 新 plugin 版本上 marketplace」唔係重建 trigger**，所以 cloud session 會繼續用快照內嗰個舊版本，而且完全冇錯誤提示。要拿到新版本：手動改一下 setup script（任何改動即可，例如加/改一行註釋）強制重建，或者等快照過期（約七日）。本機唔受影響（`claude plugin update ai-dev-team` 即時生效）。
 - Project `.claude/settings.json` 嘅聲明可以保留（本機有效），但**唔可以當佢喺 cloud 會生效**。
 - 診斷：cloud 冇 `/plugin` command，睇唔到 Errors tab；只可展開「Initialized session」面板，入面 `Run setup script` 一行亦係加 setup script 嘅入口。
-- 診斷：plugin 裝咗但 **skill 唔出現** 時，官方 troubleshooting 嘅做法係清 cache：`rm -rf ~/.claude/plugins/cache`，重啟 Claude Code，再重新安裝 plugin（`discover-plugins` → Troubleshooting → Common issues）。本機直接可做；cloud 就要將呢兩步放入 setup script（順帶亦會觸發環境快取重建）。
+- 診斷：plugin 裝咗但 **skill / command 唔出現** 時，官方 troubleshooting（`discover-plugins` → Troubleshooting → Common issues）係**三步**：(1) `rm -rf ~/.claude/plugins/cache` → (2) 重啟 Claude Code → (3) 重新安裝 plugin。
+    - **本機**：照跑官方三步。
+    - **Cloud**：三步唔可以照搬。setup script 跑喺 Claude Code 啟動**之前**，所以「重啟 Claude Code」喺 setup script 語境冇意義（等價操作係改完 setup script 後開一個**全新** session）。直接用上面「正確處理」第一項嘅完整 snippet copy-paste：`rm -rf ~/.claude/plugins/cache` 必須排喺 `claude plugin install` **之前**，排後面會刪走啱啱裝好嘅 plugin 而且被 `|| true` 靜默。
+    - 而且 cloud **通常唔需要** `rm -rf`：改 setup script 本身已經觸發環境快照重建，效果等同清 cache（所以 snippet 內該行默認註釋掉）。
 - Marketplace repo 是否必須 public **未驗證**——今次修好時 repo 已經係 public。
 
 **參考**：
