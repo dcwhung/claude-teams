@@ -220,6 +220,7 @@ claude plugin install <plugin>@<marketplace> || true
 - ⚠️ **版本 staleness（cloud 會靜默用舊 plugin 版本）**：按 `#environment-caching`，setup script 只喺第一次 session 跑，跑完影快照，之後**新** session 直接 skip setup script step；只有 (a) 改 setup script、(b) 改 allowed network hosts、(c) 快照約七日過期，三者之一才會重建。**「push 新 plugin 版本上 marketplace」唔係重建 trigger**，所以 cloud session 會繼續用快照內嗰個舊版本，而且完全冇錯誤提示。要拿到新版本：手動改一下 setup script（任何改動即可，例如加/改一行註釋）強制重建，或者等快照過期（約七日）。本機唔受影響（`claude plugin update ai-dev-team` 即時生效）。
 - Project `.claude/settings.json` 嘅聲明可以保留（本機有效），但**唔可以當佢喺 cloud 會生效**。
 - 診斷：cloud 冇 `/plugin` command，睇唔到 Errors tab；只可展開「Initialized session」面板，入面 `Run setup script` 一行亦係加 setup script 嘅入口。
+- 診斷：plugin 裝咗但 **skill 唔出現** 時，官方 troubleshooting 嘅做法係清 cache：`rm -rf ~/.claude/plugins/cache`，重啟 Claude Code，再重新安裝 plugin（`discover-plugins` → Troubleshooting → Common issues）。本機直接可做；cloud 就要將呢兩步放入 setup script（順帶亦會觸發環境快取重建）。
 - Marketplace repo 是否必須 public **未驗證**——今次修好時 repo 已經係 public。
 
 **參考**：
