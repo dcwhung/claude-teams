@@ -158,6 +158,8 @@ Observed sequence：
 
 ## [SK-009] Cloud session 唔會自動裝 project 聲明嘅 external-source plugin——已驗證解法：environment setup script
 
+> ⚠️ 已更新：2026-09-11 18:00，原因：官方文檔覆核後大幅修正——(a) 呢個行為係 v2.1.195 起嘅 documented intended behavior，唔係 bug（原文誤稱「文檔寫明會自動裝但實測唔成立」）；(b) 移除「唯一變數係 setup script」嘅過度歸因；(c) 補 environment cache 版本 staleness 警示；(d) synced plugin 一項降級為「未確定」；(e) 更正 GitHub repo 存取範圍同 github-proxy 適用範圍。
+
 **日期**：2026-09-11 00:20
 **來源 Agent**：Main Agent（claude-teams `/fix` session）
 **類別**：平台限制
@@ -194,7 +196,7 @@ Observed sequence：
 1. 真正加入 `claude plugin marketplace add` + `claude plugin install` 命令；
 2. **強制重建 environment cache snapshot**——按官方 caching 文檔，setup script 一改就係重建 trigger。
 
-即係「加 setup script」同「換新 snapshot」兩個變數綁埋一齊，無法分離。連帶後果：上面「private 唔係原因」同「claude.ai synced plugin 無效」兩項結論，全部係喺**同一個舊 snapshot** 下觀察到嘅（所有所謂「全新 session」都由該舊 snapshot 開機），所以嚴格只成立於該舊 snapshot，唔可以當成普遍結論。
+即係「加 setup script」同「換新 snapshot」兩個變數綁埋一齊，無法分離。連帶後果：上面「private 唔係原因」同「claude.ai synced plugin 未確定」兩項觀察，全部係喺**同一個舊 snapshot** 下觀察到嘅（所有所謂「全新 session」都由該舊 snapshot 開機），所以嚴格只成立於該舊 snapshot，唔可以當成普遍結論。
 
 **Discriminating test（未做）**：將 setup script 改成一個 no-op（例如 `echo noop`）——只觸發 cache 重建、唔安裝任何 plugin——再開全新 session。若仍然失敗 → 安裝命令係真因；若突然成功 → 舊 snapshot 本身係污染源。
 
