@@ -156,7 +156,7 @@ Observed sequence：
 
 ---
 
-## [SK-009] Cloud session 唔會自動裝 project 聲明嘅 plugin——唯一可靠解法係 environment setup script
+## [SK-009] Cloud session 唔會自動裝 project 聲明嘅 external-source plugin——已驗證解法：environment setup script
 
 **日期**：2026-09-11 00:20
 **來源 Agent**：Main Agent（claude-teams `/fix` session）
