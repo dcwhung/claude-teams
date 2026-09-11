@@ -162,15 +162,24 @@ Observed sequence：
 **來源 Agent**：Main Agent（claude-teams `/fix` session）
 **類別**：平台限制
 **適用 Agent**：全部（尤其 DevOps / 任何維護 plugin marketplace 嘅 agent）
-**有效期至**：直至 Claude Code 修正 cloud session start 嘅 plugin 自動安裝為止
+**有效期至**：永久（v2.1.195 起嘅 documented behavior，非 bug；若官方統一兩頁矛盾文檔再覆核）
 
 **內容**：
-官方文檔寫明 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 會喺 cloud session start 自動裝 plugin。**實測唔成立。** 症狀係 `/ai-dev-team:start` 回 `Unknown command`。
+
+**先講清楚文檔狀態：兩頁官方文檔互相矛盾，以 `discover-plugins` 為權威。** 部分文檔（含本條目上一版所依據嘅段落）令人以為 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 會喺 session start 自動裝 plugin；但 `discover-plugins` → *Configure team marketplaces* 明確講相反：
+
+> "As of Claude Code v2.1.195, adding the marketplace doesn't install plugins that come from an external source, on any path that loads plugins. A plugin that only the project's `.claude/settings.json` enables, and that comes from an external source such as a GitHub repository or npm package, doesn't load until the team member installs it. Until then, Claude Code reports the plugin as not installed and shows the `claude plugin install` command to run."
+
+即係話：本條目觀察到嘅行為**唔係 bug、唔係 cloud 專屬缺陷**，而係 v2.1.195 起嘅 documented intended behavior——external source（GitHub repo / npm）嘅 plugin 只由 project settings 啟用時，喺**任何**載入 plugin 嘅路徑都唔會自動裝，要等使用者自己 install。我哋當初當成「文檔寫明會自動裝但實測唔成立」，其實係讀錯咗權威文檔。症狀係 `/ai-dev-team:start` 回 `Unknown command`。
 
 2026-09-10 至 09-11 喺 Python-Project-Run365Days 逐項排除（全部實測）：
 - Repo 由 private 轉 public、開全新 session → **仍然失敗**。private 唔係原因；文檔亦明講 cloud session 可存取「連接嘅 GitHub 帳戶睇到嘅任何 repo」。
 - 喺 cloud session 內手動跑 `claude plugin marketplace add` + `claude plugin install` → **成功**（HTTPS clone 正常）。即網絡、認證、marketplace 可達性全部冇問題。
-- 但 session 中途安裝**唔會令 slash command 生效**：command / hooks / subagent 只喺 session 啟動時註冊，而且該次安裝唔會帶入下一個 session。
+- 但 session 中途安裝**當時唔會令 slash command 生效**。官方口徑（`discover-plugins` → *Install plugins*）：「The `claude plugin install` shell command doesn't run in a session, so Claude Code loads the plugins it installs the next time you start Claude Code, or when you run `/reload-plugins` in a session that's already open.」即係要下次啟動、或者喺當前 session 跑 `/reload-plugins`。我哋當時冇試 `/reload-plugins`，所以以下關於 `/reload-plugins` 嘅內容係**引文檔、未實測**：
+    - 需要 Claude Code v2.1.260+；可喺無 interactive terminal 嘅 session 用（desktop app、Agent SDK、`-p` 非互動模式）。
+    - ⚠️ 「The command runs only when you type it directly into the session… When you send it over a remote connection instead, such as Remote Control or a relayed chat message, the command declines without reloading anything.」——**本次 session 正正中咗呢個限制**：我哋用 `SendMessage` 將指令送入 cloud session，屬 relayed message，即使當時打 `/reload-plugins` 都會被拒、唔會 reload。
+    - Reload **唔會** connect / disconnect plugin MCP server。
+    - 另外，session 內嗰次安裝唔會帶入下一個 session（見下面 environment caching）。
 - claude.ai 帳戶層加 marketplace + plugin（synced plugins，Customize → Plugins → Add → Add marketplace，再喺 Discover 撳 Add）→ 加得成功，但開全新 session **仍然失敗**。
 - 加 environment **setup script** → **成功**。Team folder 解析為 `/root/.claude/plugins/cache/claude-teams/ai-dev-team/1.0.3`，即係 marketplace 安裝生效，唔係 synced 路徑。
 
@@ -200,6 +209,9 @@ claude plugin install <plugin>@<marketplace>
 - Marketplace repo 是否必須 public **未驗證**——今次修好時 repo 已經係 public。
 
 **參考**：
+- https://code.claude.com/docs/en/discover-plugins#configure-team-marketplaces（權威：external-source plugin 唔會自動裝）
+- https://code.claude.com/docs/en/discover-plugins#install-plugins（安裝何時生效）
+- https://code.claude.com/docs/en/discover-plugins#apply-plugin-changes-without-restarting（`/reload-plugins` 同其限制）
 - https://code.claude.com/docs/en/cloud-environments#setup-scripts
 - https://code.claude.com/docs/en/cloud-environments#environment-caching
 - https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup
