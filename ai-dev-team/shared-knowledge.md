@@ -185,7 +185,7 @@ Observed sequence：
     - ⚠️ 「The command runs only when you type it directly into the session… When you send it over a remote connection instead, such as Remote Control or a relayed chat message, the command declines without reloading anything.」——**本次 session 正正中咗呢個限制**：我哋用 `SendMessage` 將指令送入 cloud session，屬 relayed message，即使當時打 `/reload-plugins` 都會被拒、唔會 reload。
     - Reload **唔會** connect / disconnect plugin MCP server。
     - 另外，session 內嗰次安裝唔會帶入下一個 session（見下面 environment caching）。
-- claude.ai 帳戶層加 marketplace + plugin（synced plugins，Customize → Plugins → Add → Add marketplace，再喺 Discover 撳 Add）→ 加得成功，但開全新 session **仍然失敗**。
+- claude.ai 帳戶層加 marketplace + plugin（synced plugins，Customize → Plugins → Add → Add marketplace，再喺 Discover 撳 Add）→ 加得成功，但開全新 session `/ai-dev-team:start` 仍然 `Unknown command`。**結論：未確定，唔可以當「synced plugin 無效」。** 當時冇喺 cloud session 跑 `claude plugin list` 記錄有冇 `Synced from claude.ai` 標題，所以分辨唔到兩種完全唔同嘅情況：(a) synced plugin 根本冇下載落環境，(b) 下載咗但 command / hooks / subagent 未註冊（即上一點嘅註冊時機問題）。下次重驗必須先 `claude plugin list` 睇標題再落結論。
 - 加 environment **setup script** → **成功**。Team folder 解析為 `/root/.claude/plugins/cache/claude-teams/ai-dev-team/1.0.3`，即係 marketplace 安裝生效，唔係 synced 路徑。
 
 **因果強度：setup script 已驗證係 sufficient，未驗證係 necessary。** 加 setup script 同時改變兩樣嘢：
