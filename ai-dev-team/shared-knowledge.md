@@ -174,7 +174,13 @@ Observed sequence：
 - claude.ai 帳戶層加 marketplace + plugin（synced plugins，Customize → Plugins → Add → Add marketplace，再喺 Discover 撳 Add）→ 加得成功，但開全新 session **仍然失敗**。
 - 加 environment **setup script** → **成功**。Team folder 解析為 `/root/.claude/plugins/cache/claude-teams/ai-dev-team/1.0.3`，即係 marketplace 安裝生效，唔係 synced 路徑。
 
-前後兩次都係全新 session，唯一變數係 setup script，所以 setup script 係決定性因素。
+**因果強度：setup script 已驗證係 sufficient，未驗證係 necessary。** 加 setup script 同時改變兩樣嘢：
+1. 真正加入 `claude plugin marketplace add` + `claude plugin install` 命令；
+2. **強制重建 environment cache snapshot**——按官方 caching 文檔，setup script 一改就係重建 trigger。
+
+即係「加 setup script」同「換新 snapshot」兩個變數綁埋一齊，無法分離。連帶後果：上面「private 唔係原因」同「claude.ai synced plugin 無效」兩項結論，全部係喺**同一個舊 snapshot** 下觀察到嘅（所有所謂「全新 session」都由該舊 snapshot 開機），所以嚴格只成立於該舊 snapshot，唔可以當成普遍結論。
+
+**Discriminating test（未做）**：將 setup script 改成一個 no-op（例如 `echo noop`）——只觸發 cache 重建、唔安裝任何 plugin——再開全新 session。若仍然失敗 → 安裝命令係真因；若突然成功 → 舊 snapshot 本身係污染源。
 
 **適用場景**：
 為任何 project 設定 cloud session 使用 ai-dev-team（或任何自有 plugin）時。
