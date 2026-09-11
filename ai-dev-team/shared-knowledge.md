@@ -8,6 +8,9 @@
 
 ## 使用指引
 
+### 條目排序
+條目按日期由新到舊排列，ID（SK-XXX）只作引用識別，唔代表位置或先後——搵條目請用 ID 搜尋，唔好靠序號推位置。
+
 ### 何時記錄
 - 發現項目特有技術規律或約定
 - 發現常見錯誤模式或陷阱
@@ -156,36 +159,122 @@ Observed sequence：
 
 ---
 
-## [SK-009] Cloud session 裝 plugin 要求 marketplace repo 公開可達——private repo 一律靜默失敗
+## [SK-009] Cloud session 唔會自動裝 project 聲明嘅 external-source plugin——已驗證解法：environment setup script
 
-**日期**：2026-09-10 23:28
+> ⚠️ 已更新：2026-09-11 22:43（實際修正 commit 時間，`git log` commit range `6545afa..7a88ef7`；原標嘅 `18:00` 係估算值，早於實際修正時間）。原因：官方文檔覆核後大幅修正——(a) 呢個行為係 v2.1.195 起嘅 documented intended behavior，唔係 bug（原文誤稱「文檔寫明會自動裝但實測唔成立」）［C-002］；(b) 移除「唯一變數係 setup script」嘅過度歸因［C-001］；(c) 補 environment cache 版本 staleness 警示［C-003 / S-005］；(d) synced plugin 一項降級為「未確定」［W-004］；(e) 更正 GitHub repo 存取範圍同 github-proxy 適用範圍［W-001 / W-002］；(f) 補「實測環境 network access level 係 Trusted」呢個前提——`None` 之下連「setup script 係解法」都唔成立［W-005］；(g) 標題去絕對化［W-006］。
+>
+> ⚠️ 再更新：2026-09-11 22:55（`git log` commit range `71d9095..a68f240`）。原因：第二輪 review——(h) 補入矛盾嘅另一頁官方文檔（`cloud-environments#what-carries-over-from-your-setup` 表格斷言 `Yes / Installed at session start`）並列對照，說明以 `discover-plugins` 為權威嘅理由［W-007］；(i) 標明「documented 嘅 not-installed 提示喺 cloud 從未出現」係未對帳 delta，保住「失敗係靜默嘅」呢項實測［W-008］；(j) 清 plugin cache 指引改為完整可 copy-paste 嘅 cloud snippet，`rm -rf` 固定排喺 install 之前，末加 `claude plugin list`［W-009 / S-007］；(k) snippet 內 `|| true` 由「必要」改為「保險做法」［S-006］。
+
+**日期**：2026-09-11 00:20
 **來源 Agent**：Main Agent（claude-teams `/fix` session）
 **類別**：平台限制
 **適用 Agent**：全部（尤其 DevOps / 任何維護 plugin marketplace 嘅 agent）
-**有效期至**：永久（proxy repo-scope 行為官方明載；靜默失敗症狀為 2026-09-10 實測）
+**有效期至**：永久（v2.1.195 起嘅 documented behavior，非 bug；若官方統一兩頁矛盾文檔再覆核）
 
 **內容**：
-Cloud session（claude.ai/code、Desktop Cloud）會按 project `.claude/settings.json` 嘅 `extraKnownMarketplaces` + `enabledPlugins` 喺 session start 自動裝 plugin，**但 clone marketplace 用嘅係 session-scoped GitHub proxy**：
-- **（官方文檔明載）** Proxy 只可到達 **attach 喺該 session 嘅 repo**，其他 repo 嘅 GitHub API / release-asset 請求一律 403。
-- **（實測，文檔未載）** 即使 Claude GitHub App 已設 "All repositories"，未 attach 嘅 marketplace repo 仍然失敗。
-- 文檔容許喺 cloud environment 設 `GH_TOKEN` / `GITHUB_TOKEN`（原樣傳入 container），但能否令 marketplace clone 越過 proxy repo-scope **未驗證**；未驗證前以 public 為準。
-- **（實測，文檔未載）** 失敗係**靜默**嘅：唯一症狀係 `Unknown command: /ai-dev-team:start`；cloud 冇 `/plugin` command，睇唔到 Errors tab，只可展開「Initialized session」訊息。
 
-實際觀察（2026-09-10，實測項目：Run365Days，PR #10）：`dcwhung/claude-teams` 建立時係 private → cloud 全部 project 都用唔到 plugin；本機因用自己嘅 git credential 完全正常，所以本機測試**唔會**暴露呢個問題。
+**先講清楚文檔狀態：兩頁官方文檔互相矛盾，以 `discover-plugins` 為權威。** 兩頁都已定位，以下並列對照。
+
+**矛盾嘅一方** — `cloud-environments` → *What carries over from your setup*
+（https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup）
+該頁「What carries over from your setup」表格其中一行斷言 cloud session 會自動裝：
+
+> | Plugins declared in `.claude/settings.json` | Yes | Installed at session start from the marketplace you declared. Requires network access to reach the marketplace source |
+
+本條目上一版正正係只讀咗呢張表（`Yes / Installed at session start`），所以以為「文檔寫明會自動裝但實測唔成立」。
+
+**權威嘅一方** — `discover-plugins` → *Configure team marketplaces*
+（https://code.claude.com/docs/en/discover-plugins#configure-team-marketplaces）
+明確講相反：
+
+> "As of Claude Code v2.1.195, adding the marketplace doesn't install plugins that come from an external source, on any path that loads plugins. A plugin that only the project's `.claude/settings.json` enables, and that comes from an external source such as a GitHub repository or npm package, doesn't load until the team member installs it. Until then, Claude Code reports the plugin as not installed and shows the `claude plugin install` command to run."
+
+**為何以 `discover-plugins` 為權威**：佢有明確版本號（`As of Claude Code v2.1.195`）同明確適用條件（external source、只由 project 嘅 `.claude/settings.json` 啟用、`on any path that loads plugins`）；`cloud-environments` 嗰張表只係一格無版本、無條件嘅 `Yes` 摘要，粒度粗過前者。因此 `有效期至` 嘅覆核條件（「若官方統一兩頁矛盾文檔再覆核」）而家係可操作嘅：覆核時分別重讀上面兩個 anchor，睇 `#what-carries-over-from-your-setup` 表格嗰行有冇改成 `No` 或補上條件，以及 `#configure-team-marketplaces` 嘅 v2.1.195 段落有冇被新版本取代。
+
+即係話：本條目觀察到嘅行為**唔係 bug、唔係 cloud 專屬缺陷**，而係 v2.1.195 起嘅 documented intended behavior——external source（GitHub repo / npm）嘅 plugin 只由 project settings 啟用時，喺**任何**載入 plugin 嘅路徑都唔會自動裝，要等使用者自己 install。我哋當初當成「文檔寫明會自動裝但實測唔成立」，其實係讀錯咗權威文檔。症狀係 `/ai-dev-team:start` 回 `Unknown command`。
+
+**未對帳嘅 delta（唔好當成已吻合）**：上面引文最後一句係 "Until then, Claude Code reports the plugin as not installed and shows the `claude plugin install` command to run."，但實測 cloud session 由頭到尾**冇出現過任何**呢類 not-installed 報告或 `claude plugin install` 建議，唯一症狀就係 `/ai-dev-team:start` 回 `Unknown command`。所以要分開兩層講：就「唔自動裝」而言，唔係 cloud 專屬缺陷（documented behavior）；但「documented 嘅 not-installed 提示喺 cloud 從未出現」仍然係**未解釋嘅 cloud 專屬落差**——未確定係 cloud UI 唔顯示該提示，定係根本冇發出。上一版「失敗係靜默嘅」呢項實測觀察依然有效，唔應被「文檔同觀察完全吻合」呢種講法抹走。
+
+**實測環境（重要前提）**：cloud environment 嘅 network access level 係 **Trusted**。下面所有結論只喺呢個 level 下成立——如果環境設為 `None`，setup script 內嘅 `claude plugin marketplace add` / `claude plugin install` 本身就出唔到網、會失敗，連「setup script 係解法」都唔成立。為別人 project 抄呢個解法前，先確認 network access level。
+
+2026-09-10 至 09-11 喺 Python-Project-Run365Days 逐項排除（全部實測）：
+- Repo 由 private 轉 public、開全新 session → **仍然失敗**。private 唔係原因（此結論受下面「因果強度」段落嘅舊 snapshot 前提限制）。順帶更正上一版對文檔嘅誇大描述——cloud repo 存取範圍係**有條件**嘅，官方 *GitHub authentication options* 只講：
+    - GitHub App：「Any public repository, and private repositories that the Claude GitHub App is installed on」
+    - `/web-setup`：「Any repository your gh token can access, whether or not the App is installed」
+
+  即唔係「連接嘅 GitHub 帳戶睇到嘅任何 repo」，而係視乎用邊種認證方式同 App 裝喺邊。
+- 喺 cloud session 內手動跑 `claude plugin marketplace add` + `claude plugin install` → **成功**（HTTPS clone 正常）。即網絡、認證、marketplace 可達性全部冇問題。
+- **GitHub proxy 嘅 repo-scope 限制界定（更正上一版嘅適用範圍錯誤）**：cloud 嘅 GitHub proxy 文檔講「GitHub API and release-asset requests reach only repositories attached to the session, so a setup script that downloads release assets from an unattached repository gets a 403.」——**只限 GitHub API request 同 release-asset 下載，唔管 `git clone`**。所以 marketplace 嘅 HTTPS clone（本身唔係 API 亦唔係 release asset）從來冇被 proxy 擋，上面嘅實測結果同文檔一致。上一版將 proxy 限制當成 marketplace 失敗嘅可能原因，錯喺適用範圍，而唔係文檔本身有錯。要留意嘅真實風險係：setup script 若改為由**未 attach** 嘅 repo 落 release asset 或打 GitHub API，就會 403。
+- 但 session 中途安裝**當時唔會令 slash command 生效**。官方口徑（`discover-plugins` → *Install plugins*）：「The `claude plugin install` shell command doesn't run in a session, so Claude Code loads the plugins it installs the next time you start Claude Code, or when you run `/reload-plugins` in a session that's already open.」即係要下次啟動、或者喺當前 session 跑 `/reload-plugins`。我哋當時冇試 `/reload-plugins`，所以以下關於 `/reload-plugins` 嘅內容係**引文檔、未實測**：
+    - 需要 Claude Code v2.1.260+；可喺無 interactive terminal 嘅 session 用（desktop app、Agent SDK、`-p` 非互動模式）。
+    - ⚠️ 「The command runs only when you type it directly into the session… When you send it over a remote connection instead, such as Remote Control or a relayed chat message, the command declines without reloading anything.」——**本次 session 正正中咗呢個限制**：我哋用 `SendMessage` 將指令送入 cloud session，屬 relayed message，即使當時打 `/reload-plugins` 都會被拒、唔會 reload。
+    - Reload **唔會** connect / disconnect plugin MCP server。
+    - 另外，session 內嗰次安裝唔會帶入下一個 session（見下面 environment caching）。
+- claude.ai 帳戶層加 marketplace + plugin（synced plugins，Customize → Plugins → Add → Add marketplace，再喺 Discover 撳 Add）→ 加得成功，但開全新 session `/ai-dev-team:start` 仍然 `Unknown command`。**結論：未確定，唔可以當「synced plugin 無效」。** 當時冇喺 cloud session 跑 `claude plugin list` 記錄有冇 `Synced from claude.ai` 標題，所以分辨唔到兩種完全唔同嘅情況：(a) synced plugin 根本冇下載落環境，(b) 下載咗但 command / hooks / subagent 未註冊（即上一點嘅註冊時機問題）。下次重驗必須先 `claude plugin list` 睇標題再落結論。
+- 加 environment **setup script** → **成功**。Team folder 解析為 `/root/.claude/plugins/cache/claude-teams/ai-dev-team/1.0.3`，即係 marketplace 安裝生效，唔係 synced 路徑。
+
+**因果強度：setup script 已驗證係 sufficient，未驗證係 necessary。** 加 setup script 同時改變兩樣嘢：
+1. 真正加入 `claude plugin marketplace add` + `claude plugin install` 命令；
+2. **強制重建 environment cache snapshot**——按官方 caching 文檔，setup script 一改就係重建 trigger。
+
+即係「加 setup script」同「換新 snapshot」兩個變數綁埋一齊，無法分離。連帶後果：上面「private 唔係原因」同「claude.ai synced plugin 未確定」兩項觀察，全部係喺**同一個舊 snapshot** 下觀察到嘅（所有所謂「全新 session」都由該舊 snapshot 開機），所以嚴格只成立於該舊 snapshot，唔可以當成普遍結論。
+
+**Discriminating test（未做）**：將 setup script 改成一個 no-op（例如 `echo noop`）——只觸發 cache 重建、唔安裝任何 plugin——再開全新 session。若仍然失敗 → 安裝命令係真因；若突然成功 → 舊 snapshot 本身係污染源。
 
 **適用場景**：
-維護 plugin marketplace repo、為項目設定 cloud session `extraKnownMarketplaces` 時。
+為任何 project 設定 cloud session 使用 ai-dev-team（或任何自有 plugin）時。
 
 **正確處理**：
-- Marketplace repo 必須 **public**（2026-09-10 已將 `dcwhung/claude-teams` 轉 public，匿名 fetch `marketplace.json` HTTP 200）。
-- 保持 private 嘅文檔路徑係 Organization settings > Plugins（org sync 經 Claude GitHub App 讀 marketplace；App 認證唔到嘅 source 先要 public）；個人 Pro/Max 帳戶層 synced plugins 對 private repo 嘅行為文檔未講，視為未驗證。
-- 驗證 cloud 可達性：`curl -sI https://raw.githubusercontent.com/<owner>/<repo>/main/.claude-plugin/marketplace.json` 必須回 200。
-- 新開 marketplace repo 時 `gh repo create` 預設 private，記得加 `--public`。
+- 喺 cloud environment 加 setup script（claude.ai/code 訊息輸入框上面嗰行嘅環境 chip → 齒輪；**Settings 入面冇呢個位，亦冇直接 URL**）：
+
+```bash
+# ── Cloud environment setup script（完整版，可直接 copy-paste）──────────
+#
+# `|| true` 係保險做法：setup script 一旦 exit 非零，session 就開唔到
+# （cloud-environments #setup-scripts：「if the script exits non-zero, the
+# session fails to start」——呢點有文檔）。而快取重建後 marketplace / plugin
+# 可能已經存在，呢類「已存在」情況**有機會**回非零（未驗證嘅推測），
+# 唔想因此炸咗整個 session，所以先加 `|| true`。
+
+# 清 plugin cache：只喺「plugin 裝咗但 skill / command 唔出現」時才解註。
+# 必須排喺 install 之前 —— 排喺 install 後面會刪走啱啱裝好嘅 plugin，
+# 而且刪錯嘅後果會被 `|| true` 靜默，表面上一切正常。
+# 註：cloud 通常唔需要呢一行 —— 改 setup script 本身已觸發環境快照重建
+# （見下面 #environment-caching），效果等同清 cache。
+# rm -rf ~/.claude/plugins/cache
+
+claude plugin marketplace add <owner>/<repo> || true
+claude plugin install <plugin>@<marketplace> || true
+
+# 驗證證據直接落喺 setup script log：「Initialized session」面板 →
+# 「Run setup script」一行可展開，即場睇到 plugin 有冇裝到、係邊個版本，
+# 唔需要另開 session 摸黑撞。
+claude plugin list || true
+```
+
+> ⚠️ 代價：`|| true` 會連真正嘅失敗都靜默掉。所以裝完之後必須自己驗證（開全新 session 睇 slash command 有冇出現，或喺 session 內 `claude plugin list`），唔可以「script 跑完就當成功」。
+
+- Setup script 喺 Claude Code 啟動**之前**執行，寫落磁碟嘅嘢會入環境快取，所以 plugin 喺 command 註冊嗰刻已經存在。
+- 改 setup script 亦會迫環境快取重建；`resume` 一個現有 session 永遠唔會重跑 setup script，所以驗證必須開**全新** session。
+- ⚠️ **版本 staleness（cloud 會靜默用舊 plugin 版本）**：按 `#environment-caching`，setup script 只喺第一次 session 跑，跑完影快照，之後**新** session 直接 skip setup script step；只有 (a) 改 setup script、(b) 改 allowed network hosts、(c) 快照約七日過期，三者之一才會重建。**「push 新 plugin 版本上 marketplace」唔係重建 trigger**，所以 cloud session 會繼續用快照內嗰個舊版本，而且完全冇錯誤提示。要拿到新版本：手動改一下 setup script（任何改動即可，例如加/改一行註釋）強制重建，或者等快照過期（約七日）。本機唔受影響（`claude plugin update ai-dev-team` 即時生效）。
+- Project `.claude/settings.json` 嘅聲明可以保留（本機有效），但**唔可以當佢喺 cloud 會生效**。
+- 診斷：cloud 冇 `/plugin` command，睇唔到 Errors tab；只可展開「Initialized session」面板，入面 `Run setup script` 一行亦係加 setup script 嘅入口。
+- 診斷：plugin 裝咗但 **skill / command 唔出現** 時，官方 troubleshooting（`discover-plugins` → Troubleshooting → Common issues）係**三步**：(1) `rm -rf ~/.claude/plugins/cache` → (2) 重啟 Claude Code → (3) 重新安裝 plugin。
+    - **本機**：照跑官方三步。
+    - **Cloud**：三步唔可以照搬。setup script 跑喺 Claude Code 啟動**之前**，所以「重啟 Claude Code」喺 setup script 語境冇意義（等價操作係改完 setup script 後開一個**全新** session）。直接用上面「正確處理」第一項嘅完整 snippet copy-paste：`rm -rf ~/.claude/plugins/cache` 必須排喺 `claude plugin install` **之前**，排後面會刪走啱啱裝好嘅 plugin 而且被 `|| true` 靜默。
+    - 而且 cloud **通常唔需要** `rm -rf`：改 setup script 本身已經觸發環境快照重建，效果等同清 cache（所以 snippet 內該行默認註釋掉）。
+- Marketplace repo 是否必須 public **未驗證**——今次修好時 repo 已經係 public。
 
 **參考**：
-- https://code.claude.com/docs/en/cloud-environments#github-proxy
-- https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup
-- https://code.claude.com/docs/en/plugin-marketplaces#private-repositories
+- https://code.claude.com/docs/en/discover-plugins#configure-team-marketplaces（權威：external-source plugin 唔會自動裝）
+- https://code.claude.com/docs/en/discover-plugins#install-plugins（安裝何時生效）
+- https://code.claude.com/docs/en/discover-plugins#apply-plugin-changes-without-restarting（`/reload-plugins` 同其限制）
+- https://code.claude.com/docs/en/cloud-environments#setup-scripts
+- https://code.claude.com/docs/en/cloud-environments#environment-caching
+- https://code.claude.com/docs/en/cloud-environments#github-proxy（repo-scope 只限 API + release asset，唔包 git clone）
+- https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup（矛盾嘅另一方：表格斷言 `Yes / Installed at session start`；已被 `#configure-team-marketplaces` 嘅 v2.1.195 段落推翻）
+- https://code.claude.com/docs/en/plugins-reference#synced-plugins
+- https://code.claude.com/docs/en/claude-code-on-the-web#github-authentication-options（cloud repo 存取範圍嘅實際條件）
 
 ---
 
@@ -337,7 +426,7 @@ Do you want to overwrite .active-team?
 
 ---
 
-## [SK-006] 設計原則 — UI Logic 必須先問 utils/service 層有冇
+## [SK-013] 設計原則 — UI Logic 必須先問 utils/service 層有冇
 
 **日期**：2026-05-07 00:45
 **來源 Agent**：Main Agent

@@ -23,7 +23,7 @@ Add to the project's `.claude/settings.json` (committed):
 }
 ```
 
-Cloud sessions install the plugin automatically at session start **only because this repo is public** — the cloud GitHub proxy can only reach repos attached to the session, so a private marketplace fails silently (see [SK-009](ai-dev-team/shared-knowledge.md)). Locally, accept the install prompt on first launch (or run `claude plugin install ai-dev-team@claude-teams`).
+Cloud sessions do **not** install this plugin from a project's `.claude/settings.json` alone — a plugin from an external source such as this GitHub repo has to be installed explicitly — so add the two `claude plugin` commands to the cloud environment's setup script instead (see [SK-009](ai-dev-team/shared-knowledge.md)). Note that the environment snapshot caches that install: pushing a new plugin version is **not** a rebuild trigger, so cloud sessions keep silently using the cached version until you edit the setup script or the snapshot expires (~7 days). Locally, accept the install prompt on first launch (or run `claude plugin install ai-dev-team@claude-teams`).
 
 ## Layout
 
