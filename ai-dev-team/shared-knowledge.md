@@ -179,6 +179,7 @@ Observed sequence：
 
   即唔係「連接嘅 GitHub 帳戶睇到嘅任何 repo」，而係視乎用邊種認證方式同 App 裝喺邊。
 - 喺 cloud session 內手動跑 `claude plugin marketplace add` + `claude plugin install` → **成功**（HTTPS clone 正常）。即網絡、認證、marketplace 可達性全部冇問題。
+- **GitHub proxy 嘅 repo-scope 限制界定（更正上一版嘅適用範圍錯誤）**：cloud 嘅 GitHub proxy 文檔講「GitHub API and release-asset requests reach only repositories attached to the session, so a setup script that downloads release assets from an unattached repository gets a 403.」——**只限 GitHub API request 同 release-asset 下載，唔管 `git clone`**。所以 marketplace 嘅 HTTPS clone（本身唔係 API 亦唔係 release asset）從來冇被 proxy 擋，上面嘅實測結果同文檔一致。上一版將 proxy 限制當成 marketplace 失敗嘅可能原因，錯喺適用範圍，而唔係文檔本身有錯。要留意嘅真實風險係：setup script 若改為由**未 attach** 嘅 repo 落 release asset 或打 GitHub API，就會 403。
 - 但 session 中途安裝**當時唔會令 slash command 生效**。官方口徑（`discover-plugins` → *Install plugins*）：「The `claude plugin install` shell command doesn't run in a session, so Claude Code loads the plugins it installs the next time you start Claude Code, or when you run `/reload-plugins` in a session that's already open.」即係要下次啟動、或者喺當前 session 跑 `/reload-plugins`。我哋當時冇試 `/reload-plugins`，所以以下關於 `/reload-plugins` 嘅內容係**引文檔、未實測**：
     - 需要 Claude Code v2.1.260+；可喺無 interactive terminal 嘅 session 用（desktop app、Agent SDK、`-p` 非互動模式）。
     - ⚠️ 「The command runs only when you type it directly into the session… When you send it over a remote connection instead, such as Remote Control or a relayed chat message, the command declines without reloading anything.」——**本次 session 正正中咗呢個限制**：我哋用 `SendMessage` 將指令送入 cloud session，屬 relayed message，即使當時打 `/reload-plugins` 都會被拒、唔會 reload。
@@ -219,6 +220,7 @@ claude plugin install <plugin>@<marketplace>
 - https://code.claude.com/docs/en/discover-plugins#apply-plugin-changes-without-restarting（`/reload-plugins` 同其限制）
 - https://code.claude.com/docs/en/cloud-environments#setup-scripts
 - https://code.claude.com/docs/en/cloud-environments#environment-caching
+- https://code.claude.com/docs/en/cloud-environments#github-proxy（repo-scope 只限 API + release asset，唔包 git clone）
 - https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup
 - https://code.claude.com/docs/en/plugins-reference#synced-plugins
 - https://code.claude.com/docs/en/claude-code-on-the-web#github-authentication-options（cloud repo 存取範圍嘅實際條件）
