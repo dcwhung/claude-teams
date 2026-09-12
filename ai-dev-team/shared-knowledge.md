@@ -83,6 +83,117 @@
 
 ---
 
+## [SK-018] 「今日不可達」唔可以做嚴重性評級嘅唯一標準 —— 未驗證 actor 類缺陷會被系統性低估
+
+**日期**：2026-09-12
+**來源 Agent**：Code Reviewer + QA（uno-games Phase C）
+**類別**：流程 / 評級
+**適用 Agent**：QA、Code Reviewer、Engineering Manager
+**有效期至**：永久
+
+### 現象
+
+uno-games 連續兩輪將 actor 認證類缺陷評為 🟢 Low，理由都係「今日 app 只 dispatch 已知 id，不可達」。
+兩次實際攻擊面都遠闊過 ticket 描述：
+
+- CUI-0101 filed 🟢 Low，只描述「未知 id 會 throw」。Reviewer 喺 release commit 實測發現
+  `CATCH_UNO` 根本從來冇檢查 `action.player`，QA 再枚舉出 **18 種**無效形態（`null`、number、
+  object、`__proto__`、空字串、大小寫變體、同形字…）**全部被接受並令真實玩家抽牌**。
+- 修好之後 QA 再掘到 CUI-0405：guard 用 `undefined` 同時表示「無 actor」同「畸形 actor」，
+  所以欄位缺失一樣繞過。`JSON.stringify` 會刪走 `undefined` 值 → 持久化 log 餵 `replay()` 即中。
+
+### 規律
+
+「今日不可達」講嘅係**現時嘅呼叫方**，唔係缺陷本身嘅性質。一個純 reducer / API 邊界嘅輸入驗證漏洞，
+本質係信任邊界問題：可達性會隨住「加 multiplayer」「加 save / replay」「加 URL 分享局面」而一夜改變，
+而嗰陣冇人會回去重評舊 ticket。
+
+### 做法
+
+```
+□ 評級寫兩個維度：可達性（今日） + 後果（一旦可達）。唔可以用前者掩蓋後者。
+□ ticket 明文寫低「呢個評級喺 <某條件> 成立時應升到 <級別>」，例如「持久化 action log 落地即升 Critical」
+□ 輸入驗證類缺陷唔好逐個 case 補 —— 用 fuzz spec 一次過封死成個 class
+   （uno-games 做法：rngForTick 做種子確保 deterministic，斷言 apply() 永不 throw
+     + 回嚟嘅 state 仍然讀得。第二條斷言捉到第一條捉唔到嘅 fail-open 污染）
+□ fail-open（接受並污染 state）比 fail-closed（throw）嚴重。唔好將兩者嘅嚴重性論證互相套用
+```
+
+---
+
+## [SK-017] 證明「純格式改動」唔可以用 `git diff -w` —— prettier 會 re-wrap，要用 AST 或 minified bundle 比對
+
+**日期**：2026-09-12
+**來源 Agent**：Frontend Developer + QA（uno-games AU-014 全 repo format）
+**類別**：驗證方法
+**適用 Agent**：所有 Developer、Code Reviewer、QA
+**有效期至**：永久
+
+### 現象
+
+uno-games 做全 repo `prettier --write`（63 檔，2-space → tabWidth 4）。想證明第二個 commit 純格式，
+`git diff -w`（忽略空白）**仍然顯示 1,971 行改動** —— 因為 prettier 會按 `printWidth` 重新斷行，
+斷行唔係空白差異。即係 `-w` 喺呢個場景完全冇證明力。
+
+### 有效方法（由弱到強）
+
+```
+1. AST 比對        —— TypeScript AST walk，比 node kind + identifier / literal 嘅 cooked value
+                      （cooked 值令 quote style / trailing comma 比較時相等）
+2. Minified emit   —— esbuild minify 後 byte 比對。Minify 會 normalise 所有空白，
+                      剩低嘅差異只可能係 AST 差異。比 AST walk 更難作弊，寫嘅 code 更少
+3. 非 TS 檔各自對應 —— JSON: parse round-trip deep-equal
+                      YAML: safe_load deep-equal（順帶驗 heredoc 內容 re-indent 後不變）
+                      CSS: PostCSS node-level 比對（CSS 通常冇 unit test 守住，最需要呢層）
+                      MD : GFM render 出 HTML 比對（唔好比 raw text）
+4. 最強：跨版本 lockstep —— 兩個 bundle 同時 import 入同一 process，逐步比 state + event hash
+```
+
+### 順帶：prettier 會改壞 markdown 通配符
+
+`(AU-*)` / `(C/W/S-*)` 呢類星號對會被 GFM 當 emphasis，prettier normalise 成 `_…_`，
+raw text 語意出錯。修法係轉義 `\*` 或者用 backtick。
+注意歸因：GFM 本來就已經將佢 render 成 `<em>`，prettier 只係令個 bug 喺原始碼變得顯眼，
+**唔係 prettier 整出嚟**。判斷呢類問題要 render 兩邊 HTML 比對，唔好只睇 diff。
+
+---
+
+## [SK-016] `.tickets/` 喺 `.gitignore` 入面 → ticket 狀態唔會跟 branch 走，並行 lane 會靜默互相覆蓋
+
+**日期**：2026-09-12
+**來源 Agent**：Main Agent + 多個 lane subagent（uno-games Phase B / C）
+**類別**：流程 / 並行調度
+**適用 Agent**：Main Agent（parallel-dispatch）、所有 Developer、QA
+**有效期至**：直至 ticket 改為 tracked
+
+### 三個實際踩到嘅問題
+
+**1. Ticket 改動唔會入 commit。** Subagent 喺隔離 worktree 工作，但 `.tickets/` 係 gitignored，
+worktree 根本冇呢個目錄。所有 lane 都要走返去主 checkout 直接改。後果：ticket 狀態同 branch 脫鈎，
+branch 未 merge 但 ticket 已標 completed。
+
+**2. 並行 lane 會靜默覆蓋。** 兩條 lane 同時改同一張 ticket / 同一個 `index.md`，冇 merge conflict
+保護，後寫嗰個直接蓋前面。uno-games 靠喺 dispatch prompt 明文分配編號區間避開
+（「CUI-0404 已被平行 lane 佔用，你由 CUI-0405 起」），但呢個係人手協調，唔係機制。
+
+**3. Lane rebase 令 ticket 入面記低嘅 commit hash 失效。** Lane 喺 worktree rebase 之後 hash 變咗，
+ticket 寫住舊 hash。uno-games 嘅 CUI-0201 記住 `7050215`，object 仲喺 repo 但**任何 branch 都到達唔到**，
+`git gc` 之後永久斷鏈。
+⚠️ 驗證要用 `git branch -a --contains <hash>`（可達性），**唔可以用 `git cat-file -e`**（只驗 object 存在，
+會驗唔出呢個問題）。
+
+### 做法
+
+```
+□ Dispatch 前：main agent 喺 prompt 明文分配每條 lane 嘅 ticket 編號區間，並講明 .tickets/ 唔會跟 branch
+□ Merge 後：main agent 回填真實 commit hash 入 ticket（sw-parallel-dispatch 應加呢個步驟）
+□ 驗 hash 用 git branch -a --contains，唔好用 git cat-file -e
+□ 並行 lane 唔可以同時改同一張 ticket —— 當成 hard conflict 排入同一 lane
+□ 長遠：考慮將 .tickets/ 改為 tracked，令狀態同 branch 一齊 review / merge
+```
+
+---
+
 ## [SK-012] Rate limit（429）中斷 subagent 後：worktree + branch 完整保留，用 SendMessage 續返原 agent
 
 **日期**：2026-09-11 15:40
