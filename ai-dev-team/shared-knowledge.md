@@ -83,6 +83,108 @@
 
 ---
 
+## [SK-021] 量度一個 shape 唔等於量度個 bound —— 固定住嘅變數先係冇 bound 嗰個
+
+**日期**：2026-09-14 15:10
+**來源 Agent**：Main Agent（自身分析錯誤）+ Code Reviewer（Run365Days AU-047）
+**類別**：錯誤模式 / 分析方法
+**適用 Agent**：全部（尤其 Architect、Code Reviewer、Backend Developer）
+**有效期至**：永久
+
+**內容**：
+
+做性能／成本分析時，好自然會揀一個代表性 query／request／input 去量，然後比較入面唔同成本來源嘅佔比，再由佔比決定修邊個。**呢個推論有一個隱藏前提：你固定住嗰啲變數本身係有 bound 嘅。** 如果唔係，你量到嘅佔比只係「喺呢個 shape 之下」嘅佔比，同「最壞情況由乜嘢主導」係兩件事。
+
+實例（Run365Days AU-047，GraphQL query cost）：
+
+| Query | SQL 語句數 | 耗時 | Rows |
+|---|---|---|---|
+| `activities(365) { track(points: 5) }` | 732 | 0.60 s | 1,825 |
+| `activities(365) { track(points: 1000) }` | 732 | 8.29 s | 219,000 |
+
+Main agent 由呢兩行得出：「語句數一樣，時間差 7.7 s，所以 round trip 只佔 7%，DataLoader 唔係主修，應該 bound rows」。**結論被寫入 docstring，並成為分拆 ticket 時「唔做 batching」嘅理由。**
+
+Reviewer 之後用 GraphQL alias 放大同一條 query：27 個 alias × `activities(365){track(points:1)}` = 9,855 點（喺 rows budget 之內、合法、HTTP 200、零 error）→ **19,764 條 SQL / 13–14 秒**。語句數由 732 變 19,764 —— 佢由頭到尾就唔係常數，只係喺 main agent 揀嗰個 shape 入面啱啱好係常數。真實情況係 rows 同 round trips **兩個維度都要 bound**。
+
+**做法**：
+1. 比較兩個成本來源之前，先問「**我固定咗乜？嗰樣嘢有冇上限？**」。冇上限就唔可以用佢做分母。
+2. 敵意輸入要當成搜尋問題去做，唔係量一兩個「代表性」樣本。至少掃：重複（alias / fragment / 多個 operation）、寬度（limit / page size）、深度（nesting）、平價單位（最細 unit cost 換最大 system cost）。
+3. **最平嘅單位成本換最貴嘅系統成本** 係最常見嘅繞過方式。任何「按 X 收費」嘅 quota，要問「有冇一個 X 細但實際成本大嘅 input」。
+
+**適用場景**：
+Query cost / rate limit / quota 設計；性能瓶頸分析；DoS 曝險評估；任何「A 佔 93%，所以唔使理 B」形式嘅結論。
+
+**參考**：
+Run365Days `.proj-docs/tickets.md` §AU-047 實測表；`reviews/2026-09-14_review_au-047.md` §C-001；`src/api/schema.py` 嘅 `MAX_TRACK_POINTS_PER_REQUEST` / `MAX_TRACK_FIELDS_PER_REQUEST`
+
+---
+
+## [SK-020] Docstring 入面冇 assert 撐住嘅量度數字必然腐爛 —— 要將 headline 數字變成測試
+
+**日期**：2026-09-14 15:10
+**來源 Agent**：Code Reviewer（Run365Days AU-047 round 3）
+**類別**：錯誤模式 / 測試設計
+**適用 Agent**：全部
+**有效期至**：永久
+
+**內容**：
+
+喺 docstring / 註解 / 設計文件寫低嘅量度數字（「最壞 128 條 SQL」「10,000 行 ≈ 0.37 s」「呢個 document lex 到 1218 tokens」）**冇任何機制令佢喺相關常數改動之後變紅**。佢會靜靜咁變錯，而且因為佢睇落好精確，下一個人會直接信。
+
+實例（Run365Days AU-047）：同一個 ticket 入面，**同一類缺陷重複咗五次** —— 每次都係「寫低嘅 claim 闊過實測支持嘅範圍」：
+
+| # | Claim | 實測 |
+|---|---|---|
+| 1 | 「batching would not have bought the headroom back」 | alias flood 之下 round trip 佔 99.9% |
+| 2 | 「budget 係 dashboard 最貴 document 嘅兩倍」 | 該 document 消耗 0 |
+| 3 | 測試常數 `MAX_SQL_PER_REQUEST` 名為 per-request 上限 | 合法、被服務嘅 document 去到 208 |
+| 4 | 「64 × 2 = 128 statements」 | request 層面 208 |
+| 5 | 「alias fan-out 去唔到 field cap」（**喺專門修前四次嗰個 commit 入面**） | 714 tokens，完全服務 |
+
+第 5 次出現喺一個 review 之後、專門為咗修前四次而寫嘅 commit 度 —— 即係話「下次小心啲」呢種修法救唔到，因為根本成因係結構性嘅：**散文冇 gate**。
+
+**做法**：
+1. 任何寫入 docstring 嘅 headline 量度數字，配一條 assert。例如 parametrize 幾個 shape，assert `(tokens, statements)` 同文件講嘅一致，測試名直接引用嗰句 docstring。
+2. **驗證嗰條測試真係會紅**：逐個改相關常數（cap、limit、per-unit cost），確認每次都紅，然後還原。冇做呢步就可能寫咗一條永遠綠嘅測試（參考 SK-004）。
+3. 推導量度用嘅輔助值時，**唔好重寫一套平行實作**（例如自己寫 lexer 數 token）—— 佢會自己漂。用被測系統自己嗰個定義（例：二分搜尋揾 parser 肯收嘅最細 `max_tokens`，即係 limiter 實際比較嗰個數）。
+4. Wall time **唔好**寫成 assert（CI 上唔穩定會 flaky）；改為喺 docstring 註明係「一部機嘅讀數，唔受測試保護」。
+
+**適用場景**：
+寫任何含數字嘅 docstring／設計文件；review 見到精確數字而附近冇 assert；同一個 ticket 重複出現「文件同實際唔符」。
+
+**參考**：
+Run365Days `reviews/2026-09-14_review_au-047_round3.md` §W-017；`tests/test_api.py` 嘅 `test_the_documented_worst_cases_still_measure_as_documented`；相關：SK-004（coverage 數字唔等於 TDD 執行）
+
+---
+
+## [SK-019] 「防禦性」fallback 可以直接廢掉一個 security bound —— budget / quota 要大聲失敗
+
+**日期**：2026-09-14 15:10
+**來源 Agent**：Code Reviewer + QA（Run365Days AU-047）
+**類別**：錯誤模式 / 安全
+**適用 Agent**：全部（尤其 Backend Developer、Code Reviewer）
+**有效期至**：永久
+
+**內容**：
+
+喺 budget / quota / rate limit 呢類語境，一句睇落好無害嘅 `dict.get(KEY, DEFAULT)` 等於**冇咗個 bound**：state 缺失嗰陣唔係拒絕，而係當成「未用過」，於是每次都重新攞到全額。呢類 fallback 通常由「唔想 crash」嘅好意引入，但佢將一個 fail-closed 設計變成 fail-open。
+
+實例（Run365Days AU-047）：per-request budget 存喺 `info.context`，由 schema extension seed。實作刻意用 `info.context[KEY]` 直接 index，缺 key 就大聲失敗。Review 指出**冇任何測試釘住呢個決定** —— 加一句 `.get(KEY, MAX)` 之後 291 條測試全部照綠，而 budget 會喺任何唔經該 extension 嘅 schema 上靜靜消失。
+
+**做法**：
+1. Budget / quota / limit 嘅 state 缺失 → **拒絕並拋一個講得明嘅錯**，唔好 fallback 到預設額度。
+2. 錯誤訊息唔好洩漏 internal key 名（`KeyError: 'track_points_remaining'` 咁樣會直接畀 client 睇到內部結構）；包成一個描述性 exception。
+3. **用 mutation test 證明條測試有牙**：runtime patch 成 `.get(KEY, DEFAULT)`，確認有測試紅。⛔ 唔好改 repo 檔案，做完 `git status` 要 clean。
+4. 留意「同一條測試可能因為另一個理由綠」：Run365Days 有一條 fail-closed 測試喺 mutant 之下照樣綠，因為 read-only mapping 寫唔入會掟 `TypeError` —— 換咗個理由一樣 fail-closed，但佢唔再釘住原本嗰個不變量。**斷言失敗嘅理由（訊息內容），唔好淨係斷言有 error。**
+
+**適用場景**：
+Quota / budget / rate limit / feature flag / 權限檢查嘅 state 讀取；review 見到 `.get(key, default)` 而個 default 係「放行」語義。
+
+**參考**：
+Run365Days `src/api/schema.py` 嘅 `_charge_track_field`；`reviews/2026-09-14_review_au-047_round2.md` §W-014 / §六（mutation matrix）
+
+---
+
 ## [SK-018] 「今日不可達」唔可以做嚴重性評級嘅唯一標準 —— 未驗證 actor 類缺陷會被系統性低估
 
 **日期**：2026-09-12
@@ -416,6 +518,11 @@ Main agent 用 Agent tool 跑 background subagent、收到 task-notification 時
 **參考**：
 - `hooks/detect-plan-mode.sh`、`hooks/hooks.json`
 - SK-003（hook 經 stdin JSON）、SK-007（hook 只有 exit 2 係硬 block；呢個 hook 係 exit 0 + 文字指令，所以 main agent 可判斷後忽略）
+
+> ✅ **2026-09-14 再次印證（Run365Days AU-047 session）**：同一個 hook 喺一個 session 入面誤觸發咗**兩次**，兩次都係由 background subagent 嘅完成通知觸發（通知內文含 reviewer 報告嘅「設計」「plan」等字），而唔係用戶要求 plan。
+> 第一次：通知內容本身確實帶住一個需要用戶拍板嘅 scope 決定，所以入 plan mode 係合理嘅，最後產出咗一份有用嘅 plan。
+> 第二次：receipt 係 `status: pass` + `next_action: merge_development`，屬確定性交接，入 plan mode 會同 hard rule #2（auto-handoff，禁止停低問）直接衝突 —— 用咗 hook 自己提供嘅 `CLAUDE_HOOK_BYPASS_PLAN_MODE=1` 並向用戶講明理由。
+> **判斷準則**：睇「有冇一個需要用戶決定嘅分岔」，唔係睇通知有冇關鍵字。冇分岔就 bypass 並講明。
 
 ---
 
