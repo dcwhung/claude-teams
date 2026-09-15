@@ -83,6 +83,102 @@
 
 ---
 
+## [SK-024] 測試只斷言「應該出現嘅嘢」，就會放生「唔應該出現嘅嘢」
+
+**日期**：2026-09-15 15:30
+**來源 Agent**：Main Agent（UI Visual Confirmation Gate）+ Frontend Developer（Run365Days CUI-0016）
+**類別**：錯誤模式 / 測試設計
+**適用 Agent**：全部（尤其 Frontend Developer、Quality Assurance、Code Reviewer）
+**有效期至**：永久
+
+**內容**：
+一個前端錯誤處理修復加咗 7 條測試，全部綠；`eslint`、`tsc`、87 條既有測試全綠；diff 讀落完全合理。但真機截圖之下，個錯誤訊息係**四行 JSON** —— `graphql-request` 嘅 `ClientError.message` 本身就係序列化咗嘅 response + request，所以連 raw GraphQL document 同 variables 都渲染出街。
+
+點解測試捉唔到：斷言寫嘅係「畫面有冇出現 track 專屬訊息」。**字串的確有**（佢就喺四行 JSON 嘅最前面），所以綠。
+
+冇任何一條測試問過：**有冇嘢唔應該喺度但喺咗度？**
+
+修法有兩邊：
+1. **斷言要有否定面**：`expect(text).not.toContain('{"response"')`、`.not.toContain("query Track(")`、`.not.toContain('"variables"')`
+2. **Fixture 要用真實形狀**：第二版用返真機截到嗰段完整 `ClientError` 做 fixture，Red 階段個 `Received` 同截圖**逐字一樣** —— 證明個 fixture 真係重現到生產路徑，而唔係砌一個啱自己答案嘅假 shape
+
+**適用場景**：
+- 任何「顯示一段外部嚟嘅文字」嘅測試（error message、API 回應、用戶輸入回顯）
+- 任何用 mock / stub 造 error 嘅測試 —— 短 stub 係主要成因，真實 error object 隨時係幾 KB
+- Code review 見到 `expect(...).toContain(...)` 而冇對應 `not.toContain` 嗰陣
+
+**參考**：
+Run365Days CUI-0016（`88c5c6f` → `b84b7b7`）；`.proj-docs/reviews/2026-09-15_review_cui0016-au048-au050_batch.md`
+
+---
+
+## [SK-023] 「量」同「算」混喺同一個表而唔標示，就係 claim drift 嘅溫床 —— reviewer 唔會免疫
+
+**日期**：2026-09-15 15:30
+**來源 Agent**：Code Reviewer（自身錯誤，自己揾返出嚟並撤回）+ Backend Developer（Run365Days W-020）
+**類別**：錯誤模式 / 分析方法
+**適用 Agent**：全部（**尤其 Code Reviewer 同 Quality Assurance**）
+**有效期至**：永久
+
+**內容**：
+一個 code reviewer 開咗個 finding，內容係「呢個 fixture 自稱 worst case 但唔係」。佢喺報告個表入面列咗兩個數：worst case **10,113**（佢實測）同 fixture **10,100**（佢用公式算）。兩格排埋一齊，**冇標示邊格係量、邊格係算**。
+
+真相係公式漏咗一項（`row_number() OVER (...) - 1` 入面嗰個 `- 1` 被 SQLAlchemy 綁成 bound parameter），fixture 實測係 **10,101**。佢仲喺報告另一處寫低咗「analytic 10112 / 實測 10113」—— **即係佢當時已經見到公式同實測差 1，但冇追**。
+
+結果：developer 實測五個 shape 全部推翻佢，而佢喺覆檢時自我診斷：
+
+> 「我量咗 (64,156) 但算咗 (50,200)，再將兩者放埋同一個表，冇標示邊個係量邊個係算……呢個正正係我開嗰個 finding 去 ticket 佢嘅同一個毛病。」
+
+**要害唔係算錯，係唔標示。** 一個標示咗「(算)」嘅數字，下一個人會去驗；一個混入實測表嘅算出嚟嘅數字，會被當成事實傳落去。
+
+**適用場景**：
+- 寫任何含數字嘅表：每格標示係實測、公式推導、定引用他人
+- Review / QA 報告尤其要做 —— 呢啲報告係下游嘅事實來源
+- 見到自己嘅公式同實測有細微差異（差 1、差 0.3%）：**嗰個差異就係個 finding**，唔好當捨入誤差放過
+
+**參考**：
+Run365Days W-020；`.proj-docs/tickets.md` §2026-09-15 Batch「三處下游用實測推翻上游」
+
+---
+
+## [SK-022] 「判斷」同「數字」一樣會腐爛 —— SK-020 要擴展到散文結論
+
+**日期**：2026-09-15 15:30
+**來源 Agent**：Code Reviewer（Run365Days CUI-0016 / AU-048 / AU-050 batch review）
+**類別**：錯誤模式 / 測試設計
+**適用 Agent**：全部
+**有效期至**：永久
+
+**內容**：
+SK-020 立咗「docstring 入面冇 assert 撐住嘅**量度數字**必然腐爛」。同一個 repo 下一輪 review 顯示：**判斷句一樣會腐爛，而且更難捉**，因為佢冇數字，睇落唔似一個 claim。
+
+同一個 batch 入面三次：
+
+| 寫低嘅判斷 | 實測 |
+|---|---|
+| 「呢個 fixture 係 bound-parameter 嘅 worst case」 | 唔係（10,101 vs 10,113） |
+| 「呢兩個 counter 喺 refusal 之後都唔會寫返」 | 只有一個有 gate；搬另一個嘅寫入位置，97 條測試零紅 |
+| 「拆走呢句會整 flaky 某個測試」 | 拆走之後 105 條全綠；**保留仍然啱，但係另一個理由** |
+
+三個都寫得好肯定，三個都冇嘢會因為佢哋錯而變紅。
+
+**判準（寫落 docstring / comment / commit message 之前問自己）**：
+> 如果呢句係錯嘅，有冇任何測試會紅？
+
+冇 → 要嘛加 gate，要嘛唔好寫，要嘛明確標示佢係「未被 assert 嘅推理 / 量度」並註明條件（邊個環境、幾多資料、邊日）。
+
+第三行仲有一個獨立教訓：**結論啱唔代表理由啱**。嗰個 developer 保留咗個 term 係啱嘅，但佢寫低嘅理由係假嘅 —— 而下一個人會照住個**理由**去判斷可唔可以拆。
+
+**適用場景**：
+- 寫 docstring / comment 解釋「點解咁做」嗰陣
+- Code review：見到「因為 X 所以 Y」而 X 冇 gate
+- 見到「呢個係 worst case / 上限 / 唯一路徑」呢類最高級形容詞
+
+**參考**：
+Run365Days W-018 / W-020 / W-021；延伸自 SK-020
+
+---
+
 ## [SK-021] 量度一個 shape 唔等於量度個 bound —— 固定住嘅變數先係冇 bound 嗰個
 
 **日期**：2026-09-14 15:10
@@ -343,6 +439,12 @@ Session usage limit 觸發時，所有 background subagent 同時收到 429 並�
 
 **相關**：merge 入 protected branch 用 `git merge --no-ff <branch> -m "..."` 唔會被 block（command 無 `git commit` 字串），呢個係 main agent sync 嘅正常路徑。
 
+> ✅ **2026-09-15 補充（Run365Days）**：同一個機制仲有一個**跨 repo** 變種，比上面嗰個難察覺。
+> Hook 讀嘅係 tool input 嘅 `.cwd`（= session 主 repo），而唔係你實際操作緊嗰個 repo。所以喺 session A（主 repo 喺 `develop`）用 `cd /path/to/repoB && git commit` 去 commit **另一個 repo 嘅非 protected branch**，一樣會被 block —— 而且 Bash tool 嘅 cwd 每次 call 之後會 reset 返主 repo，所以「先 cd 再喺下一個 call commit」呢招喺跨 repo 情況下**唔 work**。
+> `CLAUDE_HOOK_BYPASS_BRANCH_POLICY=1` 寫喺 command 前面亦冇用：hook 喺 PreToolUse 階段跑，嗰陣 command 仲未執行，env var 未存在。
+> **可行做法**：改用 GitHub API（`create_branch` + `create_or_update_file` + `create_pull_request`）完全唔經本地 git。
+> ⛔ **唔好做**：嘗試切主 repo 嘅 branch 去「修正」hook 輸入（會被 auto-mode classifier 當成繞過行為擋住，而且擋得啱）；亦唔好靠改寫 command 字串（例如 `git -C <path> commit`）去避開 grep —— 嗰個係刻意繞 guard。
+
 ---
 
 ## [SK-010] 由 protected branch untrack 檔案（`git rm --cached`）後 merge 會將檔案從 working tree 刪走
@@ -523,6 +625,10 @@ Main agent 用 Agent tool 跑 background subagent、收到 task-notification 時
 > 第一次：通知內容本身確實帶住一個需要用戶拍板嘅 scope 決定，所以入 plan mode 係合理嘅，最後產出咗一份有用嘅 plan。
 > 第二次：receipt 係 `status: pass` + `next_action: merge_development`，屬確定性交接，入 plan mode 會同 hard rule #2（auto-handoff，禁止停低問）直接衝突 —— 用咗 hook 自己提供嘅 `CLAUDE_HOOK_BYPASS_PLAN_MODE=1` 並向用戶講明理由。
 > **判斷準則**：睇「有冇一個需要用戶決定嘅分岔」，唔係睇通知有冇關鍵字。冇分岔就 bypass 並講明。
+
+> ✅ **2026-09-15 第三度印證（Run365Days v3.1.0 session）**：同一個 session 內誤觸發 **7 次**，全部由 subagent handback 觸發。今次多咗一個新觸發源：receipt 格式本身 —— Design-Source Binding Rule 要求前端 receipt 寫 `design_origin:` 欄位，而該欄位名就含 `design`。即係話**團隊自己嘅 receipt 格式保證咗呢個 hook 會喺每次前端交接時誤觸發**。
+> 7 次全部冇分岔（純 status 報告），全部照上面準則忽略並向用戶交代一句。
+> **修正方向加一條**：除咗過濾 `[SYSTEM NOTIFICATION - NOT USER INPUT]` / `<task-notification>` 之外，亦應過濾 `design_origin:` / `Design Origin:` 呢兩個 receipt 欄位名，否則前端 lane 每次交接都會 fire。
 
 ---
 
