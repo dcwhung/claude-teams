@@ -278,6 +278,58 @@ Agent 必須主動管理 context：lazy load skill 檔案、subagent 卸載重�
 
 ---
 
+## Review / QA 經濟學（Hard Rule）
+
+> 由 Run365Days 2026-09-17 retrospective 歸納。實測數據：53 張 CUI ticket 產生 **124 條 W/S
+> review item**、**33 份報告共 19,884 行**；而最後一輪（6 張票 + 21 條 finding）入面 `src/`
+> 只改咗 **213 行 / 3 個檔案**，文件對代碼 ≈ **13 : 1**。流程開 finding 快過收 finding。
+
+### 1. Finding 必須分兩級
+
+| 級別 | 定義 | 處理 |
+|---|---|---|
+| **blocking** | 改到**行為**，或者可以用一條測試／一個 mutant 釘住 | 開 W/S 編號、開 commit、入 registry |
+| **log-only** | 純註釋措辭、文件用字、報告排版、簿記數字 | **寫喺報告一段就算**，唔開編號、唔開 commit、唔開 ticket |
+
+Reviewer / QA 喺報告入面要**自己標**每條係邊級。標錯（log-only 標成 blocking）本身唔係 finding，
+main agent 直接降級，唔使討論。
+
+> ⚠️ 判準唔係「重唔重要」，係「**收唔收得返**」。一條冇 gate 嘅措辭 finding 修完會種出下一條
+> 措辭 finding（實例：W-060 → W-061 → S-128，同一個表格 row 三轉，零行為改動）。
+
+### 2. Reviewer / QA 有 scope，scope 外只報一句
+
+Brief 寫明審邊個 diff / 邊幾張票，就只喺嗰個範圍開編號。**scope 外見到嘅嘢寫一句「順帶一提」，
+唔開編號、唔開 ticket。** 想跟就由 main agent 或者用戶決定下一輪開唔開。
+
+> 實例：QA 個 brief 係驗六張票，佢連 registry 嘅「編號完整性核實」段都查埋，捉得啱（S-125 係真嘅），
+> 但嗰段唔喺六張票嘅 diff 入面，結果一份 QA 報告開多咗三條簿記 finding，再觸發多一條 lane。
+
+### 3. Handoff 要有 stop condition
+
+```
+第一輪：review → 清 blocking → QA
+第二輪：QA 捉到嘅 blocking → 清
+第三輪起：只收 🔴 Critical，其餘一律入下一個 sprint backlog
+```
+
+冇呢條，`review → 清 → QA → 清 → review` 可以無限落去，而每一輪嘅產出都係上一輪嘅產出。
+
+### 4. 報告有長度上限
+
+**Review 報告 ≤ 400 行，QA 報告 ≤ 400 行。** 超咗就係把「證據」同「敘述」溝埋一齊寫。
+
+> 實測：呢個項目平均每份 **600 行**，最長 **1,189 行**。報告係**成本**唔係產出 —— 報告越長，
+> 下一個 agent 要讀嘅 context 越多，而且報告自己會變成下一輪 review 嘅對象。
+> 證據（mutant 讀數、byte 數、md5）保留；心路歷程剷走。
+
+### 5. 一輪工作一次 review + 一次 QA
+
+唔好每張票各開一次。累積一批（3–8 張）一次過 review，一次過 QA。
+分開開嘅成本係固定嘅（dispatch + 讀 context + 寫報告 + handoff），乘以票數就係大部分時間。
+
+---
+
 ## 安全規範
 
 - 禁止 hardcode 任何 secret、API key、密碼

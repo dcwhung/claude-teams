@@ -37,6 +37,18 @@ Branch: `[類型]/[模組]/[TICKET]_[描述]`
 Commit: `feat / fix / refactor / chore / docs / test`
 → 詳細: global-rules.md#git-規範
 
+## Review / QA 經濟學（速查）
+```
+Finding 分兩級:  blocking (改到行為 / 釘得住) → 開編號 + commit
+                 log-only (措辭 / 文件用字 / 簿記數字) → 報告一段就算
+Scope:          brief 寫明審邊個 diff，scope 外只報一句，唔開編號
+Stop:           第三輪起只收 🔴 Critical，其餘入 backlog
+報告長度:        review / QA 各 ≤ 400 行（證據留，心路歷程剷）
+批次:           3–8 張票一次過 review + 一次過 QA，唔好逐張開
+```
+冇 gate 嘅絕對數字（測試數 / 行數 / byte / %）一律唔准寫入註釋同文件 → SK-022
+→ 詳細: global-rules.md#review--qa-經濟學hard-rule
+
 ## 安全
 禁止 hardcode secret。所有外部輸入必須 validation。
 新依賴引入前必須執行 `npm audit` / `pip-audit`。License 禁止 GPL。
