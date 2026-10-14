@@ -30,6 +30,7 @@ Prettier: `tabWidth=4`, `singleQuote`, `trailingComma`, `printWidth=100`
 
 ## TDD
 Red → Green → Refactor。禁止先寫實現後補測試。核心邏輯覆蓋率 ≥ 80%。
+測試範圍：Developer / Reviewer 只跑改動相關 test，如非必要唔跑 full suite；唔肯定 → 停低問用戶。→ `skills/sw-tdd/SKILL.md` §測試執行範圍
 
 ## Git
 `main` + `develop`。所有 branch checkout 自 `develop`（`hotfix` 除外，checkout 自 `main`）。

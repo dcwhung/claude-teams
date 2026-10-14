@@ -52,7 +52,7 @@ argument-hint: [feature description]
 5. 逐個功能點執行 TDD 循環（見 tdd.md）：
    ⚠️ 若涉及複雜業務規則（計算邏輯、日期邏輯、狀態機等）：
    先枚舉所有 edge cases（見 autonomous-loop.md）
-6. 完成所有功能點後，執行完整測試套件確認全綠
+6. 完成所有功能點後，執行與改動相關嘅測試確認全綠（範圍見 `skills/sw-tdd/SKILL.md` §測試執行範圍；如非必要唔跑 full suite，唔肯定 → 停低問用戶）
 7. Commit（Conventional Commits，見 git-flow.md）
 8. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review
 9. Reviewer 返回後，main agent 按 **`skills/sw-post-review-handoff/SKILL.md` → Protocol 1** 執行 handoff：

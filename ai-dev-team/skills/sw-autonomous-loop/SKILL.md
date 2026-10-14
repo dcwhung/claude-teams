@@ -23,12 +23,13 @@ description: Self-healing fix loop + parallel subagent dispatch + edge case enum
 ```
 使用 Agent tool 啟動子 agent，執行以下循環直至全綠：
 
-1. 執行完整測試套件（[項目測試指令，如 npm test / pytest / php artisan test]）
+1. 只執行與改動相關嘅測試（[相關 test file 清單]；範圍規則見 `skills/sw-tdd/SKILL.md` §測試執行範圍）
 2. 如有失敗：讀取失敗輸出，定位根源，修正代碼
 3. 重複直至所有測試通過
 4. 完成後輸出：修改摘要 + 每個失敗嘅根源分析
 
 不問用戶問題，自行判斷每個修正。
+例外：唔肯定相關 test 範圍、或者需要 full suite → 停低問用戶。
 ```
 
 ### 配合 Edge Case 枚舉（複雜業務邏輯必用）
@@ -81,10 +82,11 @@ Agent 2 - [模組 B]：
 Agent 3 - [Tests]：
   範圍：[測試檔案清單]
   任務：補充新 category 嘅測試覆蓋
-  驗證：npm test 全通過
+  驗證：執行新增 / 修改嘅 test file 確認通過
 
 各 agent 有明確唔重疊嘅檔案範圍。
-全部完成後執行整合測試，修正任何 regression。
+全部完成後執行各 agent 範圍內嘅相關測試，修正任何 failure。
+Full suite 交由 QA / CI；唔肯定範圍 → 停低問用戶。
 ```
 
 ### 關鍵規則
@@ -118,10 +120,11 @@ Agent 2 - [模組 B]：
 Agent 3 - Test Layer：
   範圍：[測試檔案清單]
   任務：更新測試以覆蓋新邏輯，補充缺失 edge cases
-  驗證：完整測試套件全通過
+  驗證：新增 / 修改嘅 test file 全通過
 
 三個 agents 同時執行，完成後匯報各自改動摘要。
-主 agent 執行完整測試套件，修正任何整合問題。
+主 agent 執行跨模組相關測試，修正任何整合問題。
+涉及共用邏輯、影響面搵唔清 → 先問用戶確認，再決定係咪跑 full suite。
 ```
 
 ---
