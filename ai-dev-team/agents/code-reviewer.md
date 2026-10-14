@@ -109,8 +109,8 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 |------|---------|----------|
 | **Lint** | `eslint .` / `ruff .` exit code 0 | 強制 fail |
 | **Type check** | `tsc --noEmit` / `mypy` exit code 0 | 強制 fail |
-| **Tests** | 完整測試套件全綠 | 強制 fail |
-| **Coverage** | 核心邏輯 ≥ 80%（project CLAUDE.md 可覆蓋） | 強制 fail |
+| **Tests** | 與 diff 相關嘅 test 全綠（範圍見 `skills/sw-tdd/SKILL.md` §測試執行範圍；唔肯定 → 問用戶）| 強制 fail |
+| **Coverage** | 被改動嘅核心邏輯 ≥ 80%（project CLAUDE.md 可覆蓋） | 強制 fail |
 | **No Critical** | 🔴 Critical 數量 = 0 | 強制 fail |
 | **Security scan** | 新增依賴無 Critical/High CVE | 強制 fail |
 
@@ -181,7 +181,7 @@ Receipt 格式、`next_action` 允許值及完整 status 映射表 → **`skills
 | 項目 | 單 fix | Batch（≤ 5 fix） |
 |------|--------|------------------|
 | Review 範圍 | 1 commit / branch | N 個 merged commit（已喺 develop） |
-| Hard gates | 跑一次 | 跑一次（涵蓋全部）|
+| Hard gates | 跑一次 | 跑一次（涵蓋全部 fix 嘅相關 test，唔係 full suite）|
 | 報告結構 | 單 section | **每 fix 一 Section**（A / B / C…）+ 整體 verdict |
 | 評分 | 1 個總分 | 每 fix 獨立評分 + 1 個整體 status |
 | Review Item ID | 起點：當前最高 +1 | 跨 fix 共用同一 ID 池，順序遞增 |

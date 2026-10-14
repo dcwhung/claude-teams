@@ -89,7 +89,8 @@ it('should not create duplicate when request sent twice')
 
 ## 測試執行範圍（Scoped Test Runs — 強制）
 
-> **核心規則**：TDD 循環中，任何時候只跑與當前改動直接相關嘅 test file。唔好跑 full suite。
+> **核心規則**：TDD 循環期間**同埋 development 完成後**，Developer 同 Code Reviewer 都只跑與改動直接相關嘅 test。如非必要，唔好跑 full suite。
+> **唔肯定相關範圍、或者唔肯定係咪「必要」→ 停低問用戶，唔好自己估。**
 
 ### 規則
 
@@ -99,25 +100,65 @@ it('should not create duplicate when request sent twice')
 | 🟢 Green | 只跑同一個 test file，確認變綠 |
 | 🔵 Refactor | 只跑直接相關嘅 test file（通常同 Green 一樣） |
 | 多個改動 | 每個改動只跑自己對應嘅 test file，例如 `npx vitest run src/utils/foo.test.ts src/pages/bar/Bar.test.tsx` |
+| Development 完成後 | 只跑今次 diff 涉及嘅 test file + 直接 import 被改模組嘅 test file |
+| Code Review（Hard Gate） | 同上：只跑 diff 相關 test，coverage 只計被改動嘅檔案 |
+
+### 「相關 test」點揀
+
+```
+1. 被改檔案自己嘅 test（foo.ts → foo.test.ts）
+2. 今次新增 / 修改嘅 test file
+3. 直接 import 被改模組嘅 test file（用 grep 搵，唔好估）
+4. 可用 runner 內置功能：`npx vitest related <changed-files>` / `jest --findRelatedTests <changed-files>`
+```
+
+### 幾時先算「必要」跑 full suite
+
+```
+✅ 改咗 shared utility / 共用 type / 全局 store，影響面搵唔清
+✅ 改咗 config、build 設定、依賴版本、test setup / fixtures / mocks
+✅ 用戶明確要求跑 full suite
+✅ QA 階段、CI pipeline（兩者照舊跑 full suite）
+```
+
+> 以上情況出現時，Developer / Reviewer 唔好自行開跑 full suite —— 先講明原因同預計影響，**問用戶確認**再跑。
+
+### 唔肯定 → 停低問用戶（強制）
+
+以下任何一種情況，必須停低問用戶，唔可以自己決定：
+
+```
+? 搵唔到被改檔案對應嘅 test
+? 唔肯定邊啲 test 會受影響（例如動態 import、跨 package 依賴）
+? 唔肯定改動算唔算上面「必要」清單
+? 相關 test 數量多到接近 full suite
+```
+
+問法：列出「打算跑嘅 test file 清單 + 唔肯定嘅原因」，俾用戶揀：只跑清單 / 加跑某啲 / 跑 full suite。
+
+> 此規則屬 explicit blocker，同 Auto-Handoff「禁止停低等確認」唔衝突。
 
 ### 禁止行為
 
 ```
 ❌ Developer subagent 跑 full suite（`pnpm vitest run` / `pnpm test`）作 regression check
+❌ Code Reviewer 喺 Hard Gate 預設跑 full suite
 ❌ 將 full suite 寫入 subagent prompt 嘅任何步驟
-❌ 以「確保冇 regression」為由在 Green 後立即跑全部 test
+❌ 以「確保冇 regression」為由在 Green 後 / development 完成後立即跑全部 test
+❌ 唔肯定範圍時自己估一個範圍就跑，唔問用戶
 ```
 
 ### Full suite 責任歸屬
 
 ```
 ✅ CI pipeline — 每次 push / merge 自動跑
-✅ Code Reviewer — Hard Gates 階段跑 full suite 作為 review gate
-✅ Developer — 只有當改動涉及 shared utility 且懷疑有廣泛影響先自行考慮
+✅ QA — Hard Gates 階段跑 full suite 一次作為 regression gate
+✅ 用戶明確要求 / 用戶確認「必要」情況之後
 ```
 
 > **Why**：每次 Red→Green 跑 457 個 test 浪費 ~8 分鐘，對單一 component 改動毫無意義。
 > 觀察到嘅失敗 pattern：subagent prompt 含「full suite regression check」→ 每個 agent 各多跑 8 分鐘。
+> 2026-10-14 擴展：用戶要求 development 完成後同 code review 都只跑相關 test，唔肯定就問。
 
 ---
 

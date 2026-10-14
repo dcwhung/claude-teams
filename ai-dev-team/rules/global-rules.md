@@ -173,6 +173,7 @@
 > 完整規範定義於 `skills/sw-tdd/SKILL.md`。
 
 Red → Green → Refactor。禁止先寫實現後補測試。覆蓋率 ≥ 80%。
+測試範圍：Developer 同 Code Reviewer 只跑與改動相關嘅 test，如非必要唔跑 full suite（full suite 由 QA / CI 負責）；唔肯定範圍 → 停低問用戶。
 命名：`it('should [預期行為] when [條件]')`
 
 ---

@@ -62,7 +62,7 @@ argument-hint: [scope]
    - 消除重複（DRY）
    - 拆分過長函數
    - 調整分層
-6. 完成後執行完整測試套件，確認全綠
+6. 完成後執行與改動相關嘅測試，確認全綠（範圍見 `skills/sw-tdd/SKILL.md` §測試執行範圍；如非必要唔跑 full suite，唔肯定 → 停低問用戶）
 7. Commit（見 git-flow.md）
 8. 透過 Agent tool 呼叫 code-reviewer agent 執行 /review
 9. Reviewer 返回後，main agent 按 **`skills/sw-post-review-handoff/SKILL.md` → Protocol 1** 執行 handoff：

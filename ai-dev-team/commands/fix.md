@@ -90,7 +90,7 @@ argument-hint: [bug description | CUI-XXXX]
 
 ```
 □ Bug 重現測試通過
-□ 完整測試套件無回歸問題
+□ 與改動相關嘅測試無回歸問題（full suite 由 QA / CI 負責）
 □ Root Cause Analysis 已記錄
 □ ESLint / Prettier 無錯誤
 □ Code Review 評分 ≥ 90 分，無 🔴 Critical
