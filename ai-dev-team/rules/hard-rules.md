@@ -51,7 +51,14 @@
 
 > **為何重要**：observed failure mode — main agent 喺 `/feature` workflow 中段被 compact，summary 只記得「業務改動」，workflow state 流失，重啟後直接 commit 入 main / 跳過 reviewer。此規則為 D 層守衛。
 
-## 6. 讀取優先順序
+## 6. PWA Version & Self-Update — PWA project 必須顯示版本號 + 自動更新
+- ✅ 介面一定要見到版本號（SSoT = `package.json` `version`，build time 注入；❌ component hardcode 版本字串）
+- ✅ 一定要識自己偵測新版本並 reload（`registration.update()` + `SKIP_WAITING` + `controllerchange` → reload，要有防 loop guard；有未儲存輸入時改為 prompt）
+- ✅ `sw.js` / `index.html` 唔可長 cache，否則永遠拎唔到新版
+- ❌ 缺任何一項 → Reviewer 🔴 Critical reject；QA 驗唔到 vN → vN+1 自動更新 → 阻止部署
+- 詳細：`rules/global-rules.md` §PWA Version & Self-Update Rule
+
+## 7. 讀取優先順序
 1. Project `CLAUDE.md` — 項目專屬設定，永遠覆蓋全局
 2. `team.md` — 團隊定義
 3. `rules/global-rules.md` — 全局行為規範（digest 已注入，詳細按需 Read）

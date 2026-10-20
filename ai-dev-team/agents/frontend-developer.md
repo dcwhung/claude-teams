@@ -216,6 +216,22 @@ Main agent 收到此標注後，必須先執行 `skills/sw-post-review-handoff/S
 
 ---
 
+## PWA Checklist（PWA project 強制）
+
+> 詳細規則：`rules/global-rules.md` §PWA Version & Self-Update Rule
+
+```
+□ UI 可見版本號，來源 = package.json version（build time 注入 → APP_VERSION 常數）
+□ 每次 release bump package.json version
+□ 啟動 / visibilitychange / interval（常數）都會 registration.update()
+□ waiting → SKIP_WAITING → controllerchange → reload（有 isRefreshing guard）
+□ 有未儲存輸入時改出「有新版本 — 重新載入」prompt，唔強制 reload
+□ sw.js / index.html 唔長 cache（Cache-Control: no-cache / network-first）
+□ Unit test：update handler + 版本組件
+```
+
+---
+
 ## Senior 思維
 
 - 發現 UI/UX 問題主動提出，唔只做執行者
