@@ -739,3 +739,56 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 - `mockup:` 但路徑唔存在 → reject
 
 > 詳見 `~/.claude/CLAUDE.md` Hard Rules #4。
+
+---
+
+## PWA Version & Self-Update Rule（Hard Rule）
+
+> 此規則由 2026-10-20 生效。原因：PWA 有 service worker cache，用戶開住舊 tab / 已安裝嘅 app 會長期停喺舊版本，而且冇辦法睇到自己用緊邊個版本，report bug 時無從對版。
+
+**適用範圍**：Project 符合以下任何一項即視為 PWA project：
+- 有 `manifest.webmanifest` / `manifest.json`（被 `<link rel="manifest">` 引用）
+- 有註冊 service worker（`navigator.serviceWorker.register`）
+- 依賴包含 `vite-plugin-pwa` / `next-pwa` / `@ducanh2912/next-pwa` / `workbox-*` / `@angular/service-worker`
+
+### 1. 介面必須顯示版本號
+
+- ✅ UI 上**任何時候**都可以睇到版本號（例：footer、settings / about 頁、側邊 menu 底部），唔可以只喺 console / devtools 見到
+- ✅ 版本號 **Single Source of Truth = `package.json` `version`**，build time 注入（Vite `define: { __APP_VERSION__: JSON.stringify(pkg.version) }`、Next.js `env` / `NEXT_PUBLIC_APP_VERSION` 等）
+- ✅ 建議同時顯示 build identifier（git short SHA 或 build 日期），格式：`v1.4.2 (a1b2c3d)`
+- ✅ 版本字串抽成常數 / config（例：`src/constants/appVersion.ts` export `APP_VERSION`），component 只 import
+- ❌ Component 入面 hardcode `'v1.4.2'` 字串（違反 magic string + 會同 `package.json` 脫節）
+- ❌ 每次 release 唔 bump `version`（版本號一樣 = 用戶無法分辨新舊）
+
+### 2. 必須自動偵測新版本並 reload
+
+**偵測（Detect）** — 以下三個時機都要 check update：
+- App 啟動時：`registration.update()`
+- Tab 由背景返前景：`visibilitychange` → `document.visibilityState === 'visible'` 時 `registration.update()`
+- 定時 polling：間隔抽成常數（例：`UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000`），唔可 magic number
+
+**套用（Apply）**：
+- ✅ 新 service worker 進入 `waiting` → `postMessage({ type: 'SKIP_WAITING' })` → SW 內 `self.skipWaiting()`
+- ✅ 監聽 `navigator.serviceWorker` 嘅 `controllerchange` → `window.location.reload()`
+- ✅ **防 reload loop**：用 flag（例：`let isRefreshing = false`）確保 `controllerchange` 只 reload 一次
+- ✅ 頁面有未儲存輸入（form dirty / 編輯中）時，**唔可以強制 reload**，改為顯示「有新版本 — 重新載入」prompt，由用戶撳；冇未儲存狀態 → 直接自動 reload
+- ✅ 用 library 時用佢嘅官方機制（例：`vite-plugin-pwa` `registerType: 'autoUpdate'` + `useRegisterSW` 嘅 `onNeedRefresh`），唔好自己再寫一套重複邏輯
+
+**Cache 策略（唔做呢步，上面全部無效）**：
+- ✅ `sw.js`（或 workbox 生成嘅 SW file）server 回應 `Cache-Control: no-cache`（或 `max-age=0`），否則瀏覽器拎唔到新 SW
+- ✅ `index.html` / app shell 用 network-first（或 SW precache 跟 revision 更新），唔可以永久 cache-first
+- ✅ 帶 hash 嘅靜態 asset（`app.3f9a1c.js`）先可以長 cache
+- ❌ Precache manifest 冇 revision / hash（舊 file 會一直被 serve）
+
+### 3. 測試要求
+
+- ✅ Unit test：update handler（`waiting` → 發 `SKIP_WAITING`；`controllerchange` 只 reload 一次；dirty state 時唔自動 reload 而係出 prompt）
+- ✅ Unit test：版本組件 render 出嚟嘅字串 = `APP_VERSION` 常數
+- ✅ QA 手動 / E2E：部署 vN → 開 tab → 部署 vN+1 → 切返 tab（或等 polling）→ 自動 reload 並顯示 vN+1 版本號
+
+### Hard rule 細則
+
+- Reviewer：PWA project 嘅 PR 冇版本號顯示、冇 update 偵測、或冇 `controllerchange` reload（且冇 loop guard）→ 🔴 Critical，必須 reject
+- Reviewer：新增 / 改動 service worker 註冊或 cache 設定，但 `sw.js` / `index.html` 會被長 cache → 🔴 Critical
+- DevOps：PWA release 時 `package.json` `version` 冇 bump → block deploy
+- QA：「vN → vN+1 自動更新」驗證未通過 → 🔴 Critical，阻止部署

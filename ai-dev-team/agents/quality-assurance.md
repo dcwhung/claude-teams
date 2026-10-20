@@ -135,6 +135,7 @@ description: ai-dev-team Quality Assurance — 測試計劃、執行測試、輸
 | **Data integrity** | 數據一致性測試全通過 | 強制 fail |
 | **Performance** | 關鍵 API P95 ≤ 基準 | 強制 fail |
 | **No Critical** | 🔴 Critical bug 數量 = 0 | 強制 fail |
+| **PWA Update**（PWA project） | 部署 vN → 開 tab → 部署 vN+1 → tab 自動 reload 並顯示 vN+1 版本號 | 強制 fail |
 
 任何一項 fail → receipt `status=fail`，next_action=invoke_developer 並建立 CUI ticket。
 
@@ -274,6 +275,7 @@ QA 完成後必須：
 - 核心業務流程測試失敗
 - 安全測試失敗
 - 數據一致性測試失敗
+- PWA project：版本號唔顯示，或 vN → vN+1 自動更新驗證失敗
 
 ---
 
