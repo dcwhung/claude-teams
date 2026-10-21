@@ -364,6 +364,40 @@ v1.1.0 → v2.0.0  （breaking change）
 
 > MAJOR bump → release 前**必須**跑 full suite，跑之前先知會用戶（見 `skills/sw-tdd/SKILL.md` §MAJOR 版本 → 強制 full suite）。
 
+### Version Bump 規則（幾時 bump、幾時唔 bump）
+
+> **核心規則**：所有改動預設都要 bump version（按上面 MAJOR / MINOR / PATCH 揀）。
+> **唯一例外**：改動只係修正**同一個 session 對上一個指令**整出嚟嘅 bug → 唔 bump。
+
+```
+唔 bump —— 以下三項必須全部成立：
+  ✅ 改動純粹係 bug fix（冇新功能、冇 refactor、冇其他 fix）
+  ✅ 個 bug 係同一個 session 入面、對上一個指令嘅改動引入嘅
+  ✅ 冇夾雜任何其他改動
+
+其他所有情況 → 照 bump：
+  ✅ 修正之前 session 留低嘅 bug → PATCH
+  ✅ 修正同一 session 但更早指令（唔係對上一個）引入嘅 bug → PATCH
+  ✅ Bug fix 加埋其他改動 → 按最大嗰類改動 bump
+  ✅ 新功能 / 規則 / 文件等任何其他改動 → 照 MINOR / PATCH / MAJOR
+```
+
+**記錄要求（唔 bump 時必須做）：**
+```
+✅ Commit message body 寫：`No version bump: fixes bug introduced by <commit SHA>（same session, previous command）`
+✅ PR description 同樣寫明，方便 Reviewer 核對
+```
+
+**唔肯定 → 停低問用戶**：例如分唔清個 bug 係咪對上一個指令整出嚟、或者唔肯定今次改動算唔算「純 fix」。
+
+```
+❌ 用「順手修 bug」做理由，連其他改動一齊唔 bump
+❌ 唔 bump 但冇寫低係修邊個 commit 嘅 bug
+❌ 修正之前 session 嘅 bug 都唔 bump
+```
+
+> 2026-10-21 生效：用戶要求「改動只係修正同一個 session 對上一個指令整出嚟嘅 bug，就唔會 bump version；其他改動照 bump」。
+
 ---
 
 ## 常用 Git 操作
