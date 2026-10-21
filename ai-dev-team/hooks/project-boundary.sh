@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Enforce project boundary for Write/Edit operations.
-# Within project dir (or additionalDirectories) → allow (exit 0, normal flow).
+# Within project dir, harness plan dir, or additionalDirectories → allow (exit 0, normal flow).
 # Outside → BLOCK (exit 2). Use CLAUDE_HOOK_BYPASS_BRANCH_POLICY=1 to override.
 
 set -uo pipefail
@@ -38,7 +38,21 @@ if [[ "$ABS_FILE" == "$ABS_CWD/"* ]] || [[ "$ABS_FILE" == "$ABS_CWD" ]]; then
   exit 0
 fi
 
-# 2. Within additionalDirectories (global + project settings) → allow
+# 2. Within Claude Code harness-managed directories → allow
+#    Plan mode can only write its plan file under <config dir>/plans/; blocking
+#    it leaves ExitPlanMode approving an empty plan (see SK-022).
+CLAUDE_CONFIG_ROOT=$(expand_path "${CLAUDE_CONFIG_DIR:-$HOME/.claude}")
+HARNESS_ALLOWED_DIRS=(
+  "$CLAUDE_CONFIG_ROOT/plans"
+)
+
+for allowed_dir in "${HARNESS_ALLOWED_DIRS[@]}"; do
+  if [[ "$ABS_FILE" == "$allowed_dir/"* ]]; then
+    exit 0
+  fi
+done
+
+# 3. Within additionalDirectories (global + project settings) → allow
 is_in_additional_dirs() {
   local file="$1" cwd="$2" settings_file abs_dir dir
   for settings_file in \
@@ -66,7 +80,7 @@ if [[ "${CLAUDE_HOOK_BYPASS_BRANCH_POLICY:-0}" == "1" ]]; then
   exit 0
 fi
 
-# 3. Outside project → BLOCK
+# 4. Outside project → BLOCK
 cat >&2 <<EOF
 ⛔ BLOCKED by project-boundary hook
 
