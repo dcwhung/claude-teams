@@ -83,6 +83,33 @@
 
 ---
 
+## [SK-022] Plan mode 嘅 plan file 喺 `~/.claude/plans/`，project-boundary hook 要放行
+
+**日期**：2026-10-21
+**來源 Agent**：Main Agent（claude-teams PWA 規則 session）
+**類別**：平台限制 / Hook
+**適用 Agent**：全部
+**有效期至**：永久
+
+**內容**：
+
+Plan mode 只准寫一個檔案 —— harness 指定嘅 plan file，位置係 `<config dir>/plans/<name>.md`（預設 `~/.claude/plans/`，有 `CLAUDE_CONFIG_DIR` 就跟佢）。呢個路徑一定喺 project 目錄之外，所以 `project-boundary.sh` 會 exit 2 擋咗佢。
+
+後果：`detect-plan-mode.sh` 撞到「設計 / design / plan」等字就逼 main agent 入 plan mode → plan file 寫唔到 → `ExitPlanMode` 照樣彈出批准，但用戶見到嘅計劃係空嘅。兩個 hook 一齊觸發就每次都中。
+
+**做法**：
+1. `project-boundary.sh` 用 `HARNESS_ALLOWED_DIRS` 白名單放行 `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/plans/`，只放行呢一個子目錄，`~/.claude/settings.json` 等照擋。
+2. 路徑先 `realpath -m` 再比對，`plans/../settings.json` 呢類 traversal 會被正規化後擋返。
+3. 比對用 `"$dir/"*`（有斜線），避免 `plans-evil/` 呢類前綴撞名。
+
+**適用場景**：
+改 `project-boundary.sh` / 加新 Write 限制 hook 時；見到 plan mode 批准畫面係空白時。
+
+**參考**：
+`hooks/project-boundary.sh` §2；SK-007（hard block 必須 exit 2）
+
+---
+
 ## [SK-021] 量度一個 shape 唔等於量度個 bound —— 固定住嘅變數先係冇 bound 嗰個
 
 **日期**：2026-09-14 15:10

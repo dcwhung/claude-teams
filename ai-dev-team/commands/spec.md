@@ -119,6 +119,7 @@ argument-hint: [feature description]
   - `proposal` → 跳去下面 `## Design Proposal` 寫提案
   - `library` → library 名 + 版本 + component 名 + docs URL
   - `none-required` → 一句話解釋（例：純 API wiring，無視覺輸出）
+- **PWA project**：新畫面 / layout 改動 origin 必須係 `mockup:`，指向用戶已確認嘅 `_mockups_/<feature>/index.html` preview（見 global-rules.md §PWA Layout & Preview-First Rule）
 
 ## Design Proposal（只有 origin = proposal 時填）
 

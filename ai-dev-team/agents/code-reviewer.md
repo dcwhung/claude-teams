@@ -100,7 +100,7 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 
 ### PWA 檢查（PWA project 強制）
 
-> 適用條件：project 有 manifest / service worker / PWA plugin（見 global-rules.md §PWA Version & Self-Update Rule）。
+> 適用條件：project 有 manifest / service worker / PWA plugin（見 global-rules.md §PWA Version & Self-Update Rule、§PWA Layout & Preview-First Rule）。
 
 - [ ] **版本號顯示**：UI 有可見版本號，來源係 `package.json` `version`（build time 注入）— 冇 / hardcode 字串 → 🔴 Critical
 - [ ] **Update 偵測**：啟動 + `visibilitychange` + interval（常數）呼叫 `registration.update()` — 缺 → 🔴 Critical
@@ -108,6 +108,9 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 - [ ] **未儲存狀態保護**：有 dirty form 時改為 prompt，唔強制 reload — 缺 → 🟡 Warning
 - [ ] **Cache 設定**：`sw.js` / `index.html` 唔會被長 cache — 違反 → 🔴 Critical
 - [ ] **測試**：update handler + 版本組件有 unit test — 缺 → 🟡 Warning
+- [ ] **Preview 已確認**：新畫面 / layout 改動嘅 Design Origin 係 `mockup:` 指向用戶已確認嘅 `_mockups_/<feature>/` preview — 冇 → 🔴 Critical
+- [ ] **固定畫面**：body 唔 scroll，header / footer 固定，只有內容 panel scroll（preview 已批准嘅例外除外）— 違反 → 🔴 Critical
+- [ ] **Viewport 細節**：用 `100dvh`、header / footer 有 safe-area padding、高度用 CSS variable — 缺 → 🟡 Warning
 
 ---
 
