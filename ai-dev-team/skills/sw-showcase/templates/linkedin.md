@@ -12,10 +12,9 @@
 6. **CTA** —— link（R6：第三方內容 app 改為 "Repo / demo in comments"）
 7. **Hashtags** 3–5 個：#ClaudeCode #AIEngineering + tech stack 相關
 
-## 分隔線之後（唔計字數）
+## 附圖建議 → 另存 `linkedin-images.md`（唔計字數）
 
 ```
----
 Suggested images (attach in this order):
 1. deck P1 (hero)
 2. mobile screenshot — <screen>
@@ -25,6 +24,6 @@ Suggested images (attach in this order):
 
 ## 規則
 
-- ≤ 800 字元（分隔線之前），用 check-length.py 驗證
+- ≤ 800 字元，用 check-length.py 驗證
 - 第一身、主動語態、具體；唔好用 "excited to announce"、"game-changer"
 - 數字必須同 metrics.json 一致

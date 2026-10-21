@@ -31,12 +31,13 @@ description: App showcase pack — after an app ships, generate a Cantonese Face
 <project-root>/.proj-docs/showcase/v<version>/
   metrics.json          ← collect-metrics.sh 輸出（凍結當刻數字）
   facebook.md           ← FB post（純文字，可直接 copy）
-  linkedin.md           ← LinkedIn post（純文字）+ 圖片建議（分隔線之後）
+  linkedin.md           ← LinkedIn post（純文字，可直接 copy）
+  linkedin-images.md    ← LinkedIn 附圖建議（次序 + 檔案）
   cv-project.md         ← CV Selected Projects 段落
   deck-spec.json        ← build-deck.py 輸入
-  deck.pptx             ← 生成嘅 deck（upload 前版本）
+  deck.pptx / deck.pdf  ← 生成嘅 deck（pptx 拖入 Drive 即變 Google Slides）
   screenshots/          ← mobile-*.png / desktop-*.png
-  README.md             ← 索引：Google Slides link、risk flags、驗證結果
+  README.md             ← 索引：數字、risk flags、驗證結果、Slides link（用戶轉好後補）
 ```
 
 同一版本重行 → 覆寫（idempotent）；新版本 → 新資料夾，保留舊版方便比較。完成後更新 `.proj-docs/index.md`（如有）。
@@ -61,9 +62,9 @@ Step 4  揀賣點：由候選清單排序 → Deck 5–10 / LinkedIn 5 / FB 3–
 Step 5  截圖（見 §截圖）
 Step 6  生成 4 樣輸出（見 templates/）
 Step 7  驗證：check-length.py（R4）；數字逐個對 metrics.json（R1）；link 規則（R6）
-Step 8  Deck → Google Slides（見 §Deck）
+Step 8  Deck → pptx + pdf；交用戶拖入 Drive 轉 Google Slides（見 §Deck）
 Step 9  寫 README.md 索引，commit 入項目 branch（跟 sw-git-flow；只係文件 → `docs:` commit）
-Step 10 向用戶交付：Slides link + 4 樣輸出路徑 + risk flags + 「CV 請自行 paste」
+Step 10 向用戶交付：deck.pptx / deck.pdf 路徑（+ 轉 Slides 步驟）+ 4 樣輸出路徑 + risk flags + 「CV 請自行 paste」
 ```
 
 ---
@@ -108,10 +109,10 @@ Step 10 向用戶交付：Slides link + 4 樣輸出路徑 + risk flags + 「CV �
 2. `python3 ${CLAUDE_PLUGIN_ROOT}/skills/sw-showcase/scripts/build-deck.py deck-spec.json deck.pptx`
    （需要 `python-pptx`；`qrcode` 可選 —— 冇就 `pip install python-pptx qrcode`）
 3. Render 檢查：`soffice --headless --convert-to pdf deck.pptx` → 轉 PNG 用 Read 睇一次，修正溢出 / 重疊
-4. Upload：Google Drive connector `create_file`，`title: "<App> — Showcase v<version>"`，
-   `contentMimeType: application/vnd.openxmlformats-officedocument.presentationml.presentation`，
-   `base64Content` = deck.pptx → Drive 自動轉 Google Slides。Link 寫入 README.md
-5. Drive connector 唔可用 → 交付 `deck.pptx` 並話俾用戶知要手動 upload（唔可以靜靜跳過）
+4. 輸出 PDF：`soffice --headless --convert-to pdf deck.pptx`（`deck.pdf` 一齊存檔，方便 attach / LinkedIn Featured）
+5. 轉 Google Slides：由用戶將 `deck.pptx` 拖入 Google Drive → 右掣「開啟工具 › Google 簡報」（或者 Drive 設定開咗「轉換上載檔案」就自動轉）。
+   ⚠️ **唔好用 Drive connector `create_file` upload**：佢只收 inline base64，含截圖嘅 deck（~200 KB）要成幾十萬 output token，實際做唔到（2026-10-21 試點發現）。
+   交付時必須清楚講明呢一步要用戶手動做（唔可以靜靜跳過）
 
 ---
 

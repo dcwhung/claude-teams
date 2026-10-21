@@ -39,8 +39,12 @@ MAX_FEATURES = 10
 MAX_KPIS = 6
 FEATURE_COLUMNS = 2
 QR_SIZE_IN = 1.1
+MAX_IMAGE_PX = 1600
+JPEG_QUALITY = 85
 LABEL_PT = 12
 APP_NAME_PT = 44
+APP_NAME_LONG_PT = 30
+APP_NAME_LONG_CHARS = 20
 TAGLINE_PT = 20
 BODY_PT = 14
 FEATURE_TITLE_PT = 13
@@ -75,19 +79,33 @@ def add_rect(slide, box, fill, shape=MSO_SHAPE.RECTANGLE):
     rect.fill.solid()
     rect.fill.fore_color.rgb = fill
     rect.line.fill.background()
+    rect.shadow.inherit = False
     return rect
+
+
+def compress_image(image_path):
+    """縮細 + 轉 JPEG（截圖係 3x DPR，原圖會令 deck 好大）；回傳 (BytesIO, ratio)。"""
+    from io import BytesIO
+
+    from PIL import Image
+
+    with Image.open(image_path) as img:
+        img = img.convert("RGB")
+        img.thumbnail((MAX_IMAGE_PX, MAX_IMAGE_PX))
+        buffer = BytesIO()
+        img.save(buffer, "JPEG", quality=JPEG_QUALITY, optimize=True)
+        ratio = img.width / img.height
+    buffer.seek(0)
+    return buffer, ratio
 
 
 def add_picture_fit(slide, image_path, box):
     """喺 box 入面等比例縮放置中擺圖。"""
-    from PIL import Image
-
     left, top, width, height = box
-    with Image.open(image_path) as img:
-        ratio = img.width / img.height
+    image_stream, ratio = compress_image(image_path)
     fit_w, fit_h = (width, width / ratio) if width / ratio <= height else (height * ratio, height)
     slide.shapes.add_picture(
-        str(image_path),
+        image_stream,
         Inches(left + (width - fit_w) / 2),
         Inches(top + (height - fit_h) / 2),
         Inches(fit_w),
@@ -95,12 +113,15 @@ def add_picture_fit(slide, image_path, box):
     )
 
 
-def add_qr(slide, url, box, out_dir):
+def add_qr(slide, url, box):
     if qrcode is None or not url:
         return
-    qr_path = Path(out_dir) / "_qr.png"
-    qrcode.make(url).save(qr_path)
-    add_picture_fit(slide, qr_path, box)
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp_dir:
+        qr_path = Path(tmp_dir) / "qr.png"
+        qrcode.make(url).save(qr_path)
+        add_picture_fit(slide, qr_path, box)
 
 
 def build_hero(prs, spec, accent, base_dir):
@@ -115,13 +136,13 @@ def build_hero(prs, spec, accent, base_dir):
     text_width = panel_left - MARGIN_IN * 2
     add_text(slide, (MARGIN_IN, 0.6, text_width, 0.4), spec.get("label", "PORTFOLIO PROJECT"),
              LABEL_PT, accent, bold=True)
-    add_text(slide, (MARGIN_IN, 1.0, text_width, 1.0), spec["app_name"], APP_NAME_PT, bold=True)
-    add_text(slide, (MARGIN_IN, 2.0, text_width, 0.8), spec["tagline"], TAGLINE_PT, MUTED)
+    name_pt = APP_NAME_PT if len(spec["app_name"]) <= APP_NAME_LONG_CHARS else APP_NAME_LONG_PT
+    add_text(slide, (MARGIN_IN, 1.0, text_width, 0.9), spec["app_name"], name_pt, bold=True)
+    add_text(slide, (MARGIN_IN, 1.95, text_width, 0.8), spec["tagline"], TAGLINE_PT, MUTED)
     add_problem_solution(slide, spec, accent, (MARGIN_IN, 3.0, text_width))
     add_text(slide, (MARGIN_IN, 6.5, text_width - QR_SIZE_IN, 0.4), spec.get("link_label", ""),
              BODY_PT, accent, bold=True)
-    add_qr(slide, spec.get("qr_url"), (panel_left - QR_SIZE_IN - 0.3, 6.1, QR_SIZE_IN, QR_SIZE_IN),
-           base_dir)
+    add_qr(slide, spec.get("qr_url"), (panel_left - QR_SIZE_IN - 0.3, 6.1, QR_SIZE_IN, QR_SIZE_IN))
 
 
 def add_problem_solution(slide, spec, accent, origin):
