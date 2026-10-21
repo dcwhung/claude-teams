@@ -58,6 +58,7 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 - [ ] 函數過長（超過 30 行須拆分）
 - [ ] 深層嵌套（超過 3 層考慮重構）
 - [ ] 缺少錯誤處理（try/catch、error boundary）
+- [ ] **Version bump**：改動有 bump version；冇 bump 就要符合 `skills/sw-git-flow/SKILL.md` §Version Bump 規則 嘅例外（只修正同一 session 對上一個指令嘅 bug），commit / PR 寫明修邊個 commit — 唔符合 → 🟡 Warning
 - [ ] 性能問題（N+1 query、不必要嘅重複計算、missing index）
 - [ ] 違反 SOLID 原則
 - [ ] 缺少或不足嘅測試覆蓋

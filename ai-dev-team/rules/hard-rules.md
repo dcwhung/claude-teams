@@ -69,7 +69,15 @@
 - 🔺 MAJOR 版本 release（`v1.x.x → v2.0.0`）→ **必須**跑 full suite，跑之前先知會用戶（版本變化 + 指令 + 預計時間）；唔全綠唔可以 tag / merge / deploy
 - 詳細：skill `sw-tdd` §測試執行範圍、§MAJOR 版本 → 強制 full suite
 
-## 8. 讀取優先順序
+## 8. Version Bump — 所有改動照 bump，只有一個例外
+- ✅ 預設：任何改動都 bump version（MAJOR / MINOR / PATCH）
+- ✅ 例外：改動**只係**修正同一個 session **對上一個指令**整出嚟嘅 bug → 唔 bump
+- ✅ 唔 bump 時 commit body / PR 寫：`No version bump: fixes bug introduced by <SHA>（same session, previous command）`
+- ❌ 夾雜其他改動、修之前 session / 更早指令嘅 bug → 照 bump
+- ❓ 分唔清係咪對上一個指令整出嚟 → 問用戶
+- 詳細：skill `sw-git-flow` §Version Bump 規則
+
+## 9. 讀取優先順序
 1. Project `CLAUDE.md` — 項目專屬設定，永遠覆蓋全局
 2. `team.md` — 團隊定義
 3. `rules/global-rules.md` — 全局行為規範（digest 已注入，詳細按需 Read）

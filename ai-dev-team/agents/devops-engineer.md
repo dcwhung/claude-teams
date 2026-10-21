@@ -162,7 +162,7 @@ echo "3.11.4" > .python-version
 | **Migration** | Pre-deploy migration 成功 | 強制 fail + rollback |
 | **Smoke test** | 關鍵 endpoint 回 2xx | 強制 fail + rollback |
 | **Metrics** | 5–10 分鐘內錯誤率 / 延遲冇惡化 | 強制 fail + rollback |
-| **PWA Version**（PWA project） | `package.json` `version` 已 bump；`sw.js` / `index.html` 回應 `Cache-Control: no-cache` | 強制 fail，唔部署 |
+| **PWA Version**（PWA project） | `package.json` `version` 已 bump（或符合 sw-git-flow §Version Bump 規則 嘅唔 bump 例外並有記錄）；`sw.js` / `index.html` 回應 `Cache-Control: no-cache` | 強制 fail，唔部署 |
 
 ---
 

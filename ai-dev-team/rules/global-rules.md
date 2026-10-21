@@ -187,6 +187,7 @@ MAJOR 版本 release（`v1.x.x → v2.0.0`）→ **必須**跑 full suite，跑�
 Branch: `[類型]/[模組]/[TICKET]_[描述]`
 Commit: `<type>: [identifier] | [描述]`（例：`fix: RV-001 | description`、`refactor: | description`）
 PR → `develop` 須 ≥ 90 分 review。`develop` → `main` 須 QA 全通過。
+Version bump：所有改動照 bump；**唯一例外**係只修正同一個 session 對上一個指令整出嚟嘅 bug → 唔 bump，但 commit / PR 要寫明修邊個 commit。詳見 `skills/sw-git-flow/SKILL.md` §Version Bump 規則。
 
 **Developer 開始工作前必須確認：**
 ```
@@ -415,6 +416,7 @@ Agent 必須主動管理 context：lazy load skill 檔案、subagent 卸載重�
 □ Branch 命名符合規範（含 ticket number，如有）
 □ 無 unrelated 改動混入同一 commit
 □ 無 .env 或 secret 被 commit
+□ Version 已按 `skills/sw-git-flow/SKILL.md` §Version Bump 規則 bump（或符合唔 bump 例外並已記錄原因）
 ```
 
 ### QA 層面（功能性改動必須）
@@ -759,7 +761,7 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 - ✅ 建議同時顯示 build identifier（git short SHA 或 build 日期），格式：`v1.4.2 (a1b2c3d)`
 - ✅ 版本字串抽成常數 / config（例：`src/constants/appVersion.ts` export `APP_VERSION`），component 只 import
 - ❌ Component 入面 hardcode `'v1.4.2'` 字串（違反 magic string + 會同 `package.json` 脫節）
-- ❌ 每次 release 唔 bump `version`（版本號一樣 = 用戶無法分辨新舊）
+- ❌ 每次 release 唔 bump `version`（版本號一樣 = 用戶無法分辨新舊）；唯一例外見 `skills/sw-git-flow/SKILL.md` §Version Bump 規則
 
 ### 2. 必須自動偵測新版本並 reload
 
@@ -791,7 +793,7 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 
 - Reviewer：PWA project 嘅 PR 冇版本號顯示、冇 update 偵測、或冇 `controllerchange` reload（且冇 loop guard）→ 🔴 Critical，必須 reject
 - Reviewer：新增 / 改動 service worker 註冊或 cache 設定，但 `sw.js` / `index.html` 會被長 cache → 🔴 Critical
-- DevOps：PWA release 時 `package.json` `version` 冇 bump → block deploy
+- DevOps：PWA release 時 `package.json` `version` 冇 bump → block deploy（除非符合 `skills/sw-git-flow/SKILL.md` §Version Bump 規則 嘅唔 bump 例外，且 commit 已記錄原因）
 - QA：「vN → vN+1 自動更新」驗證未通過 → 🔴 Critical，阻止部署
 
 ---

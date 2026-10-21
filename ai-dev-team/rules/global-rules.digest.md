@@ -37,6 +37,7 @@ MAJOR 版本 release → 必須跑 full suite，跑之前先知會用戶；唔�
 `main` + `develop`。所有 branch checkout 自 `develop`（`hotfix` 除外，checkout 自 `main`）。
 Branch: `[類型]/[模組]/[TICKET]_[描述]`
 Commit: `feat / fix / refactor / chore / docs / test`
+Version bump：所有改動照 bump；只修正同一 session 對上一個指令整出嚟嘅 bug → 唔 bump（commit 寫明修邊個 commit）
 → 詳細: global-rules.md#git-規範
 
 ## 安全

@@ -241,6 +241,7 @@ Version bump 規則：
   全 PATCH（fix only）→ +0.0.1
   混 feat + fix     → +0.1.0
   Breaking change   → +1.0.0（步驟 2 之前先知會用戶，跑 full suite 全綠先可以繼續；見 `skills/sw-tdd/SKILL.md` §MAJOR 版本 → 強制 full suite）
+  例外：batch 入面只得修正同一 session 對上一個指令 bug 嘅 fix → 唔 bump（見 `skills/sw-git-flow/SKILL.md` §Version Bump 規則）
 ```
 
 ---
