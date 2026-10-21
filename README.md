@@ -4,7 +4,7 @@ Claude Code plugin marketplace for Donald's AI teams.
 
 | Plugin | What it is |
 |--------|------------|
-| `ai-dev-team` | Virtual software house: 8 role agents, `/feature` `/fix` `/refactor` `/hotfix` `/review` `/test` `/deploy` workflow commands, TDD / git-flow / coding-style skills, branch-policy hooks. |
+| `ai-dev-team` | Virtual software house: 8 role agents, `/feature` `/fix` `/refactor` `/hotfix` `/review` `/test` `/deploy` workflow commands, TDD / git-flow / coding-style skills, branch-policy hooks, `/showcase` app promo pack (posts / deck / CV) with token-usage logging. |
 
 ## Use in a project (Local **and** Cloud sessions)
 

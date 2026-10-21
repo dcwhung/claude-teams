@@ -74,6 +74,7 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 | `/docs` | PM + Developer(s) | 生成或更新 README / API doc / CHANGELOG |
 | `/test` | Quality Assurance | 執行測試計劃，輸出 QA 報告 |
 | `/deploy` | DevOps Engineer | 執行 CI/CD 部署流程 |
+| `/showcase` | Main agent | App 宣傳包：FB / LinkedIn post、2 頁 Slides deck、CV 段落 |
 | `/session-log` | 全體 | 記錄今次 session，儲存 log |
 | `/session-close` | 全體 | 記錄今次 session log 並自動關閉 session |
 | `--task=postmortem` | Engineering Manager | Hotfix 事後根源分析 |
@@ -101,6 +102,7 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 | Review hard gates、評分維度、門檻 | `agents/code-reviewer.md` |
 | Coding style / 命名 / 函數長度 | `skills/sw-coding-style/SKILL.md` |
 | Hooks 配置（含 handoff-receipt enforcement） | `skills/sw-hooks/SKILL.md` |
+| App 宣傳包（post / deck / CV）+ 開發數字來源 | `skills/sw-showcase/SKILL.md` |
 
 **原生 Skill 機制**：
 

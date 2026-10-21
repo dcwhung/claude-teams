@@ -26,6 +26,7 @@ description: 記錄今次 session，儲存 log
 7. 確認有冇 common knowledge 需要補充入 shared-knowledge.md
 8. 按 templates/session-log.md 生成 log 檔案
 9. 儲存至指定位置
+10. 如項目有 `.claude/usage/*.json`（usage-logger hook 寫入）→ 同 log 一齊 commit，供 /showcase 統計 token
 ```
 
 ---

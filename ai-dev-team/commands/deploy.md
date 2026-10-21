@@ -56,6 +56,7 @@ argument-hint: [staging|production]
 7. 按 post-review-handoff.md → Protocol 4 執行 handoff（成功 / 失敗）
 8. 輸出部署記錄（格式見 devops-engineer.md）
 9. 如有 common knowledge 記錄入 shared-knowledge.md
+10. MAJOR release（vX.0.0）部署成功 → 提醒用戶：「要唔要行 /showcase 出宣傳包？」（只提醒，唔自動行；見 skills/sw-showcase/SKILL.md §觸發）
 ```
 
 ---

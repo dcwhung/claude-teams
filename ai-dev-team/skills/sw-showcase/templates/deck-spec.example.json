@@ -1,0 +1,57 @@
+{
+  "label": "PORTFOLIO PROJECT · v2.10.0",
+  "app_name": "Life in the UK Test Practice",
+  "tagline": "Pass the citizenship test — in English and Cantonese.",
+  "accent_hex": "#1D4E89",
+  "problem": "Hong Kong BN(O) migrants must pass an English-only test on 24 random questions; existing apps ignore Cantonese speakers.",
+  "solution": "An offline PWA with 480 questions, full Cantonese translation, a real exam simulator and a personal study plan.",
+  "link_label": "life-uk.vercel.app",
+  "qr_url": "https://life-uk.vercel.app/",
+  "hero_screenshot": "screenshots/mobile-home.png",
+  "desktop_screenshot": "screenshots/desktop-exam.png",
+  "features_title": "Key features",
+  "features": [
+    {
+      "title": "Real exam mode",
+      "desc": "45-min timer, 24-dot navigator, flagging, 18/24 pass mark."
+    },
+    {
+      "title": "Random exam",
+      "desc": "24 of 480 questions, max one per study fact."
+    },
+    {
+      "title": "Cantonese mode",
+      "desc": "Every question, option and note in colloquial HK Cantonese."
+    },
+    {
+      "title": "Study plan",
+      "desc": "Phased daily tasks from exam date, time budget and rest days."
+    },
+    {
+      "title": "Similar questions",
+      "desc": "Links each question to its study fact and sibling questions."
+    }
+  ],
+  "kpis": [
+    {
+      "value": "12",
+      "label": "active dev days"
+    },
+    {
+      "value": "1,568",
+      "label": "commits"
+    },
+    {
+      "value": "143",
+      "label": "merged PRs"
+    },
+    {
+      "value": "41",
+      "label": "Claude Code sessions"
+    },
+    {
+      "value": "3.3k",
+      "label": "test assertions"
+    }
+  ]
+}
