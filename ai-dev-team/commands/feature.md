@@ -40,6 +40,9 @@ argument-hint: [feature description]
         library   → 讀 library doc + 試裝 minimal example 對齊 props
         none-required → 自我審：今次 diff 真係零視覺變化？如有任何 className / 新 layout 即 stop
    ❌ Origin 缺 / spec 未 sign-off → 停低，return /spec（唔可繼續）
+   ⚡ PWA project 嘅新畫面 / layout 改動：需求唔清楚 → 先 invoke `grill-me`；
+      做靜態 HTML preview（`_mockups_/<feature>/index.html`）→ 用戶確認 → Origin = mockup:
+      未確認唔可以寫 UI code（見 global-rules.md §PWA Layout & Preview-First Rule）
    ❌ 純 backend / logic 改動 → 標 none-required + Why 一句說明，跳過此 check
 
 1. 讀取 shared-knowledge.md（全局 + 項目）

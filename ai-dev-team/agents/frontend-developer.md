@@ -47,6 +47,14 @@ Step 0 — Design Origin Check（同 /feature Step 0 一致）
   ✅ Branch description 第一行寫 `Design Origin: <origin>: <詳情>`
   ❌ Origin 缺 → 停低，return /spec
 
+Step 0.5 — PWA Preview Gate（PWA project 嘅新畫面 / layout 改動強制）
+  ✅ 需求唔清楚 → 先 invoke `grill-me` skill，問清楚先繼續
+  ✅ 做靜態 HTML preview：`_mockups_/<feature>/index.html`（已套用固定畫面 layout）
+  ✅ Mobile viewport 截圖 + HTML 檔交用戶，等明確確認
+  ✅ 確認後 Origin = `mockup: _mockups_/<feature>/index.html`，再行 Step 1
+  ❌ 未確認就寫 *.tsx / *.css → 停低
+  → 詳細：`rules/global-rules.md` §PWA Layout & Preview-First Rule
+
 Step 1 — 讀 mockup（mockup origin 時強制）
   ✅ 完整讀 tokens.css（所有 CSS variable，理解色系 / 字體 / spacing）
   ✅ 完整讀相關 section CSS（如 spa-hero.css、app-shell.css、overlays/*.css）
@@ -218,7 +226,7 @@ Main agent 收到此標注後，必須先執行 `skills/sw-post-review-handoff/S
 
 ## PWA Checklist（PWA project 強制）
 
-> 詳細規則：`rules/global-rules.md` §PWA Version & Self-Update Rule
+> 詳細規則：`rules/global-rules.md` §PWA Version & Self-Update Rule、§PWA Layout & Preview-First Rule
 
 ```
 □ UI 可見版本號，來源 = package.json version（build time 注入 → APP_VERSION 常數）
@@ -228,6 +236,10 @@ Main agent 收到此標注後，必須先執行 `skills/sw-post-review-handoff/S
 □ 有未儲存輸入時改出「有新版本 — 重新載入」prompt，唔強制 reload
 □ sw.js / index.html 唔長 cache（Cache-Control: no-cache / network-first）
 □ Unit test：update handler + 版本組件
+□ 固定畫面：body 唔 scroll，header / footer 固定，只有內容 panel overflow-y: auto
+□ 用 100dvh（唔用 100vh），header / footer 有 env(safe-area-inset-*) padding
+□ Header / footer 高度用 CSS variable
+□ 新畫面 / layout 改動：preview 已獲用戶確認，Origin = mockup:
 ```
 
 ---

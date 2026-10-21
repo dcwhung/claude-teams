@@ -793,3 +793,95 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 - Reviewer：新增 / 改動 service worker 註冊或 cache 設定，但 `sw.js` / `index.html` 會被長 cache → 🔴 Critical
 - DevOps：PWA release 時 `package.json` `version` 冇 bump → block deploy
 - QA：「vN → vN+1 自動更新」驗證未通過 → 🔴 Critical，阻止部署
+
+---
+
+## PWA Layout & Preview-First Rule（Hard Rule）
+
+> 此規則由 2026-10-21 生效。適用範圍同 §PWA Version & Self-Update Rule 一樣（有 manifest / service worker / PWA plugin 嘅 project）。
+> 原因：PWA 要似 native app，成頁 scroll 會令 header / bottom nav 跟住走；同埋 UI 方向未確認就寫 code，做完先發現唔啱要成個推倒重來。
+
+### 1. 固定畫面 Layout（App Shell）
+
+**核心原則**：盡量固定畫面 —— header、footer（或 bottom nav）固定唔郁，只有中間內容 panel 自己 scroll。
+
+```css
+:root {
+    --header-height: 56px;
+    --footer-height: 64px;
+}
+
+html,
+body {
+    height: 100dvh;
+    overflow: hidden; /* body 唔 scroll */
+}
+
+.app-shell {
+    display: grid;
+    grid-template-rows: auto 1fr auto; /* header / content / footer */
+    height: 100dvh;
+}
+
+.app-header {
+    min-height: var(--header-height);
+    padding-top: env(safe-area-inset-top);
+}
+
+.app-content {
+    overflow-y: auto; /* 只有內容 panel scroll */
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+}
+
+.app-footer {
+    min-height: var(--footer-height);
+    padding-bottom: env(safe-area-inset-bottom);
+}
+```
+
+- ✅ 用 grid（`auto 1fr auto`）或 flex column 砌 shell，令內容區自動填滿剩餘高度
+- ✅ 用 `100dvh`，唔用 `100vh`（iOS / Android address bar 收埋 / 彈出會令 `100vh` 計錯，底部被遮）
+- ✅ Safe area：header / footer 加 `env(safe-area-inset-*)`；viewport meta 加 `viewport-fit=cover`；manifest `display: standalone`
+- ✅ 多 panel（例：list + detail、sidebar + content）→ 每個 panel 各自 `overflow-y: auto`，互不影響
+- ✅ Header / footer 高度用 CSS variable（`--header-height` / `--footer-height`），唔可 magic number
+- ❌ `position: fixed` header / footer + 估 `padding-top: 56px` 去頂開內容（高度一變就重疊）
+- ❌ `body` / `html` 成頁 scroll，header / footer 跟住內容 scroll 走
+- 例外：真係需要整頁 scroll 嘅畫面（例：長文閱讀頁、landing page）→ 必須喺 preview 階段講明原因，由用戶確認
+
+### 2. Preview-First（寫 code 前必須先做 preview 確認）
+
+**適用**：新畫面、新 panel、layout 結構改動（區塊增減 / 位置調動 / navigation 改動）。
+**豁免**：改字、改色、小 bug fix 等 `baseline:` 微調（視覺結構唔變）。
+
+```
+Step 1 — 釐清需求（唔清楚就 grill）
+  ? 畫面有咩區塊、header / footer 放咩、navigation 點行、主要互動係咩
+  ✅ 有任何一項唔清楚 → invoke `grill-me` skill，一次一條問題，每條附建議答案，問到清楚為止
+  ❌ 唔清楚仲自己估
+
+Step 2 — 做靜態 HTML preview
+  ✅ 路徑：`_mockups_/<feature>/index.html`（+ `tokens.css`）
+  ✅ 已套用上面「固定畫面 Layout」，用假資料，唔駁 API
+  ✅ 純 HTML + CSS（必要時少量 vanilla JS 示範互動），唔使 build
+
+Step 3 — 交畀用戶睇
+  ✅ 用 mobile viewport（例：390×844）截圖 + 附 HTML 檔
+  ✅ 列出主要設計決定（layout、navigation、配色方向）同任何例外（例：某頁整頁 scroll）
+
+Step 4 — 等用戶明確確認
+  ✅ 用戶確認方向 → 先可以寫 `*.tsx` / `*.jsx` / `*.css`
+  ✅ 用戶要求改 → 改 preview，再交再確認
+  ⚠️ 呢個係 explicit blocker，同 Auto-Handoff「禁止停低等確認」唔衝突
+
+Step 5 — 確認後
+  ✅ Design Origin = `mockup: _mockups_/<feature>/index.html`
+  ✅ 之後按 `agents/frontend-developer.md` Mockup-First Implementation Workflow 實作
+```
+
+### Hard rule 細則
+
+- Reviewer：PWA 新畫面 / layout 改動嘅 PR，Design Origin 唔係 `mockup:` 指向已確認嘅 preview → 🔴 Critical，必須 reject
+- Reviewer：`body` 會 scroll、header / footer 跟內容 scroll 走（而 preview 冇批准呢個例外）→ 🔴 Critical
+- Reviewer：用 `100vh` 而唔係 `100dvh`、header / footer 冇 safe-area padding → 🟡 Warning
+- Frontend Developer：未有用戶確認 preview 就寫 UI code → 停低，返去 Step 2

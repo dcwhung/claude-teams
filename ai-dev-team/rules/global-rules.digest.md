@@ -68,7 +68,9 @@ PWA project（有 manifest / service worker / pwa plugin）必須：
 ① UI 顯示版本號（SSoT = `package.json` version，build time 注入，唔可 hardcode）
 ② 自動偵測新版本並 reload（啟動 + visibilitychange + interval 呼叫 `registration.update()`；`SKIP_WAITING` → `controllerchange` → reload 一次；有未儲存輸入就改出 prompt）
 ③ `sw.js` / `index.html` 唔可長 cache
-→ 詳細: global-rules.md §PWA Version & Self-Update Rule
+④ 固定畫面：header / footer sticky，只有內容 panel scroll（`100dvh` + grid `auto 1fr auto`）
+⑤ 新畫面 / layout 改動先做靜態 HTML preview（`_mockups_/<feature>/`）交用戶確認先寫 code；唔清楚 → `grill-me`
+→ 詳細: global-rules.md §PWA Version & Self-Update Rule、§PWA Layout & Preview-First Rule
 
 ## Sub-Agent 觸發（速查）
 ```
