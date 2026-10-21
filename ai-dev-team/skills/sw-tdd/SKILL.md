@@ -119,9 +119,32 @@ it('should not create duplicate when request sent twice')
 ✅ 改咗 config、build 設定、依賴版本、test setup / fixtures / mocks
 ✅ 用戶明確要求跑 full suite
 ✅ QA 階段、CI pipeline（兩者照舊跑 full suite）
+✅ MAJOR 版本 release（見下方「MAJOR 版本 → 強制 full suite」，呢個情況唔使問，但要先知會）
 ```
 
-> 以上情況出現時，Developer / Reviewer 唔好自行開跑 full suite —— 先講明原因同預計影響，**問用戶確認**再跑。
+> 以上情況出現時（MAJOR release 除外），Developer / Reviewer 唔好自行開跑 full suite —— 先講明原因同預計影響，**問用戶確認**再跑。
+
+### MAJOR 版本 → 強制 full suite（先知會用戶）
+
+> **核心規則**：版本號提升 MAJOR（`v1.x.x → v2.0.0`，即 breaking change，見 `skills/sw-git-flow/SKILL.md` §版本號規範）時，**一定要**跑 full suite，冇得跳過。
+
+```
+觸發：package.json（或 project 版本 SSoT）嘅 MAJOR 數字增加
+      MINOR / PATCH bump → 照舊行上面嘅 scoped 規則
+
+步驟：
+  1. 先知會用戶（唔係問准唔准，係通知），內容包括：
+     - 版本變化：vX.Y.Z → v(X+1).0.0
+     - Breaking change 摘要（一句）
+     - 將會跑嘅指令（例：`pnpm test`）同預計時間
+  2. 知會之後即刻跑 full suite
+  3. 結果（pass / fail 數量）回報用戶
+  4. Full suite 唔全綠 → 唔可以 tag / merge 入 main / deploy
+
+❌ MAJOR bump 但只跑 scoped test
+❌ 冇知會用戶就靜靜雞開跑 full suite
+❌ Full suite 有 fail 仍然 tag / release
+```
 
 ### 唔肯定 → 停低問用戶（強制）
 
@@ -154,11 +177,13 @@ it('should not create duplicate when request sent twice')
 ✅ CI pipeline — 每次 push / merge 自動跑
 ✅ QA — Hard Gates 階段跑 full suite 一次作為 regression gate
 ✅ 用戶明確要求 / 用戶確認「必要」情況之後
+✅ MAJOR 版本 release（先知會用戶，唔使等確認）
 ```
 
 > **Why**：每次 Red→Green 跑 457 個 test 浪費 ~8 分鐘，對單一 component 改動毫無意義。
 > 觀察到嘅失敗 pattern：subagent prompt 含「full suite regression check」→ 每個 agent 各多跑 8 分鐘。
 > 2026-10-14 擴展：用戶要求 development 完成後同 code review 都只跑相關 test，唔肯定就問。
+> 2026-10-21 擴展：MAJOR 版本 release 必須跑 full suite，跑之前先知會用戶。
 
 ---
 

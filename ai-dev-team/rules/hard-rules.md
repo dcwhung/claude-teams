@@ -58,7 +58,14 @@
 - ❌ 缺任何一項 → Reviewer 🔴 Critical reject；QA 驗唔到 vN → vN+1 自動更新 → 阻止部署
 - 詳細：`rules/global-rules.md` §PWA Version & Self-Update Rule
 
-## 7. 讀取優先順序
+## 7. Test Scope — 如非必要唔跑 full suite
+- ✅ Developer / Reviewer 只跑與改動相關嘅 test（被改檔案嘅 test + import 被改模組嘅 test）
+- ❌ 以「確保冇 regression」為由自行跑 full suite（full suite 由 QA / CI 負責）
+- ❓ 唔肯定相關範圍、或者唔肯定係咪「必要」→ 停低問用戶，唔好自己估
+- 🔺 MAJOR 版本 release（`v1.x.x → v2.0.0`）→ **必須**跑 full suite，跑之前先知會用戶（版本變化 + 指令 + 預計時間）；唔全綠唔可以 tag / merge / deploy
+- 詳細：skill `sw-tdd` §測試執行範圍、§MAJOR 版本 → 強制 full suite
+
+## 8. 讀取優先順序
 1. Project `CLAUDE.md` — 項目專屬設定，永遠覆蓋全局
 2. `team.md` — 團隊定義
 3. `rules/global-rules.md` — 全局行為規範（digest 已注入，詳細按需 Read）

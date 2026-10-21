@@ -38,6 +38,7 @@ argument-hint: [staging|production]
 □ 環境變數 / Secrets 已正確配置
 □ develop → main merge 已由 main agent 按 QA receipt 完成（見 post-review-handoff.md → Protocol 2）
 □ Production 部署已獲授權
+□ MAJOR 版本 release：已知會用戶並跑 full suite 全綠（見 `skills/sw-tdd/SKILL.md` §MAJOR 版本 → 強制 full suite）
 ```
 
 ---

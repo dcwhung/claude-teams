@@ -362,6 +362,8 @@ v1.0.1 → v1.1.0  （新功能）
 v1.1.0 → v2.0.0  （breaking change）
 ```
 
+> MAJOR bump → release 前**必須**跑 full suite，跑之前先知會用戶（見 `skills/sw-tdd/SKILL.md` §MAJOR 版本 → 強制 full suite）。
+
 ---
 
 ## 常用 Git 操作
