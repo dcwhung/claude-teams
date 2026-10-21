@@ -240,7 +240,7 @@ QA receipt pass 後：
 Version bump 規則：
   全 PATCH（fix only）→ +0.0.1
   混 feat + fix     → +0.1.0
-  Breaking change   → +1.0.0
+  Breaking change   → +1.0.0（步驟 2 之前先知會用戶，跑 full suite 全綠先可以繼續；見 `skills/sw-tdd/SKILL.md` §MAJOR 版本 → 強制 full suite）
 ```
 
 ---

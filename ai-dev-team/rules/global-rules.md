@@ -174,6 +174,7 @@
 
 Red → Green → Refactor。禁止先寫實現後補測試。覆蓋率 ≥ 80%。
 測試範圍：Developer 同 Code Reviewer 只跑與改動相關嘅 test，如非必要唔跑 full suite（full suite 由 QA / CI 負責）；唔肯定範圍 → 停低問用戶。
+MAJOR 版本 release（`v1.x.x → v2.0.0`）→ **必須**跑 full suite，跑之前先知會用戶（版本變化 + 指令 + 預計時間）；唔全綠唔可以 release。詳見 `skills/sw-tdd/SKILL.md` §MAJOR 版本 → 強制 full suite。
 命名：`it('should [預期行為] when [條件]')`
 
 ---
