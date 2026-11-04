@@ -175,7 +175,8 @@ stdin JSON 完整結構見 `shared-knowledge.md` → SK-003。
 
 - Block：`npm|pnpm|yarn|bun [run] test|t|test:*`（冇 `-- <file>`）、`make test`、冇檔案參數嘅 `bun test` / `vitest` / `jest` / `node --test` / `pytest`、playwright、cypress、`e2e/`、`run-all.sh`、`test:e2e`
 - 檔案參數：有副檔名或 `/`、唔係 directory；`-t` `--reporter` `--config` `-c` `--project` `--testNamePattern` `--outputFile` `--shard` 會食埋下一個值
-- 放行：`vitest related`、`vitest run <files>`、`jest --findRelatedTests`、`npm test -- <file>`
+- 放行：`vitest related`、`vitest run <files>`、`jest --findRelatedTests`、`npm test -- [flags] <file>`、`node --check`、非 runner command（`cat e2e/x`、`grep playwright …`）
+- 逐段（`&&` `||` `;` `|`）判斷；只有段頭 command word（跳過 `FOO=1`）係 runner（npm/pnpm/yarn/bun/npx/node/bash/sh/make/playwright/vitest/jest/cypress/pytest 或 `*run-all.sh`）先套規則
 - Bypass：`CLAUDE_HOOK_BYPASS_REVIEWER_TEST_SCOPE=1`
 - Test：`bash hooks/reviewer-test-scope.test.sh`
 

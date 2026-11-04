@@ -8,7 +8,10 @@
 #     `node --test` / `pytest` 冇檔案參數、`make test`
 #     （`-t` `--reporter` `--config` `-c` `--project` 等 flag 會食埋下一個值；directory 唔算檔案）
 #   - e2e / browser suite：playwright、cypress、`e2e/`、`run-all.sh`、`test:e2e` / `run e2e`
-# 放行：`vitest related`、`vitest run <files>`、`jest --findRelatedTests`、`npm test -- <file>`、單一 node test 檔
+# 放行：`vitest related`、`vitest run <files>`、`jest --findRelatedTests`、`npm test -- [flags] <file>`、單一 node test 檔、
+#       `node --check` / `bash -n`，同埋所有非 runner command（cat / ls / git / grep / head …）
+# 規則逐段（&& || ; |）套用，只睇段頭 command word（跳過 `FOO=1`）係 runner
+#   （npm pnpm yarn bun npx node bash sh make playwright vitest jest cypress pytest，或 `*run-all.sh`）
 # 檔案參數：有副檔名或者有 `/`，而且唔係 directory（有 payload `.cwd` 就用 `-d` 檢查，冇就一定要有副檔名）
 #
 # Why：life-in-uk-test 82/93 份 review 自己跑 `run-all.sh`（約 700 s），之後 QA 同 CI 再各跑一次。
@@ -57,13 +60,9 @@ EOF
     exit "$EXIT_BLOCK"
 }
 
-# ── e2e / browser suite ──────────────────────────────────────────────────
-E2E_PATTERN='(^|[^[:alnum:]_-])(playwright|run-all\.sh)([^[:alnum:]_-]|$)|(^|[[:space:]/.])e2e/|test:e2e|(npm|pnpm|yarn)([[:space:]]+run)?[[:space:]]+e2e([^[:alnum:]_-]|$)'
-if grep -Eq "$E2E_PATTERN" <<<"$UNQUOTED"; then
-    block "e2e / browser suite 屬 QA 同 CI"
-fi
-
-# ── full suite：逐段（&& || ; |）睇 command word ────────────────────────
+# ── 逐段（&& || ; |）睇 command word；只有 runner 先檢查 full suite / e2e ──
+# cat / ls / git / grep / head 呢類讀檔 command 一律放行（W-905）
+readonly RUNNER_WORDS=" npm pnpm yarn bun npx bunx node bash sh make playwright vitest jest cypress pytest "
 # 呢啲 flag 會食埋下一個 token（唔係檔案參數）
 readonly VALUE_FLAGS=" -t --reporter --config -c --project --testNamePattern --outputFile --shard -k -m "
 readonly EXEC_WORDS=" exec dlx x "
@@ -118,11 +117,31 @@ check_npx() { # args after npx → skip npx's own flags, then check the tool
     return 0
 }
 
-pm_test_is_scoped() { # args after `test` → 0 if `-- <file>`
-    local after=0 tok
+pm_test_is_scoped() { # args after `test` → 0 if any arg after `--` is a file path
+    while [[ $# -gt 0 && "$1" != "--" ]]; do shift; done
+    [[ $# -eq 0 ]] && return 1
+    shift
+    has_file_args "$@"
+}
+
+check_e2e_args() { # runner args... → block if any arg points at an e2e / browser suite
+    local tok
     for tok in "$@"; do
-        [[ "$after" -eq 1 ]] && { is_file_arg "$tok"; return; }
-        [[ "$tok" == "--" ]] && after=1
+        case "$tok" in
+            -*) ;;
+            e2e/* | */e2e/* | *run-all.sh | playwright | cypress | test:e2e)
+                block "e2e / browser suite 屬 QA 同 CI" ;;
+        esac
+    done
+    return 0
+}
+
+is_syntax_check() { # word args... → 0 for `node --check` / `bash -n`（唔會跑任何嘢）
+    local word="$1" tok
+    shift
+    for tok in "$@"; do
+        [[ "$word" == "node" && ( "$tok" == "--check" || "$tok" == "-c" ) ]] && return 0
+        [[ ( "$word" == "bash" || "$word" == "sh" ) && "$tok" == "-n" ]] && return 0
     done
     return 1
 }
@@ -177,8 +196,12 @@ check_segment() { # one command segment (no && || ; |)
     # 跳過 FOO=1 呢類 env assignment
     while [[ $# -gt 0 && "$1" =~ $ENV_ASSIGN_RE ]]; do shift; done
     [[ $# -eq 0 ]] && return 0
+    [[ "$1" == *run-all.sh ]] && block "e2e / browser suite 屬 QA 同 CI"
     local word="${1##*/}"
     shift
+    in_list "$word" "$RUNNER_WORDS" || return 0
+    is_syntax_check "$word" "$@" && return 0
+    check_e2e_args "$@"
     case "$word" in
         npm | pnpm | yarn | bun) check_pm "$word" "$@" ;;
         npx | bunx) check_npx "$@" ;;
