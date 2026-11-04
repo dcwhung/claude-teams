@@ -26,7 +26,7 @@ argument-hint: [topic]
 ## 執行流程
 
 ```
-1. 讀取 shared-knowledge.md（全局 + 項目）
+1. 讀取 shared-knowledge.md 頂部 Index，只 Read Roles 對應本 agent 嘅條目（全局 + 項目）
 2. 讀取現有 spec（如有）及 project CLAUDE.md
 3. 輸出執行計劃
    - Main agent（直接同用戶對話）：等用戶確認

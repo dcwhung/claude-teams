@@ -44,7 +44,7 @@ argument-hint: [bug description | CUI-XXXX]
 ## 執行流程
 
 ```
-1.  讀取 shared-knowledge.md（全局 + 項目）
+1.  讀取 shared-knowledge.md 頂部 Index，只 Read Roles 對應本 agent 嘅條目（全局 + 項目）
 2.  理解 bug 描述，確認可重現步驟
 3.  輸出執行計劃
     - Main agent（直接同用戶對話）：等用戶確認

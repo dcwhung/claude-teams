@@ -5,7 +5,7 @@ description: Review Item ID (C/W/S-NNN globally unique) vs QA Ticket (CUI-XXXX) 
 
 # Skill：Ticket Management
 
-> QA 測試發現問題後，必須建立 ticket。
+> QA 測試發現**三層收斂（L1 + L2 + L3）**嘅 🔴 / 🟡 問題後，必須建立 ticket；🟢 / Observation 只寫入報告，環境問題登記 known issue（見 `skills/sw-validation-gate/SKILL.md` §4、§6）。
 
 ---
 

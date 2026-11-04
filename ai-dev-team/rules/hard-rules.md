@@ -64,7 +64,8 @@
 
 ## 7. Test Scope — 如非必要唔跑 full suite
 - ✅ Developer / Reviewer 只跑與改動相關嘅 test（被改檔案嘅 test + import 被改模組嘅 test）
-- ❌ 以「確保冇 regression」為由自行跑 full suite（full suite 由 QA / CI 負責）
+- ❌ 以「確保冇 regression」為由自行跑 full suite（full suite 只由 QA S3 / CI 負責，每個 SHA 一次）
+- ❌ Reviewer 跑 e2e / browser suite（屬 QA 同 CI）
 - ❓ 唔肯定相關範圍、或者唔肯定係咪「必要」→ 停低問用戶，唔好自己估
 - 🔺 MAJOR 版本 release（`v1.x.x → v2.0.0`）→ **必須**跑 full suite，跑之前先知會用戶（版本變化 + 指令 + 預計時間）；唔全綠唔可以 tag / merge / deploy
 - 詳細：skill `sw-tdd` §測試執行範圍、§MAJOR 版本 → 強制 full suite
@@ -77,7 +78,16 @@
 - ❓ 分唔清係咪對上一個指令整出嚟 → 問用戶
 - 詳細：skill `sw-git-flow` §Version Bump 規則
 
-## 9. 讀取優先順序
+## 9. QA 驗收凍結 + Validation Gate — 已驗冇改唔再驗
+- ✅ QA 開工先跑 `scripts/qa-ledger.sh impact --since <base>`：SKIP（已 freeze + SHA-256 冇變）嘅鏈只引用，唔讀、唔跑
+- ✅ 三階段：S1 功能鏈驗收（開發完）/ S2 整合性驗收（UAT）/ S3 全面檢查驗收（發佈前；automated full suite 一次，CI 同一個 SHA 綠咗就引用）
+- ✅ Test plan 每條鏈寫一次就凍結（plan 檔都會 hash）；相鄰範圍只計 1-hop import
+- ✅ Finding 要三層收斂：L1 一手基準（AC / SSoT）+ L2 可重現證據（指令輸出）+ L3 推論對齊，先可以 🔴 / 🟡 block
+- ❌ 缺 L1 → 最多 🟢；缺 L2 → Observation；🟢 / Observation 唔 block、唔 re-review
+- ❌ Flaky 重跑多過 1 次、為「完整」補測、S1 / S2 做 swapped build / 加 CPU 負載 / mutation / PWA 矩陣
+- 詳細：skill `sw-validation-gate`
+
+## 10. 讀取優先順序
 1. Project `CLAUDE.md` — 項目專屬設定，永遠覆蓋全局
 2. `team.md` — 團隊定義
 3. `rules/global-rules.md` — 全局行為規範（digest 已注入，詳細按需 Read）

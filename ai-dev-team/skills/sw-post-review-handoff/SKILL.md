@@ -34,6 +34,8 @@ Main agent 係唯一執行 git + 唯一 invoke 下一個 agent 嘅角色。
 protocol: 1 | 2 | 3 | 4
 status: pass | warn | fail
 score: XX/100 | n/a
+stage: T0 | S1 | S2 | S3 | n/a        # QA 驗收階段（Protocol 2）；Reviewer 填 tier（T0–T3）或 n/a
+ledger: "SKIP N / REVERIFY M / UNCOVERED K" | n/a
 hard_gates:
   lint: pass | fail | n/a
   type_check: pass | fail | n/a
@@ -69,6 +71,7 @@ blockers:
 
 - `status=fail` 或任何 `hard_gates.*=fail` → `next_action` 禁止為 merge/invoke_qa/invoke_devops，必須係 `invoke_developer` / `rollback` / `end`
 - 任何 🔴 Critical 存在 → 自動 `status=fail`，無論 score
+- 🔴 / 🟡 只計三層收斂（L1 + L2 + L3）嘅 finding（見 `skills/sw-validation-gate/SKILL.md` §4）；淨係得 🟢 / Observation → `status=pass`
 - Main agent 讀取 receipt 後**必須按 `next_action` 執行**，唔可以自行判斷跳步
 
 ---
@@ -199,9 +202,10 @@ blockers:
 只輸出 review 報告 + receipt，**唔執行 git**。
 
 ```
-判斷規則：
+判斷規則（🔴 / 🟡 只計三層收斂 finding；🟢 唔扣分、唔觸發 re-review）：
   hard_gates 全 pass + score ≥ 90 + 無 Critical → status=pass, next_action=merge_develop
-  score 75–89（有 Warning）→ status=warn, next_action=invoke_developer
+  只有 🟢 / Observation                          → status=pass（無論 score）
+  score 75–89（有收斂 🟡）→ status=warn, next_action=invoke_developer
   score < 75 或有 Critical → status=fail, next_action=invoke_developer
 ```
 
@@ -209,7 +213,8 @@ blockers:
 
 | receipt | Git 操作（main agent 執行） | 下一步 |
 |---------|---------------------------|-------|
-| `pass / merge_develop` | `git checkout develop && git merge --no-ff <branch> -m "..." && git branch -d <branch>` | **必須** Agent tool invoke `quality-assurance`，prompt 含 `context`。禁止直接結束。 |
+| `pass / merge_develop`（T0） | 同下 | **唔使 invoke QA**，`context` 寫「T0」→ 流程結束，或者併入下次 release |
+| `pass / merge_develop`（T1–T3） | `git checkout develop && git merge --no-ff <branch> -m "..." && git branch -d <branch>` | **必須** Agent tool invoke `quality-assurance`，prompt 含 `context` 同 stage：今次即刻 release → `--stage=release`（S3 會順手做 REVERIFY / UNCOVERED 鏈嘅 S1，唔會跑兩次）；否則 → S1。禁止直接結束。 |
 | `warn / invoke_developer` | 無 | Agent tool invoke `frontend-developer` 或 `backend-developer`，prompt：「喺 `<branch>` 修正 Warning 後重新 /review：`<blockers>`」 |
 | `fail / invoke_developer` | 無 | 同上，修正 Critical/hard gate fail。**Main agent 禁止自己修正代碼。** |
 
@@ -222,16 +227,18 @@ blockers:
 只輸出 QA 報告 + receipt，**唔執行 git**。
 
 ```
-判斷規則：
-  hard_gates 全 pass + 無 🔴 Critical → status=pass, next_action=merge_main
-  有 🔴 Critical → status=fail, next_action=invoke_developer（並建立 CUI ticket）
+判斷規則（階段見 skills/sw-validation-gate/SKILL.md §2）：
+  S1 / S2 pass（hard_gates 全 pass + 無收斂 🔴）→ status=pass, next_action=end      （鏈已 freeze，等 release）
+  S3 pass                                     → status=pass, next_action=merge_main
+  有收斂 🔴 Critical / hard gate fail          → status=fail, next_action=invoke_developer（並建立 CUI ticket）
 ```
 
 ### Main Agent 動作表
 
 | receipt | Git 操作 | 下一步 |
 |---------|---------|-------|
-| `pass / merge_main` | `git checkout main && git merge --no-ff develop -m "..."` | Agent tool invoke `devops-engineer`：「執行 /deploy --env=production」 |
+| `pass / end`（S1 / S2） | commit QA 寫出嘅 ledger + plan + 報告（`docs(qa): ...`） | 話俾用戶知邊條鏈已 freeze；要 release 先 invoke QA `--stage=release` |
+| `pass / merge_main`（S3） | commit ledger / 報告，然後 `git checkout main && git merge --no-ff develop -m "..."` | Agent tool invoke `devops-engineer`：「執行 /deploy --env=production」 |
 | `fail / invoke_developer` | 無 | Agent tool invoke 對應 Developer：「執行 /fix <CUI-XXXX>」 |
 
 ---

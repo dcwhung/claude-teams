@@ -46,7 +46,7 @@ argument-hint: [staging|production]
 ## 執行流程
 
 ```
-1. 讀取 shared-knowledge.md（全局 + 項目）
+1. 讀取 shared-knowledge.md 頂部 Index，只 Read Roles 對應本 agent 嘅條目（全局 + 項目）
 2. 確認前置條件達標
 3. 確認有冇 pending migration，評估影響
 4. 輸出執行計劃（含 migration 策略 + 回滾方案），等待確認

@@ -81,6 +81,62 @@
 > 此區域存放跨 agent、跨 session 嘅共享知識。
 > 項目特有嘅技術規律應記錄於對應項目嘅 `CLAUDE.md` 或項目級 shared-knowledge，唔應存入此檔案。
 
+### Index（先讀呢個表，只 Read 同自己 Role 有關嘅條目）
+
+> ⛔ 唔好成份讀（約 57 KB）。用 `grep -n "^## \[SK-0NN\]" shared-knowledge.md` 搵行號，再 Read 嗰段。
+> 新增條目時一定要喺呢個表加一行。
+
+| SK | 主題 | Roles |
+|----|------|-------|
+| SK-023 | Cloud sandbox Playwright 版本同預裝 Chromium 唔夾 → 用 `executablePath` | qa, developer, devops |
+| SK-022 | Plan mode plan file 要喺 project-boundary hook 放行 | main |
+| SK-021 | 量度 shape ≠ 量度 bound | reviewer, qa |
+| SK-020 | Docstring 嘅量度數字要變成測試 | developer, reviewer, qa |
+| SK-019 | 「防禦性」fallback 會廢咗 security bound | developer, reviewer |
+| SK-018 | 「今日不可達」唔可以做嚴重性唯一標準 | reviewer, qa |
+| SK-017 | 證明純格式改動要用 AST / bundle 比對 | reviewer, qa |
+| SK-016 | `.tickets/` 入咗 `.gitignore` → 並行 lane 互相覆蓋 | main, qa |
+| SK-013 | UI logic 先問 utils / service 層 | developer, reviewer |
+| SK-012 | 429 中斷 subagent → SendMessage 續 | main |
+| SK-011 | branch-policy hook 對 compound command 誤 block | main |
+| SK-010 | `git rm --cached` 後 merge 會刪 working tree 檔 | main |
+| SK-009 | Cloud session 要用 setup script 裝 plugin | main, devops |
+| SK-008 | detect-plan-mode hook 被 subagent 通知誤觸發 | main |
+| SK-007 | Hook 硬 block 只可以用 `exit 2` | main |
+| SK-006 | `~/.claude/` 寫入 guard | main |
+| SK-005 | `/start` 冇 task 時跳過 /feature 流程 | main |
+| SK-004 | Coverage ≠ TDD 執行 | reviewer, qa |
+| SK-003 | Hook input 經 stdin JSON | main |
+| SK-002 | Hook 只喺對應 project 目錄生效 | main |
+| SK-001 | Subagent checkpoint 壓縮行為 | main |
+
+---
+
+## [SK-023] Cloud sandbox 嘅 Playwright 版本同預裝 Chromium 唔夾 —— 直接用 `executablePath`，唔好每次重新研究
+
+**日期**：2026-11-04
+**來源 Agent**：Main Agent（ai-dev-team QA 效率檢討 session）
+**類別**：平台限制 / 測試環境
+**適用 Agent**：quality-assurance、frontend-developer、devops-engineer
+**有效期至**：直到 cloud sandbox 預裝版本改變
+
+**內容**：
+
+Cloud session 預裝咗一個 Chromium（`/opt/pw-browsers/chromium`）同對應版本嘅 Playwright。Project lock 咗另一個 Playwright 版本嘅話，佢會去搵自己版本嘅 browser build（例如 `chromium-1194`），但 sandbox 入面只有另一個 build（例如 `chromium-1243`），於是 launch fail。
+
+903-player 嘅 session log 記錄咗 QA 每次都重新研究繞路：開 `e2erun/` 或 `pwb/` symlink、用 `--import` preload、臨時改 code。每次都要燒幾千 token 同幾分鐘。
+
+**做法**（按優先次序）：
+1. Launch 時指定 browser：`chromium.launch({ executablePath: process.env.PW_CHROMIUM_PATH || undefined })`，cloud 入面 set `PW_CHROMIUM_PATH=/opt/pw-browsers/chromium`。要 project 改一次 harness，之後永久有效。
+2. Project 未改之前：喺 scratchpad 寫一個 preload（`--import <scratchpad>/pw-exec.mjs`），monkey-patch `chromium.launch` 加 `executablePath`。**唔好**改 project 檔案。
+3. ❌ 唔好跑 `npx playwright install`：會裝另一個版本，又慢，而且 sandbox 嘅網絡未必准。
+
+**適用場景**：
+Cloud session 跑 e2e / Playwright 出現 `Executable doesn't exist at .../chromium-XXXX`。
+
+**參考**：
+`agents/quality-assurance.md` §Cloud 環境備註；903-player `.claude/session-logs/`（2026-10 至 2026-11）
+
 ---
 
 ## [SK-022] Plan mode 嘅 plan file 喺 `~/.claude/plans/`，project-boundary hook 要放行

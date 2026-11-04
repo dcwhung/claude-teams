@@ -173,7 +173,8 @@
 > 完整規範定義於 `skills/sw-tdd/SKILL.md`。
 
 Red → Green → Refactor。禁止先寫實現後補測試。覆蓋率 ≥ 80%。
-測試範圍：Developer 同 Code Reviewer 只跑與改動相關嘅 test，如非必要唔跑 full suite（full suite 由 QA / CI 負責）；唔肯定範圍 → 停低問用戶。
+測試範圍：Developer 同 Code Reviewer 只跑與改動相關嘅 test，如非必要唔跑 full suite（full suite 由 QA S3 / CI 負責，每個 SHA 一次）；唔肯定範圍 → 停低問用戶。
+QA 驗收：已驗而且 SHA-256 冇變嘅功能鏈唔再驗；分 S1 功能鏈 / S2 整合 / S3 發佈前三階段；finding 要經 L1/L2/L3 三層收斂先可以 block。詳見 `skills/sw-validation-gate/SKILL.md`。
 MAJOR 版本 release（`v1.x.x → v2.0.0`）→ **必須**跑 full suite，跑之前先知會用戶（版本變化 + 指令 + 預計時間）；唔全綠唔可以 release。詳見 `skills/sw-tdd/SKILL.md` §MAJOR 版本 → 強制 full suite。
 命名：`it('should [預期行為] when [條件]')`
 
@@ -270,14 +271,10 @@ Agent 必須主動管理 context：lazy load skill 檔案、subagent 卸載重�
 
 ## QA 測試報告格式
 
-> 完整格式定義於 `agents/quality-assurance.md`。
+> 完整模板定義於 `agents/quality-assurance.md` §報告格式；上限（S1 / S2 ≤ 60 行，S3 ≤ 100 行）見 `skills/sw-validation-gate/SKILL.md` §5。
 
-報告必須包含（順序固定）：
-1. 報告頭部（日期、測試員、範圍、環境、總結）
-2. 測試覆蓋概覽表（Unit / Integration / E2E / Performance）
-3. 失敗測試詳情（可重現步驟、根源分析、ticket 編號、建議修正）
-4. 問題修正優先順序表
-5. 測試建議（下一步）
+報告必須包含：Stage + Tier、ledger 摘要（SKIP / REVERIFY / UNCOVERED）、跑過嘅指令同結果、finding（🔴 / 🟡 附 L1 / L2 / L3 引證，🟢 / Observation 每條一行）、建議補測、handoff receipt。
+禁止：抄 review 內容、Hard Gates 全 pass 都逐項列、嵌入截圖。
 
 ---
 
@@ -421,9 +418,9 @@ Agent 必須主動管理 context：lazy load skill 檔案、subagent 卸載重�
 
 ### QA 層面（功能性改動必須）
 ```
-□ QA 測試完成，無 🔴 Critical 問題
-□ E2E 測試通過（如涉及核心 user journey）
-□ Regression 測試通過（如改動影響現有功能）
+□ QA 對應階段完成（S1 / S2 / S3），無三層收斂嘅 🔴 Critical
+□ 鏈已 freeze 入 `.proj-docs/qa/verification-ledger.tsv`
+□ 發佈前：S3 automated full suite 全綠（或者引用同一個 SHA 嘅 CI run）
 □ 相關 ticket 狀態更新至 completed
 ```
 
@@ -680,7 +677,7 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 □ 執行 /start ai-dev-team
 □ 讀取 .claude/session-logs/context-for-subagent-YYYY-MM-DD_HH-MM.md
 □ 讀取 .proj-docs/index.md，了解現有文件狀態
-□ 讀取 shared-knowledge.md（全局 + 項目）
+□ 讀取 shared-knowledge.md 頂部 Index，只 Read Roles 對應本 agent 嘅條目（全局 + 項目）
 □ 只執行指定任務，唔做額外工作
 □ 完成後將輸出存入 .proj-docs/ 對應位置
 □ 更新 .proj-docs/index.md
@@ -788,6 +785,7 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 - ✅ Unit test：update handler（`waiting` → 發 `SKIP_WAITING`；`controllerchange` 只 reload 一次；dirty state 時唔自動 reload 而係出 prompt）
 - ✅ Unit test：版本組件 render 出嚟嘅字串 = `APP_VERSION` 常數
 - ✅ QA 手動 / E2E：部署 vN → 開 tab → 部署 vN+1 → 切返 tab（或等 polling）→ 自動 reload 並顯示 vN+1 版本號
+  - 頻率：每次 release（S3）一次；S1 只喺改到 `sw.js` / 更新邏輯 / build / manifest 先做（見 `skills/sw-validation-gate/SKILL.md` §2）
 
 ### Hard rule 細則
 

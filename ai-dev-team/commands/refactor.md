@@ -47,7 +47,7 @@ argument-hint: [scope]
 ## 執行流程
 
 ```
-1. 讀取 shared-knowledge.md（全局 + 項目）
+1. 讀取 shared-knowledge.md 頂部 Index，只 Read Roles 對應本 agent 嘅條目（全局 + 項目）
 2. 輸出執行計劃
    - Main agent（直接同用戶對話）：等用戶確認
    - Subagent（由 main agent invoke）：立即執行，唔等確認（見 agent-protocols.md §2）

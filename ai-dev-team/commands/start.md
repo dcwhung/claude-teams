@@ -28,8 +28,8 @@ Activate the ai-dev-team with optional task scope to minimise token usage. Works
 | plan | project-manager.md, architect.md | plan.md |
 | feature | frontend-developer.md or backend-developer.md | feature.md, tdd.md, git-flow.md, coding-style.md |
 | fix | frontend-developer.md or backend-developer.md | fix.md, tdd.md, ticket-management.md |
-| review | code-reviewer.md | review.md, coding-style.md |
-| test | quality-assurance.md | test.md, ticket-management.md |
+| review | code-reviewer.md | review.md, coding-style.md, validation-gate.md |
+| test | quality-assurance.md | test.md, validation-gate.md（ticket-management.md 有 ticket 先讀） |
 | deploy | devops-engineer.md | deploy.md, ci-cd.md |
 | hotfix | frontend-developer.md or backend-developer.md, devops-engineer.md | hotfix.md, git-flow.md |
 | refactor | frontend-developer.md or backend-developer.md | refactor.md, tdd.md, coding-style.md |
@@ -115,7 +115,7 @@ Activate the ai-dev-team with optional task scope to minimise token usage. Works
 | 重構 / refactor / 重新整理 / 清理代碼 / 拆檔 | `/refactor` | `refactor.md`, `tdd.md`, `coding-style.md` |
 | 改 / 修改 / 調整 / update | **歧義 — 必須再問**：「呢個係新行為（/feature）定修錯誤行為（/fix）？」 | — |
 | review / 審 / 睇下 OK 唔 OK | `/review` | `review.md`, `coding-style.md` |
-| 測試 / test / QA / 跑 test | `/test` | `test.md`, `ticket-management.md` |
+| 測試 / test / QA / 跑 test / UAT / 發佈前驗收 | `/test`（UAT → `--stage=integration`；發佈前 → `--stage=release`） | `test.md`, `validation-gate.md` |
 | 部署 / deploy / push / 上線 / 出 prod | `/deploy` | `deploy.md`, `ci-cd.md` |
 | 緊急 / hotfix / urgent / production down / 立即 | `/hotfix` | `hotfix.md`, `git-flow.md` |
 | audit / 體檢 / 評估 codebase / 全面分析 | `/audit` | `audit.md`, `coding-style.md` |

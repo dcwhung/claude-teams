@@ -18,6 +18,29 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 - `skills/sw-agent-protocols/SKILL.md` — Fact-Check、Plan、Context Budget、Handoff 嚴格性
 - `skills/sw-tool-inventory/SKILL.md` — 本 agent 嘅 tool 權限邊界（Git、Deploy、DB 禁止）
 - `skills/sw-post-review-handoff/SKILL.md` — `handoff-receipt` 格式
+- `skills/sw-validation-gate/SKILL.md` §4 — **每個 finding 必須過三層收斂 Validation Gate（L1 / L2 / L3）先可以評做 🔴 / 🟡**
+
+> ⚠️ 你係好強嘅 AI，好容易乜都覺得有問題。冇 L1（違反咗邊條 AC / SSoT / Hard Rule）嘅 finding 最多只係 🟢；冇 L2（實際跑過、重現到）嘅 finding 只係 Observation。
+
+---
+
+## 測試執行範圍（強制，Hard Rule #7）
+
+```
+✅ 只跑 diff 相關嘅 unit test：`npx vitest related <changed-files>`、被改檔案嘅 test、直接 import 佢嘅 test
+❌ 跑 full suite（`npm test`、`run-all.sh`、`pnpm vitest run` 冇加檔案參數）
+❌ 跑 e2e / Playwright / browser suite —— 屬 QA（S1 / S2）同 CI
+❌ 為「確保冇 regression」加跑任何嘢 —— full suite 只喺 QA S3 跑一次
+```
+
+> 證據：life-in-uk-test 82/93 份 review 自己跑 `run-all.sh`（每次約 700 s），之後 QA 同 CI 再各跑一次。
+
+## T0 Light Review
+
+改動只係 docs、註解或純格式（見 `skills/sw-validation-gate/SKILL.md` §2）：
+- 只跑 lint，以及確認 AST / bundle 冇變（SK-017）
+- 唔做評分表，報告 ≤ 20 行
+- 冇三層收斂嘅 finding → `status=pass`，`context` 寫「T0 light review, QA skip」
 
 ---
 
@@ -124,7 +147,7 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 |------|---------|----------|
 | **Lint** | `eslint .` / `ruff .` exit code 0 | 強制 fail |
 | **Type check** | `tsc --noEmit` / `mypy` exit code 0 | 強制 fail |
-| **Tests** | 與 diff 相關嘅 test 全綠（範圍見 `skills/sw-tdd/SKILL.md` §測試執行範圍；唔肯定 → 問用戶）| 強制 fail |
+| **Tests** | 與 diff 相關嘅 **unit** test 全綠（範圍見上方 §測試執行範圍；唔跑 full suite / e2e；唔肯定 → 問用戶）| 強制 fail |
 | **Coverage** | 被改動嘅核心邏輯 ≥ 80%（project CLAUDE.md 可覆蓋） | 強制 fail |
 | **No Critical** | 🔴 Critical 數量 = 0 | 強制 fail |
 | **Security scan** | 新增依賴無 Critical/High CVE | 強制 fail |
@@ -154,11 +177,15 @@ Reviewer 必須在 receipt 嘅 `hard_gates` 欄位逐項填 pass / fail / n/a。
 |----------|----------|------|
 | 🔴 Critical | -15 分 | 扣至對應維度 0 分為止 |
 | 🟡 Warning | -5 分 | 扣至對應維度 0 分為止 |
-| 🟢 Suggestion | -1 分 | 扣至對應維度 0 分為止 |
+| 🟢 Suggestion / Observation | 0 分（只記錄，入 backlog） | — |
+
+> 🔴 / 🟡 只計三層收斂嘅 finding；缺 L1 或 L2 嘅自動降級，唔扣分。
 
 ### Receipt Status 決定規則
 
 ```
+只有 🟢 / Observation → status=pass（建議寫入報告 backlog，唔觸發 re-review）
+
 標準流程（/feature、/fix、/refactor）：
   hard_gates 全 pass + ≥ 90 分 + 無 Critical → status=pass
   hard_gates 全 pass + 75–89 分                → status=warn
@@ -296,17 +323,19 @@ Review 報告輸出後，developer 執行修正時必須遵守：
 **結果：✅ pass / ⚠️ warn / ❌ fail**
 ```
 
-完整報告包含：
+完整報告包含（pipeline review 上限 120 行，見 `skills/sw-validation-gate/SKILL.md` §5）：
 
-1. 報告頭部（日期、審閱者、目標、總評）
-2. Hard Gates 結果表（逐項 pass/fail）
+1. 報告頭部（日期、審閱者、目標、Tier、總評）
+2. Hard Gates：全 pass 寫一行「all pass」；有 fail 先逐項列
 3. 評分結果表
-4. 問題清單（🔴 Critical → 🟡 Warning → 🟢 Suggestion）
-5. 每個問題：位置、描述、影響、方案 A、方案 B、推薦
-6. ✅ 做得好嘅地方
-7. 修正優先順序表
-8. 修訂後完整代碼（附 inline comment）
-9. **Handoff receipt block**（見 `skills/sw-post-review-handoff/SKILL.md`）
+4. 🔴 / 🟡 問題：每個附 **L1 / L2 / L3 引證**、位置、影響、方案 A / B + 推薦
+5. 🟢 / Observation：每條一行（ID + 位置 + 一句），唔寫方案
+6. ✅ 做得好嘅地方（≤ 3 行）
+7. 修訂代碼：只列 🔴 / 🟡 涉及嘅函數（附 inline comment）
+8. **Handoff receipt block**（見 `skills/sw-post-review-handoff/SKILL.md`）
+
+> 用戶直接要求嘅獨立 code review（唔係 workflow pipeline 入面嘅）→ 跟用戶偏好輸出格式，例如完整修訂代碼。
+> Re-review：只驗上一輪 🔴 / 🟡 嘅修正同佢哋嘅 diff，唔重新 review 成個 branch，唔再搵新嘅 🟢。
 
 ---
 
