@@ -88,6 +88,7 @@
 
 | SK | 主題 | Roles |
 |----|------|-------|
+| SK-024 | project-boundary hook 擋 session scratchpad → QA 臨時檔被逼寫入 repo | main, qa |
 | SK-023 | Cloud sandbox Playwright 版本同預裝 Chromium 唔夾 → 用 `executablePath` | qa, developer, devops |
 | SK-022 | Plan mode plan file 要喺 project-boundary hook 放行 | main |
 | SK-021 | 量度 shape ≠ 量度 bound | reviewer, qa |
@@ -109,6 +110,28 @@
 | SK-003 | Hook input 經 stdin JSON | main |
 | SK-002 | Hook 只喺對應 project 目錄生效 | main |
 | SK-001 | Subagent checkpoint 壓縮行為 | main |
+
+---
+
+## [SK-024] project-boundary hook 擋咗 session scratchpad —— QA 截圖 / 臨時 script 被逼寫入 repo
+
+**日期**：2026-11-04
+**來源 Agent**：Main Agent（ai-dev-team QA 效率檢討 session）
+**類別**：平台限制 / Hook
+**適用 Agent**：全部
+**有效期至**：永久
+
+**內容**：
+
+Harness 規定臨時檔要放喺 session scratchpad（`<tmp>/claude-<uid>/<project>/<session>/scratchpad/`），但呢個路徑喺 project 目錄之外，`project-boundary.sh` 會 exit 2 擋咗佢，同 SK-022 擋 plan file 係同一類問題。
+
+後果：agent 寫唔到 scratchpad，就將截圖、一次性 QA script 寫入 repo（例如 `.proj-docs/qa/`），之後 commit 咗。life-in-uk-test 累積咗 155 張截圖（約 105 MB）同 131 個一次性 script。
+
+**做法**：
+`project-boundary.sh` 放行 `${TMPDIR:-/tmp}/claude-*/…/scratchpad/` 之下嘅檔案。路徑先經 `realpath -m` 正規化，所以 `..` traversal 照擋；其他 `/tmp` 路徑亦照擋。
+
+**參考**：
+`hooks/project-boundary.sh` §2；SK-022
 
 ---
 

@@ -52,6 +52,16 @@ for allowed_dir in "${HARNESS_ALLOWED_DIRS[@]}"; do
   fi
 done
 
+#    Session scratchpad: <tmp>/claude-<uid>/<project>/<session>/scratchpad/.
+#    The harness tells agents to put temp files there (QA screenshots, helper
+#    scripts); blocking it pushes them into the repo instead (see SK-024).
+TMP_ROOT=$(expand_path "${TMPDIR:-/tmp}")
+for tmp_root in "$TMP_ROOT" "/tmp"; do
+  if [[ "$ABS_FILE" == "$tmp_root"/claude-*/scratchpad/* ]]; then
+    exit 0
+  fi
+done
+
 # 3. Within additionalDirectories (global + project settings) → allow
 is_in_additional_dirs() {
   local file="$1" cwd="$2" settings_file abs_dir dir
