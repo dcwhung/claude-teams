@@ -136,9 +136,10 @@ cmd_status() {
 }
 
 # ── impact ───────────────────────────────────────────────────────────────
-changed_files_since() { # git ref → changed paths (committed + working tree)
+changed_files_since() { # git ref → changed paths (committed + staged + unstaged + untracked)
     git rev-parse --verify --quiet "$1" >/dev/null || die_usage "unknown git ref: $1"
-    { git diff --name-only "$1" HEAD; git diff --name-only; } | sort -u
+    # `<ref>` vs worktree covers committed + staged + unstaged.
+    { git diff --name-only "$1"; git ls-files --others --exclude-standard; } | sort -u
 }
 
 ignore_patterns() { # default doc patterns + project ignore file (one glob per line, # comments)

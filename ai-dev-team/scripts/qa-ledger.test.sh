@@ -186,6 +186,25 @@ test_impact_since_git_ref() {
     cleanup
 }
 
+git_init_commit() { # init repo in cwd and commit everything
+    git init -q . && git -c user.email=t@t -c user.name=t add -A && git -c user.email=t@t -c user.name=t commit -qm init
+}
+
+test_impact_since_staged_and_untracked() {
+    echo "impact --since <ref> sees staged edits and untracked files (W-901)"
+    new_project
+    git_init_commit
+    run freeze chain-a S1 qa/r1.md src/a.ts
+    echo "// staged" >>src/a.ts
+    git add src/a.ts
+    echo "export const d = 4;" >src/d.ts
+    run impact --since HEAD
+    assert_exit "$EXIT_STALE" "$CODE" "staged / untracked changes → exit 1"
+    assert_contains "$OUT" $'REVERIFY\tchain-a' "staged edit → chain-a re-verify"
+    assert_contains "$OUT" $'UNCOVERED\tsrc/d.ts' "untracked file → UNCOVERED"
+    cleanup
+}
+
 test_impact_changed_but_refrozen() {
     echo "impact: file changed since ref but frozen at current hash → SKIP"
     new_project
@@ -265,6 +284,7 @@ main() {
     test_impact_files
     test_impact_nothing_touched
     test_impact_since_git_ref
+    test_impact_since_staged_and_untracked
     test_impact_changed_but_refrozen
     test_impact_ignores_docs
     test_impact_frozen_doc_still_tracked
