@@ -63,14 +63,14 @@ flowchart TD
     end
 
     subgraph COMPLETE_PHASE["✅ 完成階段"]
-        FULL_TEST["執行完整測試套件<br/>覆蓋率 ≥ 80%（核心邏輯）"]
+        FULL_TEST["執行改動相關測試<br/>（vitest related，唔跑 full suite）<br/>覆蓋率 ≥ 80%（核心邏輯）"]
         COMMIT["Commit<br/>feat: CUI-0015 | 新增用戶頭像上傳功能<br/>feat: CUI-0020 | 實現 JWT refresh token"]
         REVIEW["invoke /review<br/>👁️ Code Reviewer"]
         REVIEW_SCORE{"Reviewer receipt<br/>status=pass ?"}
         FIX_ISSUES["修正 Review 問題<br/>各 fix commit 帶 Review Item ID<br/>fix: W-007 | 提取常數至 module-level"]
         MERGE["main agent：merge feature → develop<br/>（--no-ff）"]
-        TEST_STAGING["main agent invoke /test（staging）<br/>🧪 QA Agent 主導"]
-        QA_PASS{"QA receipt<br/>status=pass ?"}
+        TEST_STAGING["main agent invoke /test<br/>🧪 S1 功能鏈驗收<br/>ledger impact → 只驗 REVERIFY / UNCOVERED<br/>（即刻 release → --stage=release S3）"]
+        QA_PASS{"QA receipt<br/>status=pass ?<br/>（只計 L1+L2+L3 收斂 finding）"}
         QA_TICKET["🧪 建立 QA Ticket<br/>/fix [CUI-XXXX]"]
         MERGE_MAIN["main agent：merge develop → main"]
         DEPLOY["main agent invoke /deploy<br/>🔧 DevOps"]

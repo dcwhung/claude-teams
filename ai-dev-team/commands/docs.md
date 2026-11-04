@@ -30,7 +30,7 @@ argument-hint: [target]
 ## 執行流程
 
 ```
-1. 讀取 shared-knowledge.md（全局 + 項目）
+1. 讀取 shared-knowledge.md 頂部 Index，只 Read Roles 對應本 agent 嘅條目（全局 + 項目）
 2. 確認文件類型（見 --type 選項）
 3. 輸出執行計劃
    - Main agent（直接同用戶對話）：等用戶確認

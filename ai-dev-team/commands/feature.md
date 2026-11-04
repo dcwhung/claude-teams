@@ -45,7 +45,7 @@ argument-hint: [feature description]
       未確認唔可以寫 UI code（見 global-rules.md §PWA Layout & Preview-First Rule）
    ❌ 純 backend / logic 改動 → 標 none-required + Why 一句說明，跳過此 check
 
-1. 讀取 shared-knowledge.md（全局 + 項目）
+1. 讀取 shared-knowledge.md 頂部 Index，只 Read Roles 對應本 agent 嘅條目（全局 + 項目）
 2. 讀取 spec 及 plan（確認功能需求及驗收標準）
 3. 輸出執行計劃，等待確認（見 agent-protocols.md）
 4. 執行 git-flow.md → Branch Pre-Flight Checklist（source=develop）

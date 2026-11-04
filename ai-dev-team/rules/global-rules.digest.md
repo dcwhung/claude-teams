@@ -33,6 +33,10 @@ Red → Green → Refactor。禁止先寫實現後補測試。核心邏輯覆蓋
 測試範圍：Developer / Reviewer 只跑改動相關 test，如非必要唔跑 full suite；唔肯定 → 停低問用戶。→ `skills/sw-tdd/SKILL.md` §測試執行範圍
 MAJOR 版本 release → 必須跑 full suite，跑之前先知會用戶；唔全綠唔可以 release。
 
+## QA 驗收（Validation Gate）
+已驗 + SHA-256 冇變 = 唔再驗（`scripts/qa-ledger.sh impact`）。S1 功能鏈（開發完）/ S2 整合（UAT）/ S3 全面（發佈前，full suite 一次）。
+Finding 要 L1（AC / SSoT）+ L2（可重現證據）+ L3（推論）收斂先可以 🔴 / 🟡 block；其餘 🟢 / Observation 入 backlog，唔 re-review。→ `skills/sw-validation-gate/SKILL.md`
+
 ## Git
 `main` + `develop`。所有 branch checkout 自 `develop`（`hotfix` 除外，checkout 自 `main`）。
 Branch: `[類型]/[模組]/[TICKET]_[描述]`

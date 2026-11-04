@@ -118,7 +118,7 @@ it('should not create duplicate when request sent twice')
 ✅ 改咗 shared utility / 共用 type / 全局 store，影響面搵唔清
 ✅ 改咗 config、build 設定、依賴版本、test setup / fixtures / mocks
 ✅ 用戶明確要求跑 full suite
-✅ QA 階段、CI pipeline（兩者照舊跑 full suite）
+✅ QA S3 全面檢查驗收（發佈前，每個 release SHA 一次）、CI pipeline —— QA S1 / S2 只跑 frozen plan 範圍（見 `skills/sw-validation-gate/SKILL.md`）
 ✅ MAJOR 版本 release（見下方「MAJOR 版本 → 強制 full suite」，呢個情況唔使問，但要先知會）
 ```
 
@@ -175,7 +175,8 @@ it('should not create duplicate when request sent twice')
 
 ```
 ✅ CI pipeline — 每次 push / merge 自動跑
-✅ QA — Hard Gates 階段跑 full suite 一次作為 regression gate
+✅ QA — 只喺 S3（發佈前）跑 full suite 一次；CI 喺同一個 SHA 已經綠 → 引用，唔重跑
+❌ Reviewer 跑 full suite / e2e；QA S1 / S2 跑 full suite
 ✅ 用戶明確要求 / 用戶確認「必要」情況之後
 ✅ MAJOR 版本 release（先知會用戶，唔使等確認）
 ```

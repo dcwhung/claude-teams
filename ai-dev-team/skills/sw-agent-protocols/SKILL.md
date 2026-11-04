@@ -90,7 +90,7 @@ description: Universal agent behavior — Fact-Check before answer, Plan Before 
 
 ```
 □ 有冇上次 session log？如有，先閱讀
-□ 閱讀 shared-knowledge.md，了解已知規律同陷阱
+□ 閱讀 shared-knowledge.md 頂部 Index，只 Read Roles 對應自己嘅條目（唔好成份讀）
 □ 當前項目係新項目定舊項目？
 □ 今次 session 目標係乜？
 □ 需要啟用邊個 / 邊幾個 agent？

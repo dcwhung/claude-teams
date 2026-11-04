@@ -31,9 +31,21 @@ Cloud sessions do **not** install this plugin from a project's `.claude/settings
 .claude-plugin/marketplace.json   ← marketplace manifest (this repo)
 ai-dev-team/                      ← the plugin
   .claude-plugin/plugin.json
-  agents/      commands/      skills/      hooks/
+  agents/      commands/      skills/      hooks/      scripts/
   rules/       templates/     team.md      shared-knowledge.md
 ```
+
+## QA verification ledger (v1.1.0+)
+
+QA no longer re-verifies what has already passed and has not changed. Each verified feature chain is frozen by SHA-256 in the project's `.proj-docs/qa/verification-ledger.tsv`:
+
+```bash
+bash ai-dev-team/scripts/qa-ledger.sh impact --since develop    # REVERIFY / SKIP / UNCOVERED
+bash ai-dev-team/scripts/qa-ledger.sh freeze <chain> S1 <report> <plan> <files...>
+bash ai-dev-team/scripts/qa-ledger.sh status
+```
+
+Acceptance runs in three stages: S1 功能鏈驗收 (after a feature), S2 整合性驗收 (UAT), and S3 全面檢查驗收 (pre-release, automated full suite once per SHA). A finding blocks only if it is backed by all three tiers of evidence: L1 (an AC or SSoT), L2 (reproducible output), and L3 (inference that agrees with both). The rules live in `skills/sw-validation-gate/SKILL.md`. Tests: `bash ai-dev-team/scripts/qa-ledger.test.sh`.
 
 ## Developing
 

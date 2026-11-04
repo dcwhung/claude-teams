@@ -1,13 +1,13 @@
 ---
-description: QA 執行測試計劃，輸出 QA 報告
-argument-hint: [scope | CUI-XXXX]
+description: QA 按階段驗收（S1 功能鏈 / S2 整合 / S3 發佈前），已凍結冇改嘅唔再驗，輸出精簡 QA 報告
+argument-hint: [--stage=chain|integration|release] [chain_id | CUI-XXXX]
 ---
 
 # 指令：/test
 
 ## 用途
 
-制定並執行測試計劃，涵蓋 Unit、Integration、E2E 三個層次，輸出完整 QA 測試報告。
+按改動範圍做驗收：**已通過、SHA-256 冇變嘅功能鏈唔再驗**。每個 finding 要經三層收斂 Validation Gate，先可以 block。
 
 ## 負責 Agent
 
@@ -17,116 +17,73 @@ argument-hint: [scope | CUI-XXXX]
 
 ## 引用規範（SSoT）
 
-- QA 報告格式、Definition of Done → `global-rules.md`
-- Ticket 建立流程（CUI-XXXX）→ `skills/sw-ticket-management/SKILL.md`
-- QA 完成後 handoff（release / reject）→ `skills/sw-post-review-handoff/SKILL.md` → Protocol 2
+- 階段、ledger、frozen plan、L1/L2/L3 gate、報告上限 → `skills/sw-validation-gate/SKILL.md`
+- QA 行為、Hard Gates 表、報告模板 → `agents/quality-assurance.md`
+- Ticket（CUI-XXXX）→ `skills/sw-ticket-management/SKILL.md`（有 ticket 要開先讀）
+- Handoff → `skills/sw-post-review-handoff/SKILL.md` → Protocol 2
 
-本檔案只定義 `/test` 獨有嘅測試設計框架同 performance 規範。
+本檔案只定義 `/test` 嘅參數同 performance 規範。
 
 ---
 
 ## 執行流程
 
 ```
-1. 讀取 shared-knowledge.md（全局 + 項目）
-2. 讀取 spec 及功能描述，確認驗收標準
-3. 輸出執行計劃，等待確認
-4. 設計測試案例（Happy / Error / Edge / Security / Idempotency / Performance）
-5. 依序執行 Unit → Integration → E2E → Security → Regression
-6. 輸出 QA 測試報告
-7. 按 post-review-handoff.md → Protocol 2 執行 handoff
-8. 如有 common knowledge 記錄入 shared-knowledge.md
+1. 讀 sw-validation-gate + project CLAUDE.md + known-issues.md（如有）
+2. 分級 T0–T3；T0 → 直接 pass，唔跑 test
+3. qa-ledger.sh impact --since <base> → 決定 REVERIFY / SKIP / UNCOVERED
+4. 沿用或新寫 frozen plan（只限 REVERIFY / UNCOVERED 鏈）
+5. 按 plan 執行，每條指令一次（flaky 最多重跑 1 次）
+6. Finding 過 Validation Gate → 定級
+7. Pass 嘅鏈 freeze → 輸出報告 + handoff-receipt（Protocol 2）
 ```
 
----
-
-## 測試案例設計框架
-
-```
-✅ Happy Path     ← 正常輸入，預期成功
-❌ Error Path     ← 無效輸入、系統錯誤
-🔲 Edge Case      ← 空值、null、極端值、特殊字元
-🔒 Security Case  ← 未授權、invalid token、injection、IDOR
-🔄 Idempotency    ← 重複操作唔應造成數據異常
-⚡ Performance    ← 關鍵 API 符合 response time 基準
-```
-
-命名：`it('should [預期結果] when [條件]')`
-
----
-
-## Performance Testing
-
-### Response Time 基準（可由 project CLAUDE.md 覆蓋）
-
-| API 類型 | P50 | P95 | P99 |
-|----------|-----|-----|-----|
-| 一般讀取 | < 100ms | < 300ms | < 500ms |
-| 列表查詢 | < 200ms | < 500ms | < 1s |
-| 寫入操作 | < 200ms | < 500ms | < 1s |
-| 複雜報表 | < 2s | < 5s | < 10s |
-
-### 必須執行 Performance Test 嘅情況
-
-```
-□ 新增涉大數據量 API（列表、搜尋、報表）
-□ 新增 DB 查詢（必須 EXPLAIN 確認用 index）
-□ 新增外部 API 調用（必須有 timeout）
-□ 修改現有高頻 API
-□ 任何 N+1 query 風險改動
-```
-
-### k6 範例
-
-```javascript
-import http from 'k6/http';
-import { check } from 'k6';
-
-export const options = {
-  vus: 50, duration: '30s',
-  thresholds: {
-    http_req_duration: ['p(95)<500'],
-    http_req_failed: ['rate<0.01'],
-  },
-};
-
-export default function () {
-  const res = http.get('http://staging/api/v1/users');
-  check(res, { 'status 200': (r) => r.status === 200 });
-}
-```
-
-### 判定
-
-```
-🔴 Critical：P95 超基準 2 倍，或失敗率 > 1%
-🟡 Warning：P95 超基準，或明顯 N+1 query
-🟢 Observation：可優化但未超標
-```
-
----
-
-## 阻止 Release 條件
-
-以下情況 QA 必須 reject（見 post-review-handoff.md → Protocol 2）：
-
-```
-🚫 任何 🔴 Critical 測試失敗
-🚫 核心業務流程測試失敗
-🚫 安全測試失敗
-🚫 數據一致性測試失敗
-```
+> Subagent 輸出計劃之後**直接執行**，唔使等確認。
+> `<base>` 預設：S1 = feature branch 嘅 merge-base；S2 = 上次 S2 嘅 commit；S3 = 上一個 release tag。
 
 ---
 
 ## 使用方式
 
+| 指令 | 階段 | 範圍 |
+|------|------|------|
+| `/test` | S1（預設） | Reviewer pass 嗰條功能鏈 |
+| `/test <chain_id>` / `/test CUI-XXXX` | S1 | 指定嘅鏈或 ticket |
+| `/test --stage=integration` | S2 | UAT：REVERIFY 鏈 + 跨功能 journey |
+| `/test --stage=release` | S3 | 發佈前：full suite 一次 + STALE 鏈手動驗 + PWA gate |
+| `/test --design` | — | 只輸出 frozen plan，唔執行 |
+| `/test --status` | — | 只跑 `qa-ledger.sh status`，列出 FROZEN / STALE |
+
+---
+
+## Performance Testing（有條件先做）
+
+> 只適用於有 **backend API** 嘅 project。純前端 PWA 冇 API 改動就跳過，報告寫「n/a」。
+
+### 必須執行嘅情況
+
 ```
-/test                       ← 完整測試計劃
-/test --unit-only           ← 只執行 unit
-/test --e2e-only            ← 只執行 E2E
-/test --performance         ← 執行 performance
-/test --regression          ← 回歸測試
-/test --scope=src/payment   ← 只測指定模組
-/test --design              ← 只輸出計劃，唔執行
+□ 新增大數據量 API（列表、搜尋、報表）
+□ 新增 DB 查詢（要 EXPLAIN 確認有用 index）
+□ 新增外部 API 調用（要有 timeout）
+□ 修改現有高頻 API / 有 N+1 query 風險
 ```
+
+### Response Time 基準（project CLAUDE.md 可以覆蓋）
+
+| API 類型 | P95 |
+|----------|-----|
+| 一般讀取 | < 300ms |
+| 列表查詢 / 寫入 | < 500ms |
+| 複雜報表 | < 5s |
+
+判定（亦要過 Validation Gate：L1 = 基準表，L2 = k6 / 實測輸出）：
+- 🔴 P95 超過基準 2 倍，或失敗率 > 1%
+- 🟡 P95 超過基準
+- 🟢 可以優化但未超標 → backlog
+
+---
+
+## 阻止 Release 條件
+
+見 `agents/quality-assurance.md` §阻止部署條件。

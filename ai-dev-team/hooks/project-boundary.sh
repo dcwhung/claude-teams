@@ -2,6 +2,8 @@
 # Enforce project boundary for Write/Edit operations.
 # Within project dir, harness plan dir, or additionalDirectories → allow (exit 0, normal flow).
 # Outside → BLOCK (exit 2). Use CLAUDE_HOOK_BYPASS_BRANCH_POLICY=1 to override.
+# A path still holding a `..` segment after realpath (e.g. macOS BSD realpath has no -m)
+# is always BLOCKED: the prefix checks below can't tell where it really points.
 
 set -uo pipefail
 
@@ -33,6 +35,20 @@ if [[ "$EXPANDED_FILE" != /* ]]; then
 fi
 ABS_FILE=$(realpath -m "$EXPANDED_FILE" 2>/dev/null || echo "$EXPANDED_FILE")
 
+# 0. Unresolved `..` (leading ../, /../, trailing /..) → BLOCK before any allow check,
+#    otherwise "$CWD/../other/x" passes the "$ABS_CWD/"* prefix test.
+if [[ "/$ABS_FILE/" == */../* ]]; then
+  cat >&2 <<EOF
+⛔ BLOCKED by project-boundary hook
+
+File    : $ABS_FILE
+Reason  : path contains a '..' segment that could not be resolved (realpath -m unavailable?).
+
+Use the resolved absolute path instead.
+EOF
+  exit 2
+fi
+
 # 1. Within project directory → allow
 if [[ "$ABS_FILE" == "$ABS_CWD/"* ]] || [[ "$ABS_FILE" == "$ABS_CWD" ]]; then
   exit 0
@@ -48,6 +64,17 @@ HARNESS_ALLOWED_DIRS=(
 
 for allowed_dir in "${HARNESS_ALLOWED_DIRS[@]}"; do
   if [[ "$ABS_FILE" == "$allowed_dir/"* ]]; then
+    exit 0
+  fi
+done
+
+#    Session scratchpad: <tmp>/claude-<uid>/<project>/<session>/scratchpad/
+#    (all three levels required, so <tmp>/claude-x/scratchpad/ is not enough).
+#    The harness tells agents to put temp files there (QA screenshots, helper
+#    scripts); blocking it pushes them into the repo instead (see SK-024).
+TMP_ROOT=$(expand_path "${TMPDIR:-/tmp}")
+for tmp_root in "$TMP_ROOT" "/tmp"; do
+  if [[ "$ABS_FILE" == "$tmp_root"/claude-*/*/*/scratchpad/* ]]; then
     exit 0
   fi
 done
