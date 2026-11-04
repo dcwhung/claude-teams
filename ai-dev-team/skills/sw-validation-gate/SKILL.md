@@ -34,6 +34,9 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/qa-ledger.sh" impact --since <base-ref>   # 
 # → REVERIFY <chain>   要重驗
 # → SKIP <chain>       已凍結、冇改 → 報告引用 ledger 行，唔可以再跑
 # → UNCOVERED <path>   未屬任何鏈 → 要開新鏈行 S1
+# → IGNORED <n>        docs（*.md、.proj-docs/、.tickets/、docs/、.claude/、.gitignore、LICENSE）唔使 QA
+#                      project 可以喺 .proj-docs/qa/ledger-ignore 加 glob（一行一個）
+# 註：改過但已經喺當前 hash 重新 freeze 嘅檔案 → SKIP，唔會再 REVERIFY
 
 # 驗收 pass 之後凍結（同一個 chain + stage 重跑會覆蓋，冪等）
 bash "${CLAUDE_PLUGIN_ROOT}/scripts/qa-ledger.sh" freeze <chain_id> <S1|S2|S3> <report-path> <plan-file> <scope-files...>

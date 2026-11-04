@@ -150,6 +150,7 @@ test_impact_files() {
     new_project
     run freeze chain-a S1 qa/r1.md src/a.ts
     run freeze chain-b S1 qa/r2.md src/b.ts
+    echo "// edit" >>src/a.ts
     run impact src/a.ts src/c.ts
     assert_exit "$EXIT_STALE" "$CODE" "something to re-verify → exit 1"
     assert_contains "$OUT" $'REVERIFY\tchain-a' "chain-a needs re-verify"
@@ -185,6 +186,54 @@ test_impact_since_git_ref() {
     cleanup
 }
 
+test_impact_changed_but_refrozen() {
+    echo "impact: file changed since ref but frozen at current hash → SKIP"
+    new_project
+    echo "// edit" >>src/a.ts
+    run freeze chain-a S1 qa/r1.md src/a.ts
+    run impact src/a.ts
+    assert_exit "$EXIT_OK" "$CODE" "already verified at current hash → exit 0"
+    assert_contains "$OUT" $'SKIP\tchain-a' "chain-a skipped"
+    assert_not_contains "$OUT" "REVERIFY" "no re-verify"
+    cleanup
+}
+
+test_impact_ignores_docs() {
+    echo "impact: docs are ignored by default, not UNCOVERED"
+    new_project
+    mkdir -p .proj-docs/qa .tickets docs
+    run freeze chain-a S1 qa/r1.md src/a.ts
+    run impact README.md .proj-docs/qa/report.md .tickets/CUI-1.md docs/guide.md .proj-docs/qa/shot.png
+    assert_exit "$EXIT_OK" "$CODE" "docs only → exit 0"
+    assert_not_contains "$OUT" "UNCOVERED" "no UNCOVERED for docs"
+    assert_contains "$OUT" "IGNORED	5" "reports ignored count"
+    cleanup
+}
+
+test_impact_frozen_doc_still_tracked() {
+    echo "impact: a doc that is part of a chain (plan file) is still tracked"
+    new_project
+    mkdir -p .proj-docs/qa/plans
+    echo "# plan" >.proj-docs/qa/plans/chain-a.md
+    run freeze chain-a S1 qa/r1.md .proj-docs/qa/plans/chain-a.md src/a.ts
+    echo "- more scope" >>.proj-docs/qa/plans/chain-a.md
+    run impact .proj-docs/qa/plans/chain-a.md
+    assert_contains "$OUT" $'REVERIFY\tchain-a' "edited plan → chain re-verify"
+    cleanup
+}
+
+test_impact_ignore_file() {
+    echo "impact: project ignore file adds patterns"
+    new_project
+    mkdir -p .proj-docs/qa tools
+    printf '# comment\ntools/*\n' >.proj-docs/qa/ledger-ignore
+    echo "x" >tools/gen.js
+    run impact tools/gen.js
+    assert_exit "$EXIT_OK" "$CODE" "ignored by project pattern → exit 0"
+    assert_not_contains "$OUT" "UNCOVERED" "tools/gen.js ignored"
+    cleanup
+}
+
 # ── hash fallback ────────────────────────────────────────────────────────
 test_shasum_fallback() {
     echo "falls back to shasum -a 256 when sha256sum is absent"
@@ -216,6 +265,10 @@ main() {
     test_impact_files
     test_impact_nothing_touched
     test_impact_since_git_ref
+    test_impact_changed_but_refrozen
+    test_impact_ignores_docs
+    test_impact_frozen_doc_still_tracked
+    test_impact_ignore_file
     test_shasum_fallback
     echo
     echo "passed: $PASS_COUNT  failed: $FAIL_COUNT"

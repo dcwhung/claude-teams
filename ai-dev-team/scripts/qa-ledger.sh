@@ -24,8 +24,12 @@ readonly DEFAULT_LEDGER=".proj-docs/qa/verification-ledger.tsv"
 readonly VALID_STAGES="S1 S2 S3"
 readonly LEDGER_HEADER=$'#chain_id\tstage\tpath\tsha256\tverified_commit\tverified_at\treport'
 readonly NO_COMMIT="-"
+readonly DEFAULT_IGNORE_FILE=".proj-docs/qa/ledger-ignore"
+# Docs never need QA (T0); a doc that IS in a chain (e.g. its frozen plan) is still tracked.
+readonly DEFAULT_IGNORE_PATTERNS=('*.md' '.proj-docs/*' '.tickets/*' 'docs/*' '.claude/*' '.gitignore' '*/.gitignore' '.git-blame-ignore-revs' 'LICENSE*' 'licenses/*')
 
 LEDGER="${QA_LEDGER:-$DEFAULT_LEDGER}"
+IGNORE_FILE="${QA_LEDGER_IGNORE:-$DEFAULT_IGNORE_FILE}"
 
 usage() {
     sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2
@@ -137,6 +141,28 @@ changed_files_since() { # git ref → changed paths (committed + working tree)
     { git diff --name-only "$1" HEAD; git diff --name-only; } | sort -u
 }
 
+ignore_patterns() { # default doc patterns + project ignore file (one glob per line, # comments)
+    printf '%s\n' "${DEFAULT_IGNORE_PATTERNS[@]}"
+    [[ -f "$IGNORE_FILE" ]] && grep -v '^[[:space:]]*#' "$IGNORE_FILE" | grep -v '^[[:space:]]*$'
+    return 0
+}
+
+is_ignored() { # path patterns → 0 if any glob matches (`*` also matches `/`)
+    local pattern
+    while IFS= read -r pattern; do
+        # shellcheck disable=SC2053  # intentional glob match
+        [[ -n "$pattern" && "$1" == $pattern ]] && return 0
+    done <<<"$2"
+    return 1
+}
+
+stale_chains_for() { # ledger rows for one path → chain ids whose frozen hash no longer matches
+    local chain stage path sha _rest
+    while IFS=$'\t' read -r chain stage path sha _rest; do
+        [[ "$(row_state "$path" "$sha")" != "ok" ]] && echo "$chain"
+    done <<<"$1"
+}
+
 cmd_impact() {
     [[ $# -ge 1 ]] || die_usage "impact needs <file...> or --since <ref>"
     local changed
@@ -147,20 +173,25 @@ cmd_impact() {
         changed="$(printf '%s\n' "$@" | sort -u)"
     fi
 
-    local rows chains reverify="" result="$EXIT_OK" file chain
+    local rows chains reverify="" result="$EXIT_OK" file chain ignored_count=0 patterns
     rows="$(ledger_rows)"
     chains="$(cut -f1 <<<"$rows" | grep -v '^$' | sort -u)"
+    patterns="$(ignore_patterns)"
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
-        local hit
-        hit="$(awk -F'\t' -v p="$file" '$3 == p {print $1}' <<<"$rows" | sort -u)"
-        if [[ -z "$hit" ]]; then
+        local hit_rows
+        hit_rows="$(awk -F'\t' -v p="$file" '$3 == p' <<<"$rows")"
+        if [[ -n "$hit_rows" ]]; then
+            # Changed since <ref> but already re-frozen at the current hash → nothing to do.
+            reverify+="$(stale_chains_for "$hit_rows")"$'\n'
+        elif is_ignored "$file" "$patterns"; then
+            ignored_count=$((ignored_count + 1))
+        else
             echo "UNCOVERED	$file	(not in any frozen chain → needs S1)"
             result="$EXIT_STALE"
-        else
-            reverify+="$hit"$'\n'
         fi
     done <<<"$changed"
+    [[ "$ignored_count" -gt 0 ]] && echo "IGNORED	$ignored_count	(docs / ledger-ignore patterns)"
 
     while IFS= read -r chain; do
         [[ -z "$chain" ]] && continue
