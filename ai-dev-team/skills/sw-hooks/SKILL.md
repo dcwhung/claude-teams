@@ -173,7 +173,8 @@ stdin JSON 完整結構見 `shared-knowledge.md` → SK-003。
 **觸發時機**：PreToolUse Bash；只管 stdin JSON `agent_type` 以 `code-reviewer` 結尾嘅 call
 **腳本位置**：`${CLAUDE_PLUGIN_ROOT}/hooks/reviewer-test-scope.sh`（plugin `hooks/hooks.json` 註冊；plugin agent frontmatter 嘅 `hooks` 會被忽略，所以唔可以放喺 agent 檔）
 
-- Block：`npm|pnpm|yarn [run] test`（冇 `-- <file>`）、冇檔案參數嘅 `vitest` / `jest`、playwright、`e2e/`、`run-all.sh`、`test:e2e`
+- Block：`npm|pnpm|yarn|bun [run] test|t|test:*`（冇 `-- <file>`）、`make test`、冇檔案參數嘅 `bun test` / `vitest` / `jest` / `node --test` / `pytest`、playwright、cypress、`e2e/`、`run-all.sh`、`test:e2e`
+- 檔案參數：有副檔名或 `/`、唔係 directory；`-t` `--reporter` `--config` `-c` `--project` `--testNamePattern` `--outputFile` `--shard` 會食埋下一個值
 - 放行：`vitest related`、`vitest run <files>`、`jest --findRelatedTests`、`npm test -- <file>`
 - Bypass：`CLAUDE_HOOK_BYPASS_REVIEWER_TEST_SCOPE=1`
 - Test：`bash hooks/reviewer-test-scope.test.sh`
