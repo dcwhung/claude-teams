@@ -86,6 +86,52 @@ test_freeze_is_idempotent() {
     cleanup
 }
 
+test_freeze_normalizes_paths() {
+    echo "freeze / impact normalize ./ and // (W-903)"
+    new_project
+    run freeze chain-a S1 qa/r1.md ./src/a.ts .//src//b.ts
+    assert_exit "$EXIT_OK" "$CODE" "freeze with ./ paths → exit 0"
+    assert_contains "$(cat "$QA_LEDGER")" $'\tsrc/a.ts\t' "ledger stores src/a.ts"
+    assert_contains "$(cat "$QA_LEDGER")" $'\tsrc/b.ts\t' "ledger stores src/b.ts"
+    assert_not_contains "$(cat "$QA_LEDGER")" "./src" "no ./ prefix stored"
+    echo "// edit" >>src/b.ts
+    run impact src/b.ts
+    assert_contains "$OUT" $'REVERIFY\tchain-a' "repo-relative path matches ./-frozen row"
+    run impact ././src/b.ts
+    assert_contains "$OUT" $'REVERIFY\tchain-a' "impact also normalizes ./"
+    cleanup
+}
+
+test_freeze_rejects_bad_input() {
+    echo "freeze / impact reject absolute, .., tab/newline (W-903, S-902)"
+    new_project
+    run freeze chain-a S1 qa/r1.md "$PROJECT_DIR/src/a.ts"
+    assert_exit "$EXIT_USAGE" "$CODE" "absolute path → exit 2"
+    run freeze chain-a S1 qa/r1.md src/../src/a.ts
+    assert_exit "$EXIT_USAGE" "$CODE" ".. segment → exit 2"
+    run impact ../x.ts
+    assert_exit "$EXIT_USAGE" "$CODE" "impact with .. → exit 2"
+    run impact /etc/passwd
+    assert_exit "$EXIT_USAGE" "$CODE" "impact with absolute path → exit 2"
+    run freeze $'chain\ta' S1 qa/r1.md src/a.ts
+    assert_exit "$EXIT_USAGE" "$CODE" "chain_id with tab → exit 2"
+    run freeze chain-a S1 $'qa/r1\n.md' src/a.ts
+    assert_exit "$EXIT_USAGE" "$CODE" "report with newline → exit 2"
+    if grep -q '^chain' "$QA_LEDGER" 2>/dev/null; then fail "nothing written"; else pass "nothing written"; fi
+    cleanup
+}
+
+test_freeze_dedupes_files() {
+    echo "freeze de-duplicates repeated files (S-903)"
+    new_project
+    run freeze chain-a S1 qa/r1.md src/a.ts ./src/a.ts src/a.ts
+    local rows
+    rows="$(grep -c $'^chain-a\tS1\t' "$QA_LEDGER")"
+    [[ "$rows" == "1" ]] && pass "1 row for repeated file" || fail "1 row for repeated file (got $rows)"
+    assert_contains "$OUT" "1 file(s)" "reports unique count"
+    cleanup
+}
+
 # ── status ───────────────────────────────────────────────────────────────
 test_status_frozen() {
     echo "status reports FROZEN when nothing changed"
@@ -289,6 +335,9 @@ main() {
     test_usage_errors
     test_freeze_writes_rows
     test_freeze_is_idempotent
+    test_freeze_normalizes_paths
+    test_freeze_rejects_bad_input
+    test_freeze_dedupes_files
     test_status_frozen
     test_status_stale_on_change
     test_status_stale_on_delete

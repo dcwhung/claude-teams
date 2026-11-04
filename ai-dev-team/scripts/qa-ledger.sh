@@ -10,6 +10,8 @@
 #   qa-ledger.sh status [chain_id]                               FROZEN / STALE / MISSING
 #   qa-ledger.sh impact <file...>                                REVERIFY / SKIP / UNCOVERED
 #   qa-ledger.sh impact --since <git-ref>                        same, from git diff
+#                                                                (vs worktree: staged + untracked too)
+# Paths: repo-relative; `./` and `//` are normalized, absolute or `..` paths are rejected.
 #
 # Stages: S1 (功能鏈驗收) / S2 (整合性驗收) / S3 (全面檢查驗收)
 # Ledger: $QA_LEDGER, default .proj-docs/qa/verification-ledger.tsv (run from repo root)
@@ -24,6 +26,7 @@ readonly DEFAULT_LEDGER=".proj-docs/qa/verification-ledger.tsv"
 readonly VALID_STAGES="S1 S2 S3"
 readonly LEDGER_HEADER=$'#chain_id\tstage\tpath\tsha256\tverified_commit\tverified_at\treport'
 readonly NO_COMMIT="-"
+readonly DOUBLE_SLASH="//"
 readonly DEFAULT_IGNORE_FILE=".proj-docs/qa/ledger-ignore"
 # Docs never need QA (T0); a doc that IS in a chain (e.g. its frozen plan) is still tracked.
 readonly DEFAULT_IGNORE_PATTERNS=('*.md' '.proj-docs/*' '.tickets/*' 'docs/*' '.claude/*' '.gitignore' '*/.gitignore' '.git-blame-ignore-revs' 'LICENSE*' 'licenses/*')
@@ -32,7 +35,7 @@ LEDGER="${QA_LEDGER:-$DEFAULT_LEDGER}"
 IGNORE_FILE="${QA_LEDGER_IGNORE:-$DEFAULT_IGNORE_FILE}"
 
 usage() {
-    sed -n '2,17p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2
+    sed -n '2,19p' "${BASH_SOURCE[0]}" | sed 's/^# \{0,1\}//' >&2
     exit "$EXIT_USAGE"
 }
 
@@ -63,9 +66,32 @@ ledger_rows() { # data rows only (no header / comments)
     grep -v '^#' "$LEDGER" | grep -v '^$' || true
 }
 
-validate_path() {
-    [[ "$1" == *$'\t'* || "$1" == *$'\n'* ]] && die_usage "path contains tab/newline: $1"
-    [[ -f "$1" ]] || die_usage "file not found: $1"
+validate_field() { # label value → die if the value would break the TSV row
+    [[ "$2" == *$'\t'* || "$2" == *$'\n'* ]] && die_usage "$1 contains tab/newline: $2"
+    return 0
+}
+
+normalize_path() { # path → repo-relative form git prints; die on absolute / `..`
+    local p="$1"
+    validate_field "path" "$p"
+    while [[ "$p" == *"$DOUBLE_SLASH"* ]]; do p="${p//$DOUBLE_SLASH//}"; done
+    while [[ "$p" == ./* ]]; do p="${p#./}"; done
+    [[ "$p" == /* ]] && die_usage "absolute path not allowed (use repo-relative): $1"
+    [[ "/$p/" == */../* ]] && die_usage "path must not contain '..': $1"
+    [[ -z "$p" || "$p" == "." ]] && die_usage "empty path: $1"
+    printf '%s\n' "$p"
+}
+
+normalized_files() { # must_exist(0|1) file... → unique normalized paths, in input order
+    local must_exist="$1" file norm seen=""
+    shift
+    for file in "$@"; do
+        norm="$(normalize_path "$file")" || exit "$EXIT_USAGE"
+        [[ "$must_exist" == "1" && ! -f "$norm" ]] && die_usage "file not found: $file"
+        grep -qxF -- "$norm" <<<"$seen" && continue
+        seen+="$norm"$'\n'
+        printf '%s\n' "$norm"
+    done
 }
 
 # ── freeze ───────────────────────────────────────────────────────────────
@@ -74,22 +100,24 @@ cmd_freeze() {
     local chain="$1" stage="$2" report="$3"
     shift 3
     [[ " $VALID_STAGES " == *" $stage "* ]] || die_usage "invalid stage '$stage' (use $VALID_STAGES)"
-    local file
-    for file in "$@"; do validate_path "$file"; done
+    validate_field "chain_id" "$chain"
+    validate_field "report" "$report"
+    local files file tmp commit now count
+    files="$(normalized_files 1 "$@")" || exit "$EXIT_USAGE"
 
     ensure_ledger
-    local tmp commit now
     tmp="$(mktemp)"
     commit="$(current_commit)"
     now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     # Idempotent: drop previous rows for this chain+stage, then append fresh ones.
     awk -F'\t' -v c="$chain" -v s="$stage" '!($1 == c && $2 == s)' "$LEDGER" >"$tmp"
-    for file in "$@"; do
+    while IFS= read -r file; do
         printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
             "$chain" "$stage" "$file" "$(hash_file "$file")" "$commit" "$now" "$report" >>"$tmp"
-    done
+    done <<<"$files"
     mv "$tmp" "$LEDGER"
-    echo "FROZEN	$chain	$stage	$# file(s) @$commit"
+    count="$(grep -c '' <<<"$files")"
+    echo "FROZEN	$chain	$stage	$count file(s) @$commit"
     return "$EXIT_OK"
 }
 
@@ -165,23 +193,40 @@ stale_chains_for() { # ledger rows for one path → chain ids whose frozen hash 
     done <<<"$1"
 }
 
-cmd_impact() {
-    [[ $# -ge 1 ]] || die_usage "impact needs <file...> or --since <ref>"
-    local changed
+impact_changed_paths() { # impact args → normalized, unique changed paths
     if [[ "$1" == "--since" ]]; then
         [[ $# -eq 2 ]] || die_usage "impact --since needs exactly one <ref>"
-        changed="$(changed_files_since "$2")"
-    else
-        changed="$(printf '%s\n' "$@" | sort -u)"
+        changed_files_since "$2"
+        return
     fi
+    local changed
+    changed="$(normalized_files 0 "$@")" || exit "$EXIT_USAGE"
+    sort -u <<<"$changed"
+}
 
-    local rows chains reverify="" result="$EXIT_OK" file chain ignored_count=0 patterns
+report_chains() { # chains reverify → REVERIFY / SKIP lines; returns 1 if any REVERIFY
+    local chain result="$EXIT_OK"
+    while IFS= read -r chain; do
+        [[ -z "$chain" ]] && continue
+        if grep -qxF -- "$chain" <<<"$2"; then
+            echo "REVERIFY	$chain"
+            result="$EXIT_STALE"
+        else
+            echo "SKIP	$chain	(frozen, untouched)"
+        fi
+    done <<<"$1"
+    return "$result"
+}
+
+cmd_impact() {
+    [[ $# -ge 1 ]] || die_usage "impact needs <file...> or --since <ref>"
+    local changed rows chains reverify="" result="$EXIT_OK" file ignored_count=0 patterns hit_rows
+    changed="$(impact_changed_paths "$@")" || exit "$EXIT_USAGE"
     rows="$(ledger_rows)"
     chains="$(cut -f1 <<<"$rows" | grep -v '^$' | sort -u)"
     patterns="$(ignore_patterns)"
     while IFS= read -r file; do
         [[ -z "$file" ]] && continue
-        local hit_rows
         hit_rows="$(awk -F'\t' -v p="$file" '$3 == p' <<<"$rows")"
         if [[ -n "$hit_rows" ]]; then
             # Changed since <ref> but already re-frozen at the current hash → nothing to do.
@@ -194,16 +239,7 @@ cmd_impact() {
         fi
     done <<<"$changed"
     [[ "$ignored_count" -gt 0 ]] && echo "IGNORED	$ignored_count	(docs / ledger-ignore patterns)"
-
-    while IFS= read -r chain; do
-        [[ -z "$chain" ]] && continue
-        if grep -qxF -- "$chain" <<<"$reverify"; then
-            echo "REVERIFY	$chain"
-            result="$EXIT_STALE"
-        else
-            echo "SKIP	$chain	(frozen, untouched)"
-        fi
-    done <<<"$chains"
+    report_chains "$chains" "$reverify" || result="$EXIT_STALE"
     return "$result"
 }
 
