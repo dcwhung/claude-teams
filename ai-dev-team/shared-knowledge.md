@@ -128,7 +128,7 @@ Harness 規定臨時檔要放喺 session scratchpad（`<tmp>/claude-<uid>/<proje
 後果：agent 寫唔到 scratchpad，就將截圖、一次性 QA script 寫入 repo（例如 `.proj-docs/qa/`），之後 commit 咗。life-in-uk-test 累積咗 155 張截圖（約 105 MB）同 131 個一次性 script。
 
 **做法**：
-`project-boundary.sh` 放行 `${TMPDIR:-/tmp}/claude-*/…/scratchpad/` 之下嘅檔案。路徑先經 `realpath -m` 正規化，所以 `..` traversal 照擋；其他 `/tmp` 路徑亦照擋。
+`project-boundary.sh` 放行 `${TMPDIR:-/tmp}/claude-*/*/*/scratchpad/` 之下嘅檔案。路徑先經 `realpath -m` 正規化；如果 `realpath -m` 用唔到（macOS BSD realpath）而路徑仲有 `..` segment，就喺任何放行檢查之前直接 exit 2，所以 `..` traversal 照擋；其他 `/tmp` 路徑亦照擋。
 
 **參考**：
 `hooks/project-boundary.sh` §2；SK-022
