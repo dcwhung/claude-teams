@@ -205,6 +205,19 @@ test_impact_since_staged_and_untracked() {
     cleanup
 }
 
+test_impact_since_rename() {
+    echo "impact --since <ref>: renamed frozen file → REVERIFY (W-902)"
+    new_project
+    git_init_commit
+    run freeze chain-a S1 qa/r1.md src/a.ts
+    git mv src/a.ts src/a2.ts
+    git -c user.email=t@t -c user.name=t commit -qm rename
+    run impact --since HEAD~1
+    assert_exit "$EXIT_STALE" "$CODE" "rename → exit 1"
+    assert_contains "$OUT" $'REVERIFY\tchain-a' "old path deleted → chain-a re-verify"
+    cleanup
+}
+
 test_impact_changed_but_refrozen() {
     echo "impact: file changed since ref but frozen at current hash → SKIP"
     new_project
@@ -285,6 +298,7 @@ main() {
     test_impact_nothing_touched
     test_impact_since_git_ref
     test_impact_since_staged_and_untracked
+    test_impact_since_rename
     test_impact_changed_but_refrozen
     test_impact_ignores_docs
     test_impact_frozen_doc_still_tracked
