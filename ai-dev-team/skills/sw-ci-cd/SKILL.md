@@ -189,6 +189,17 @@ jobs:
           fi
 ```
 
+### Docs-only 改動唔跑 CI（SK-025）
+
+```
+❌ workflow 層 `paths-ignore` / `paths`：required check 會永遠 pending；pull_request 仲係睇成個 PR 嘅 diff
+✅ `changes` job（比較今次 push）+ 測試 job `if: needs.changes.outputs.code == 'true'`：跳過當 Success
+✅ 判斷唔到（冇 before、diff 空、merge-base 失敗）→ 照跑全套
+✅ 一個 SHA 只跑一次：唔好同時用 push + pull_request 觸發同一個 workflow
+```
+
+完整做法同範例 → `shared-knowledge.md` SK-025。
+
 ---
 
 ## 環境變數管理

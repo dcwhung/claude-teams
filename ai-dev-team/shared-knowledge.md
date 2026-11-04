@@ -88,6 +88,7 @@
 
 | SK | 主題 | Roles |
 |----|------|-------|
+| SK-025 | Docs-only 改動唔跑 CI：用 job 層 `if:`，唔好用 workflow 層 `paths-ignore`（required check 會卡死） | devops, qa, main |
 | SK-024 | project-boundary hook 擋 session scratchpad → QA 臨時檔被逼寫入 repo | main, qa |
 | SK-023 | Cloud sandbox Playwright 版本同預裝 Chromium 唔夾 → 用 `executablePath` | qa, developer, devops |
 | SK-022 | Plan mode plan file 要喺 project-boundary hook 放行 | main |
@@ -110,6 +111,38 @@
 | SK-003 | Hook input 經 stdin JSON | main |
 | SK-002 | Hook 只喺對應 project 目錄生效 | main |
 | SK-001 | Subagent checkpoint 壓縮行為 | main |
+
+---
+
+## [SK-025] Docs-only 改動唔跑 CI —— 用 job 層 `if:`，唔好用 workflow 層 `paths-ignore`
+
+**日期**：2026-11-04
+**來源 Agent**：Main Agent（903-player / life-in-uk-test CI 調整）
+**類別**：CI / GitHub Actions
+**適用 Agent**：devops-engineer、quality-assurance、main
+**有效期至**：直到 GitHub 改變 required check 對 path filter 嘅處理
+
+**內容**：
+
+QA ledger 同報告嘅 commit 只改 docs，但每次都觸發成套 CI。life-in-uk 嘅 Playwright 要跑大約 15 分鐘，903 嘅 e2e 都要大約 8 分鐘。
+
+用 workflow 層 `paths-ignore` 有兩個坑：
+1. **Required check 卡死**：workflow 因為 path filter 冇觸發，branch protection 嘅 required check 會一直停喺「Expected — Waiting for status」，PR merge 唔到。
+2. **`pull_request` 睇嘅係成個 PR 嘅 diff**：一個有 code 改動嘅 PR 之後再 push docs-only commit，path filter 照樣當有 code，CI 照跑，即係根本慳唔到。
+
+另外，同時用 `push` 同 `pull_request` 兩個 trigger 會令同一個 SHA 跑兩次（903 `cdb5263` 實測）。
+
+**做法**：
+1. 加一個 `changes` job：`fetch-depth: 0`，比較**今次 push**（`push`：`github.event.before..github.sha`；`pull_request` synchronize：`github.event.before..pull_request.head.sha`；opened / reopened：同 base 嘅 merge-base）。全部檔都中 docs pattern 就輸出 `code=false`。
+2. 測試 job 加 `needs: changes` 同 `if: needs.changes.outputs.code == 'true'`。被 `if` 跳過嘅 job GitHub 當 **Success**，required check 照過。
+3. 判斷唔到（before 全 0 / 搵唔到、diff 係空、merge-base 失敗）一律 `code=true`，fail-safe。
+4. 要一個 SHA 只跑一次：只留一個 trigger（例如只留 `push` 非 main branch；check run 掛喺 commit 上面，PR 照見到）。
+
+**適用場景**：
+任何 project 想 docs / QA ledger commit 唔觸發 CI，或者見到同一個 SHA 跑兩次 CI。
+
+**參考**：
+903-player `.github/workflows/ci.yml`；life-in-uk-test `.github/workflows/playwright.yml`、`.proj-docs/ci.md`；`skills/sw-validation-gate/SKILL.md` §2（S3 引用 CI run）
 
 ---
 
