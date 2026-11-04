@@ -44,20 +44,20 @@ flowchart TD
     START(["👁️ /review"]) --> READ_SK
 
     subgraph PREP["📖 準備"]
-        READ_SK["1. 讀取 shared-knowledge.md<br/>（全局 + 項目）"]
+        READ_SK["1. 讀 shared-knowledge.md Index<br/>只讀 Roles=reviewer 條目"]
         SCAN_IDS["2. 掃描 .proj-docs/reviews/<br/>所有現有報告<br/>提取 C/W/S 各類型最高序號<br/>（確保全局唯一 Review Item ID）"]
-        EXEC_PLAN["3. 輸出執行計劃，等待確認"]
-        READ_CODE["4. 完整閱讀目標代碼"]
+        EXEC_PLAN["3. 輸出計劃 + 分級 T0–T3<br/>T0（docs/註解/格式）→ light review"]
+        READ_CODE["4. 閱讀 diff + 直接相關代碼<br/>re-review 只睇上輪 🔴/🟡 修正"]
     end
 
     subgraph REVIEW_EXEC["🔍 審閱執行"]
         CHECKLIST["5. 逐項執行 Review 檢查清單<br/>代碼質量 · 架構設計<br/>安全性 · 性能 · 測試 · 文件"]
-        HARD_GATES["6. 執行 Hard Gates<br/>lint · type_check · tests · coverage"]
+        HARD_GATES["6. 執行 Hard Gates<br/>lint · type_check · coverage<br/>tests = 只跑 diff 相關 unit<br/>⛔ full suite / e2e（hook block）"]
         SCORE["7. 計算評分（0–100）<br/>score 只作 advisory"]
-        ASSIGN_IDS["8. 整理問題清單<br/>🔴 Critical → 🟡 Warning → 🟢 Suggestion<br/>每個問題賦予全局唯一 ID<br/>從最高序號+1 開始"]
-        SOLUTIONS["9. 每個問題提供 ≥2 個解決方案<br/>附 trade-off 分析"]
+        ASSIGN_IDS["8. Validation Gate 定級<br/>L1 AC/SSoT + L2 可重現 + L3 推論<br/>三層收斂先可以 🔴 / 🟡<br/>缺 L1 → 🟢 · 缺 L2 → Observation<br/>每個問題賦予全局唯一 ID"]
+        SOLUTIONS["9. 只為 🔴 / 🟡 提供 ≥2 個方案<br/>🟢 每條一行"]
         PRIORITY["10. 排列修正優先順序"]
-        REVISED_CODE["11. 輸出完整修訂代碼<br/>附 inline comment"]
+        REVISED_CODE["11. 修訂代碼（只限 🔴/🟡 涉及函數）<br/>報告 ≤ 120 行"]
         RECEIPT["12. 輸出 handoff-receipt<br/>protocol · status · hard_gates<br/>next_action · branch · blockers"]
     end
 
@@ -68,7 +68,7 @@ flowchart TD
     end
 
     subgraph DECISION["⚖️ Status 決策"]
-        PASS["hard_gates 全 pass + ≥ 90 分<br/>無 🔴 Critical → status=pass"]
+        PASS["hard_gates 全 pass + ≥ 90 分<br/>無 🔴 Critical → status=pass<br/>只有 🟢 / Observation → pass"]
         WARN["hard_gates 全 pass + 75–89 分<br/>→ status=warn"]
         FAIL["任何 hard gate fail / < 75 分<br/>或有 🔴 Critical → status=fail"]
     end
@@ -110,14 +110,14 @@ flowchart LR
     subgraph HARNESS["🧭 Main Agent Harness"]
         MH1["解析 receipt"]
         MH2["Protocol 1 pass<br/>merge feature/fix → develop"]
-        MH3["invoke QA /test"]
+        MH3["invoke QA /test<br/>S1（或即刻 release → S3）<br/>T0 → 唔使 QA"]
         MH4["Protocol 2 pass<br/>merge develop → main"]
         MH5["invoke DevOps /deploy"]
         MH6["Protocol 4 fail<br/>rollback"]
     end
 
     subgraph QA_RELEASE["QA Stage"]
-        QA1["QA report + receipt"]
+        QA1["qa-ledger impact<br/>SKIP / REVERIFY / UNCOVERED<br/>只驗 REVERIFY → freeze<br/>report ≤ 60 行 + receipt"]
         QA2["fail → 建立 QA Ticket<br/>main agent invoke /fix"]
     end
 
@@ -138,7 +138,8 @@ flowchart LR
     MH1 -->|"status=pass"| MH2 --> MH3
     MH3 --> QA1
     QA1 -->|"status=fail"| QA2 --> FB2
-    QA1 -->|"status=pass"| MH4 --> MH5 --> P1
+    QA1 -->|"S1/S2 pass → end（等 release）"| END_S1["鏈已 freeze<br/>等 /test --stage=release"]
+    QA1 -->|"S3 pass"| MH4 --> MH5 --> P1
 
     P1 --> P2 --> P3 --> P4 --> P5 --> P6 --> P7 --> P8 --> P9
     P9 -->|"status=fail"| MH6
@@ -154,6 +155,47 @@ flowchart LR
 </div>
 
 <div class="section">
+  <h2>QA 驗收凍結 + 三階段 + Validation Gate</h2>
+  <div class="info-box">
+    已驗而且 SHA-256 冇變嘅功能鏈唔再驗。驗收分 S1 功能鏈 / S2 整合 / S3 發佈前；finding 要 L1 + L2 + L3 三層收斂先可以 block。SSoT：<code>skills/sw-validation-gate/SKILL.md</code>
+  </div>
+  <div class="diagram-card">
+    <div class="mermaid">
+%%{init: {'theme': 'dark', 'themeVariables': {'primaryColor': '#1e3a5f','primaryTextColor': '#e2e8f0','lineColor': '#475569','background': '#141921','mainBkg': '#1e293b','fontSize': '14px'}}}%%
+flowchart TD
+    Q0(["🧪 /test"]) --> TIER{"改動分級"}
+    TIER -->|"T0 docs / 註解 / 格式"| SKIPQA["唔入 QA<br/>receipt pass"]
+    TIER -->|"T1–T3"| IMPACT["qa-ledger.sh impact --since base"]
+    IMPACT --> SKIPC["SKIP<br/>已 freeze + hash 冇變<br/>只引用 ledger 行"]
+    IMPACT --> REV["REVERIFY<br/>scope 檔改咗"]
+    IMPACT --> UNC["UNCOVERED<br/>未屬任何鏈 → 寫新 frozen plan"]
+
+    REV --> STAGE{"階段"}
+    UNC --> STAGE
+    STAGE -->|"S1 功能鏈（開發完）"| S1["只跑 plan 指令<br/>PWA gate 只限改到 sw / build / manifest"]
+    STAGE -->|"S2 整合（UAT）"| S2["只跑涉及 REVERIFY 鏈嘅 journey"]
+    STAGE -->|"S3 全面（發佈前）"| S3["full suite 一次（或引用 CI 同 SHA）<br/>手動 / PWA vN→vN+1 只做 STALE 鏈"]
+
+    S1 --> GATE
+    S2 --> GATE
+    S3 --> GATE
+    GATE{"Validation Gate<br/>L1 AC / SSoT<br/>L2 可重現證據<br/>L3 推論對齊"}
+    GATE -->|"三層收斂"| BLOCK["🔴 / 🟡 → fail<br/>CUI ticket"]
+    GATE -->|"缺 L1"| MINOR["🟢 Minor → backlog"]
+    GATE -->|"缺 L2"| OBS["Observation → 一行"]
+    MINOR --> FREEZE
+    OBS --> FREEZE
+    GATE -->|"冇 finding"| FREEZE["qa-ledger.sh freeze<br/>chain + stage + plan + scope"]
+
+    style SKIPC fill:#052e16,stroke:#16a34a,color:#86efac
+    style SKIPQA fill:#052e16,stroke:#16a34a,color:#86efac
+    style BLOCK fill:#450a0a,stroke:#dc2626,color:#fca5a5
+    style FREEZE fill:#0f1a2e,stroke:#1d4ed8,color:#e2e8f0
+    </div>
+  </div>
+</div>
+
+<div class="section">
   <h2>Deploy 前置條件 + 回滾方案</h2>
   <div class="diagram-card">
     <div class="mermaid">
@@ -162,7 +204,7 @@ flowchart TD
     subgraph PREREQ["🔧 /deploy 前置條件（全部必須達標）"]
         P1["□ Review receipt = status=pass"]
         P2["□ QA receipt = status=pass"]
-        P3["□ 所有測試通過（Unit + Integration + E2E）"]
+        P3["□ S3 automated full suite 全綠<br/>（每個 SHA 一次；CI 同 SHA 綠咗可引用）"]
         P4["□ ESLint / TypeScript 無錯誤"]
         P5["□ Build 成功"]
         P6["□ Security Scan 無 Critical 漏洞"]

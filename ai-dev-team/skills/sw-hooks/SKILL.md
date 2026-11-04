@@ -51,7 +51,7 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
 
 ---
 
-### Hook 2：Merge 後自動執行測試套件
+### Hook 2：Merge 後自動執行相關測試（唔係 full suite）
 
 **解決問題**：post-merge stale files、測試失敗未被捕捉
 **觸發時機**：包含 `git merge` 嘅 Bash 命令執行後
@@ -65,7 +65,7 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
         "hooks": [
           {
             "type": "command",
-            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -q 'git merge' && npm test 2>&1 | tail -30 || true"
+            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -q 'git merge' && npx vitest related --run $(git diff --name-only 'HEAD@{1}' HEAD) 2>&1 | tail -30 || true"
           }
         ]
       }
@@ -74,7 +74,8 @@ Hooks 喺問題出現時**立即**提供反饋，唔等到 commit 或 review 才
 }
 ```
 
-> 偵測到 merge 後自動執行 `npm test`，輸出最後 30 行至用戶終端。
+> 偵測到 merge 後只跑同 merge 改動相關嘅 test（`vitest related`），輸出最後 30 行。
+> ❌ 唔好喺呢度跑 `npm test`：每次 merge 都跑 full suite，會同 QA S3 / CI 重複（Hard Rule #7、#9）。非 vitest project 換成對應 runner 嘅 related 模式。
 
 ---
 
@@ -118,7 +119,7 @@ stdin JSON 完整結構見 `shared-knowledge.md` → SK-003。
         "hooks": [
           {
             "type": "command",
-            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -q 'git merge' && npm test 2>&1 | tail -30 || true"
+            "command": "cmd=$(jq -r '.tool_input.command // empty'); echo \"$cmd\" | grep -q 'git merge' && npx vitest related --run $(git diff --name-only 'HEAD@{1}' HEAD) 2>&1 | tail -30 || true"
           }
         ]
       }
@@ -165,6 +166,17 @@ stdin JSON 完整結構見 `shared-knowledge.md` → SK-003。
 > 設計原則：保守 — 寧願偶爾 block 合理操作（用戶按 bypass）也唔可放任 main agent 繞過 workflow。
 
 ---
+
+### Hook 3b：Reviewer Test Scope（plugin 內置）
+
+**解決問題**：Code Reviewer 自己跑 full suite / e2e，同 QA、CI 重複（life-in-uk-test 82/93 份 review）
+**觸發時機**：PreToolUse Bash；只管 stdin JSON `agent_type` 以 `code-reviewer` 結尾嘅 call
+**腳本位置**：`${CLAUDE_PLUGIN_ROOT}/hooks/reviewer-test-scope.sh`（plugin `hooks/hooks.json` 註冊；plugin agent frontmatter 嘅 `hooks` 會被忽略，所以唔可以放喺 agent 檔）
+
+- Block：`npm|pnpm|yarn [run] test`（冇 `-- <file>`）、冇檔案參數嘅 `vitest` / `jest`、playwright、`e2e/`、`run-all.sh`、`test:e2e`
+- 放行：`vitest related`、`vitest run <files>`、`jest --findRelatedTests`、`npm test -- <file>`
+- Bypass：`CLAUDE_HOOK_BYPASS_REVIEWER_TEST_SCOPE=1`
+- Test：`bash hooks/reviewer-test-scope.test.sh`
 
 ### Hook 4：Handoff Receipt Enforcement（Harness 強制）
 

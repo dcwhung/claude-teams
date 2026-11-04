@@ -33,6 +33,7 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 ❌ 為「確保冇 regression」加跑任何嘢 —— full suite 只喺 QA S3 跑一次
 ```
 
+> 機制：`hooks/reviewer-test-scope.sh` 會直接 block（exit 2）。用戶明確要求先可以用 `CLAUDE_HOOK_BYPASS_REVIEWER_TEST_SCOPE=1`。
 > 證據：life-in-uk-test 82/93 份 review 自己跑 `run-all.sh`（每次約 700 s），之後 QA 同 CI 再各跑一次。
 
 ## T0 Light Review

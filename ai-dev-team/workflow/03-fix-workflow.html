@@ -102,7 +102,7 @@ flowchart TD
         SCORE{"Reviewer receipt<br/>status=pass ?"}
         FIX_RV["修正 Review 問題"]
         MERGE["main agent：merge fix → develop"]
-        QA_STAGE["main agent invoke /test（staging）"]
+        QA_STAGE["main agent invoke /test<br/>S1 功能鏈驗收（已凍結冇改 → SKIP）<br/>即刻 release → S3"]
         QA_PASS{"QA receipt<br/>status=pass ?"}
         MERGE_MAIN["main agent：merge develop → main"]
         DEPLOY["main agent invoke /deploy"]

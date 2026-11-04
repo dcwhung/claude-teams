@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+# Tests for reviewer-test-scope.sh — run: bash ai-dev-team/hooks/reviewer-test-scope.test.sh
+
+set -uo pipefail
+
+HOOK="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/reviewer-test-scope.sh"
+readonly HOOK
+readonly EXIT_ALLOW=0
+readonly EXIT_BLOCK=2
+readonly REVIEWER="ai-dev-team:code-reviewer"
+
+PASS_COUNT=0
+FAIL_COUNT=0
+
+payload() { # agent_type command
+    jq -cn --arg a "$1" --arg c "$2" \
+        '{hook_event_name:"PreToolUse",tool_name:"Bash",tool_input:{command:$c}} + (if $a == "" then {} else {agent_type:$a} end)'
+}
+
+expect() { # expected_exit agent_type command
+    local code
+    payload "$2" "$3" | bash "$HOOK" >/dev/null 2>&1
+    code=$?
+    if [[ "$code" == "$1" ]]; then
+        echo "  ✓ [$1] ${2:-main} :: $3"
+        PASS_COUNT=$((PASS_COUNT + 1))
+    else
+        echo "  ✗ [$1 expected, got $code] ${2:-main} :: $3"
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+    fi
+}
+
+echo "reviewer: blocked (full suite / e2e)"
+expect "$EXIT_BLOCK" "$REVIEWER" "npm test"
+expect "$EXIT_BLOCK" "$REVIEWER" "npm run test"
+expect "$EXIT_BLOCK" "$REVIEWER" "pnpm test 2>&1 | tail -20"
+expect "$EXIT_BLOCK" "$REVIEWER" "cd /repo && yarn test"
+expect "$EXIT_BLOCK" "$REVIEWER" "npx vitest run"
+expect "$EXIT_BLOCK" "$REVIEWER" "npx vitest run --coverage"
+expect "$EXIT_BLOCK" "$REVIEWER" "pnpm vitest"
+expect "$EXIT_BLOCK" "$REVIEWER" "npx jest"
+expect "$EXIT_BLOCK" "$REVIEWER" "bash tests/run-all.sh"
+expect "$EXIT_BLOCK" "$REVIEWER" "./tests/run-all.sh --parallel 4"
+expect "$EXIT_BLOCK" "$REVIEWER" "npx playwright test"
+expect "$EXIT_BLOCK" "$REVIEWER" "node e2e/player.mjs"
+expect "$EXIT_BLOCK" "$REVIEWER" "npm run test:e2e"
+expect "$EXIT_BLOCK" "$REVIEWER" "npm run e2e"
+expect "$EXIT_BLOCK" "code-reviewer" "npm test"
+
+echo "reviewer: allowed (scoped)"
+expect "$EXIT_ALLOW" "$REVIEWER" "npx vitest related src/foo.ts"
+expect "$EXIT_ALLOW" "$REVIEWER" "npx vitest run src/foo.test.ts src/bar.test.tsx"
+expect "$EXIT_ALLOW" "$REVIEWER" "npx vitest run --coverage src/foo.test.ts"
+expect "$EXIT_ALLOW" "$REVIEWER" "npm test -- src/foo.test.ts"
+expect "$EXIT_ALLOW" "$REVIEWER" "npx jest --findRelatedTests src/foo.ts"
+expect "$EXIT_ALLOW" "$REVIEWER" "node tests/quiz-test.js"
+expect "$EXIT_ALLOW" "$REVIEWER" "npx eslint . && npx tsc --noEmit"
+expect "$EXIT_ALLOW" "$REVIEWER" "git diff --stat develop...HEAD"
+expect "$EXIT_ALLOW" "$REVIEWER" "grep -rn 'npm test' docs/"
+
+echo "other agents / main: never blocked"
+expect "$EXIT_ALLOW" "" "npm test"
+expect "$EXIT_ALLOW" "ai-dev-team:quality-assurance" "bash tests/run-all.sh"
+expect "$EXIT_ALLOW" "ai-dev-team:frontend-developer" "npx playwright test"
+
+echo "bypass"
+OUT_CODE=0
+payload "$REVIEWER" "npm test" | CLAUDE_HOOK_BYPASS_REVIEWER_TEST_SCOPE=1 bash "$HOOK" >/dev/null 2>&1 || OUT_CODE=$?
+if [[ "$OUT_CODE" == "$EXIT_ALLOW" ]]; then
+    echo "  ✓ bypass env allows"; PASS_COUNT=$((PASS_COUNT + 1))
+else
+    echo "  ✗ bypass env allows (got $OUT_CODE)"; FAIL_COUNT=$((FAIL_COUNT + 1))
+fi
+
+echo
+echo "passed: $PASS_COUNT  failed: $FAIL_COUNT"
+[[ "$FAIL_COUNT" -eq 0 ]]

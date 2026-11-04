@@ -66,6 +66,7 @@
 - ✅ Developer / Reviewer 只跑與改動相關嘅 test（被改檔案嘅 test + import 被改模組嘅 test）
 - ❌ 以「確保冇 regression」為由自行跑 full suite（full suite 只由 QA S3 / CI 負責，每個 SHA 一次）
 - ❌ Reviewer 跑 e2e / browser suite（屬 QA 同 CI）
+- 機制：`hooks/reviewer-test-scope.sh`（PreToolUse Bash；按 stdin `agent_type` 只管 code-reviewer，exit 2）
 - ❓ 唔肯定相關範圍、或者唔肯定係咪「必要」→ 停低問用戶，唔好自己估
 - 🔺 MAJOR 版本 release（`v1.x.x → v2.0.0`）→ **必須**跑 full suite，跑之前先知會用戶（版本變化 + 指令 + 預計時間）；唔全綠唔可以 tag / merge / deploy
 - 詳細：skill `sw-tdd` §測試執行範圍、§MAJOR 版本 → 強制 full suite
