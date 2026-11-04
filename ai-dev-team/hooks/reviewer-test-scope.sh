@@ -10,7 +10,7 @@
 #   - e2e / browser suite：playwright、cypress、`e2e/`、`run-all.sh`、`test:e2e` / `run e2e`
 # 放行：`vitest related`、`vitest run <files>`、`jest --findRelatedTests`、`npm test -- [flags] <file>`、單一 node test 檔、
 #       `node --check` / `bash -n`，同埋所有非 runner command（cat / ls / git / grep / head …）
-# 規則逐段（&& || ; |）套用，只睇段頭 command word（跳過 `FOO=1`）係 runner
+# 規則逐段（&& || ; |）套用，只睇段頭 command word（跳過 `FOO=1` 同 time/env/nohup/sudo/xargs/nice/timeout/command/exec wrapper）係 runner
 #   （npm pnpm yarn bun npx node bash sh make playwright vitest jest cypress pytest，或 `*run-all.sh`）
 # 檔案參數：有副檔名或者有 `/`，而且唔係 directory（有 payload `.cwd` 就用 `-d` 檢查，冇就一定要有副檔名）
 #
@@ -63,6 +63,11 @@ EOF
 # ── 逐段（&& || ; |）睇 command word；只有 runner 先檢查 full suite / e2e ──
 # cat / ls / git / grep / head 呢類讀檔 command 一律放行（W-905）
 readonly RUNNER_WORDS=" npm pnpm yarn bun npx bunx node bash sh make playwright vitest jest cypress pytest "
+# 段頭嘅 wrapper（`time npm test`、`xargs npx vitest`）要剝走先睇真正 command（W-907）
+readonly WRAPPER_WORDS=" time env nohup sudo xargs nice timeout command exec "
+# wrapper 自己嘅 flag 入面會食埋下一個值嘅（nice -n N、sudo -u x、env -u X、timeout -s/-k、xargs -n/-I/-L/-P）
+readonly WRAPPER_VALUE_FLAGS=" -n -u -s -k -I -L -P "
+readonly DURATION_RE='^[0-9]+([.][0-9]+)?[smhd]?$'
 # 呢啲 flag 會食埋下一個 token（唔係檔案參數）
 readonly VALUE_FLAGS=" -t --reporter --config -c --project --testNamePattern --outputFile --shard -k -m "
 readonly EXEC_WORDS=" exec dlx x "
@@ -188,13 +193,40 @@ check_make() { # make targets
     return 0
 }
 
+wrapper_arg_len() { # wrapper args... → number of tokens that belong to the wrapper itself
+    local word="$1" n=0
+    shift
+    while [[ $# -gt 0 && "$1" == -* ]]; do
+        if in_list "$1" "$WRAPPER_VALUE_FLAGS" && [[ $# -ge 2 ]]; then
+            shift 2; n=$((n + 2))
+        else
+            shift; n=$((n + 1))
+        fi
+    done
+    [[ "$word" == "timeout" && $# -gt 0 && "$1" =~ $DURATION_RE ]] && n=$((n + 1))
+    echo "$n"
+}
+
+command_prefix_len() { # tokens... → number of leading env assignments / wrapper tokens
+    local n=0 word skip
+    while [[ $# -gt 0 ]]; do
+        if [[ "$1" =~ $ENV_ASSIGN_RE ]]; then shift; n=$((n + 1)); continue; fi
+        word="${1##*/}"
+        in_list "$word" "$WRAPPER_WORDS" || break
+        skip="$(wrapper_arg_len "$@")"
+        shift $((skip + 1))
+        n=$((n + skip + 1))
+    done
+    echo "$n"
+}
+
 check_segment() { # one command segment (no && || ; |)
     local -a tokens
     read -ra tokens <<<"$1"
     [[ ${#tokens[@]} -eq 0 ]] && return 0
     set -- "${tokens[@]}"
-    # 跳過 FOO=1 呢類 env assignment
-    while [[ $# -gt 0 && "$1" =~ $ENV_ASSIGN_RE ]]; do shift; done
+    # 跳過 FOO=1 呢類 env assignment 同 time / env / sudo / xargs … wrapper
+    shift "$(command_prefix_len "$@")"
     [[ $# -eq 0 ]] && return 0
     [[ "$1" == *run-all.sh ]] && block "e2e / browser suite 屬 QA 同 CI"
     local word="${1##*/}"
