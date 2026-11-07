@@ -137,6 +137,18 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 - [ ] **固定畫面**：body 唔 scroll，header / footer 固定，只有內容 panel scroll（preview 已批准嘅例外除外）— 違反 → 🔴 Critical
 - [ ] **Viewport 細節**：用 `100dvh`、header / footer 有 safe-area padding、高度用 CSS variable — 缺 → 🟡 Warning
 
+
+### UX Flow & Icon-First 檢查（所有有 UI 嘅 project）
+
+> 只檢查新流程 / PR 改動到嘅流程。詳細：`rules/global-rules.md` §UX Flow & Icon-First UI Rule。
+
+- [ ] **流程步數**：> 5 步 → 🔴 Critical；4–5 步而 spec 冇理由 / 簡化方案 → 🔴 Critical；有理由 → 🟡 Warning
+- [ ] **Spec 對齊**：實作步數多過 spec「操作流程」步數 → 🟡 Warning
+- [ ] **Icon-First**：常用動作冇 icon、按鈕 label > 2 詞 / 4 字、說明文字 > 1 行 → 🟡 Warning
+- [ ] **Accessibility**：icon-only 按鈕冇 `aria-label` → 🟡 Warning
+- [ ] **Animation**：冇 `prefers-reduced-motion`、duration hardcode 或 > 300ms、阻塞操作、純裝飾 loop → 🟡 Warning
+- [ ] **舊流程**：未改動嘅舊流程超標 → 🟢 Suggestion（入 backlog，唔 block）
+
 ---
 
 ## Hard Gates（強制 block 條件，binary pass/fail）

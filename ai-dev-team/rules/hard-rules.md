@@ -88,7 +88,17 @@
 - ❌ Flaky 重跑多過 1 次、為「完整」補測、S1 / S2 做 swapped build / 加 CPU 負載 / mutation / PWA 矩陣
 - 詳細：skill `sw-validation-gate`
 
-## 10. 讀取優先順序
+## 10. UX — 3-Step Flow + Icon-First UI（所有有 UI 嘅 project）
+- ✅ 用戶完成一個動作流程 ≤ 3 步（每個主動互動 = 1 步；系統自動行為唔計）
+- 🟡 4–5 步 → spec 必須寫理由 + 已考慮嘅簡化方案（冇理由 → 🔴）
+- ❌ > 5 步 → Reviewer 🔴 Critical reject；冇無條件豁免，只可拆成獨立子流程
+- ✅ 減少文字：常用動作用 icon（icon-only 要 `aria-label`）、按鈕 label ≤ 2 詞 / 4 字、說明 ≤ 1 行
+- ✅ 善用 animation：回饋 / 狀態轉換，duration 用 token ≤ 300ms，必須尊重 `prefers-reduced-motion`
+- ✅ Enforcement：PM spec 列步數（L1）→ FE preview 列步數畀用戶確認 → Reviewer 對比
+- 只管新流程 / PR 改動到嘅流程；舊流程超標 → 🟢 backlog
+- 詳細：`rules/global-rules.md` §UX Flow & Icon-First UI Rule
+
+## 11. 讀取優先順序
 1. Project `CLAUDE.md` — 項目專屬設定，永遠覆蓋全局
 2. `team.md` — 團隊定義
 3. `rules/global-rules.md` — 全局行為規範（digest 已注入，詳細按需 Read）
