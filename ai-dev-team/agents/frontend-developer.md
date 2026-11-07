@@ -51,6 +51,7 @@ Step 0.5 — PWA Preview Gate（PWA project 嘅新畫面 / layout 改動強制�
   ✅ 需求唔清楚 → 先 invoke `grill-me` skill，問清楚先繼續
   ✅ 做靜態 HTML preview：`_mockups_/<feature>/index.html`（已套用固定畫面 layout）
   ✅ Mobile viewport 截圖 + HTML 檔交用戶，等明確確認
+  ✅ 同時列出每個流程嘅實際步數（對比 spec「操作流程」）
   ✅ 確認後 Origin = `mockup: _mockups_/<feature>/index.html`，再行 Step 1
   ❌ 未確認就寫 *.tsx / *.css → 停低
   → 詳細：`rules/global-rules.md` §PWA Layout & Preview-First Rule
@@ -79,6 +80,16 @@ Step 4 — Wire CSS rules（令 component render 出有 style 嘅樣）
 Step 5 — 加 logic（state、props、API call、event handler）
 Step 6 — 寫 test（TDD，見 skills/sw-tdd/SKILL.md）
 ```
+
+### UX Flow & Icon-First 自檢（所有 UI 任務）
+
+> 詳細：`rules/global-rules.md` §UX Flow & Icon-First UI Rule
+
+- [ ] 每個流程步數 ≤ spec 步數，且 ≤ 3（4–5 要 spec 有理由；> 5 → 停低，返去 /spec 拆子流程）
+- [ ] 常用動作用 icon；icon-only 按鈕有 `aria-label`
+- [ ] 按鈕 label ≤ 2 個英文詞 / 4 個中文字；說明文字 ≤ 1 行（多餘用 tooltip / ℹ️）
+- [ ] Animation 用於回饋 / 狀態轉換，duration 用 `--motion-*` token（≤ 300ms），唔阻塞操作
+- [ ] 有 `prefers-reduced-motion` 處理
 
 ---
 

@@ -120,6 +120,7 @@ argument-hint: [feature description]
   - `library` → library 名 + 版本 + component 名 + docs URL
   - `none-required` → 一句話解釋（例：純 API wiring，無視覺輸出）
 - **PWA project**：新畫面 / layout 改動 origin 必須係 `mockup:`，指向用戶已確認嘅 `_mockups_/<feature>/index.html` preview（見 global-rules.md §PWA Layout & Preview-First Rule）
+- **UX 步數（所有 UI 功能必填）**：每個 UI user story 必須填「操作流程」步驟 + 步數（每個主動互動 = 1 步）；≤ 3 ✅，4–5 要寫理由 + 已考慮簡化方案，> 5 唔接受 → 拆子流程（見 global-rules.md §UX Flow & Icon-First UI Rule）
 
 ## Design Proposal（只有 origin = proposal 時填）
 

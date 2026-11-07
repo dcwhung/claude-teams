@@ -885,3 +885,101 @@ Step 5 — 確認後
 - Reviewer：`body` 會 scroll、header / footer 跟內容 scroll 走（而 preview 冇批准呢個例外）→ 🔴 Critical
 - Reviewer：用 `100vh` 而唔係 `100dvh`、header / footer 冇 safe-area padding → 🟡 Warning
 - Frontend Developer：未有用戶確認 preview 就寫 UI code → 停低，返去 Step 2
+
+---
+
+## UX Flow & Icon-First UI Rule（Hard Rule）
+
+> 此規則由 2026-11-07 生效。適用範圍：**所有有 UI 嘅 project**（web / PWA / mobile / admin panel）；backend-only / CLI 豁免。
+> 原因：步驟越多，用戶越易放棄；文字越多，用戶越唔會睇。目標係「一眼睇明、三步做完」。
+> 只管**新流程**同 **PR 有改動到嘅流程**；未改動嘅舊流程唔 block，Reviewer 發現超標可開 🟢 入 backlog。
+
+### 1. 3-Step Flow（流程步數）
+
+**計步方法**：由入口畫面開始計，每一個用戶**主動互動** = 1 步（tap / click / 輸入一欄 / 確認 / 揀選）。
+系統自動行為（loading、auto-redirect、auto-focus、auto-save）**唔計**。
+
+```
+例：「加一筆支出」
+  ❌ 按 + → 輸入金額 → 揀類別 → 按儲存          = 4 步
+  ✅ 按 + → 輸入金額（類別 smart default）→ 按儲存 = 3 步
+```
+
+| 步數 | 狀態 | 處理 |
+|------|------|------|
+| ≤ 3 | ✅ Pass | — |
+| 4–5 | 🟡 Warning | Spec 必須寫明「點解唔可以 ≤ 3」+ 已考慮過嘅簡化方案；**冇寫理由 → 升級 🔴** |
+| > 5 | 🔴 Critical | 必須重新設計，唔可 merge |
+
+**例外**：冇無條件豁免。流程太長 → 只可拆成**獨立子流程**，每個子流程各自計步
+（例：註冊只收 email + password ≤ 3 步，其餘資料之後 progressive 補填）。
+
+**簡化手段（優先考慮）**：
+- Smart default / prefill（用上次揀過嘅值、用戶 profile）
+- 合併畫面（一個畫面完成，唔好 wizard 分頁）
+- Inline edit（原地改，唔好開新頁）
+- Undo 代替 confirm dialog（做咗先，畀用戶 undo，慳一步確認）
+- Shortcut / quick action（常用動作放喺入口畫面）
+
+### 2. Icon-First UI（減少文字）
+
+- ✅ 常用動作（新增 / 編輯 / 刪除 / 搜尋 / 分享 / 關閉 / 返回）用 icon
+- ✅ 按鈕 label ≤ 2 個英文詞（中文 ≤ 4 字）
+- ✅ 畫面上說明文字唔可超過 1 行；多餘內容用 tooltip / ℹ️ 展開
+- ✅ Icon-only 按鈕必須有 `aria-label`（accessibility）
+- ✅ Icon 來自同一套 icon set，size 用 token，唔可混用風格
+- ❌ 大段說明文字、label + 描述重複講同一件事
+- 例外：破壞性 / 不可逆動作（刪除帳戶、付款）保留文字 label，確保意思清楚
+
+### 3. Animation（善用動態回饋）
+
+- ✅ 用途：用戶動作回饋（按下、儲存成功 ✔️、錯誤 shake）、狀態轉換（展開 / 入場 / 切換）、loading skeleton
+- ✅ Duration 用 token，唔可 magic number；上限 300ms
+
+```css
+:root {
+    --motion-fast: 150ms;
+    --motion-base: 250ms;
+    --motion-easing: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+```
+
+- ✅ 必須尊重 `prefers-reduced-motion`
+- ❌ 純裝飾、無限 loop 吸引注意、阻塞用戶操作（要等 animation 完先可以撳）嘅 animation
+
+### 4. Enforcement（三個 checkpoint）
+
+```
+PM（/spec）
+  ✅ Functional spec 每個 UI user story 填「操作流程」：步驟列表 + 步數
+  ✅ 4–5 步 → 必須寫理由 + 已考慮嘅簡化方案
+  → Spec 步數 = L1 SSoT（見 skills/sw-validation-gate）
+
+Frontend Developer（preview / 實作）
+  ✅ 交 preview 時列出每個流程嘅實際步數，畀用戶確認
+  ✅ 實作步數唔可以多過 spec
+  ✅ 按 §2 / §3 checklist 自檢
+
+Code Reviewer（/review）
+  ✅ 對比 spec 步數同實作步數
+  ✅ 按 §2 / §3 checklist 檢查
+```
+
+### Hard rule 細則
+
+- Reviewer：流程 > 5 步 → 🔴 Critical，必須 reject
+- Reviewer：流程 4–5 步但 spec 冇理由 / 冇簡化方案 → 🔴 Critical；有理由 → 🟡 Warning
+- Reviewer：實作步數多過 spec → 🟡 Warning
+- Reviewer：常用動作冇用 icon、按鈕 label 過長、說明文字 > 1 行、icon-only 冇 `aria-label` → 🟡 Warning
+- Reviewer：animation 冇尊重 `prefers-reduced-motion`、duration hardcode 或 > 300ms、阻塞操作 → 🟡 Warning
+- Reviewer：未改動嘅舊流程超標 → 🟢 Suggestion（入 backlog，唔 block）
+- PM：UI user story 冇「操作流程」步數 → spec 唔完整，唔可以入 /plan

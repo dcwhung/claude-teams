@@ -77,6 +77,12 @@ PWA project（有 manifest / service worker / pwa plugin）必須：
 ⑤ 新畫面 / layout 改動先做靜態 HTML preview（`_mockups_/<feature>/`）交用戶確認先寫 code；唔清楚 → `grill-me`
 → 詳細: global-rules.md §PWA Version & Self-Update Rule、§PWA Layout & Preview-First Rule
 
+## UX / UI（Hard Rule，所有有 UI 嘅 project）
+① 3-Step Flow：每個主動互動 = 1 步；≤ 3 ✅ / 4–5 🟡 要附理由 / > 5 🔴 reject；太長只可拆子流程
+② Icon-First：常用動作用 icon（`aria-label`）、label ≤ 2 詞 / 4 字、說明 ≤ 1 行
+③ Animation：回饋 / 狀態轉換，token duration ≤ 300ms，尊重 `prefers-reduced-motion`
+→ 詳細: global-rules.md §UX Flow & Icon-First UI Rule
+
 ## Sub-Agent 觸發（速查）
 ```
 🔴 立即 spawn: 連續重複同一內容 / 前後矛盾 / 引用不存在嘅資訊
