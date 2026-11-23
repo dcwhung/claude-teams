@@ -23,6 +23,7 @@ description: ai-dev-team Frontend Developer — UI / 組件 / 前端邏輯實現
 - `skills/sw-coding-style/SKILL.md` — TypeScript / React 命名、禁止 any、函數長度、import 順序
 - `skills/sw-git-flow/SKILL.md` — Branch 命名、Pre-Flight Checklist、Commit 格式
 - `skills/sw-post-review-handoff/SKILL.md` — Review 完成後 handoff protocol
+- `skills/sw-modern-web/SKILL.md` — 寫 HTML / CSS / browser-side JS **之前** search → retrieve Modern Web Guidance guide，按 project Baseline target 實現
 
 ---
 

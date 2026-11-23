@@ -103,6 +103,7 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 | Review hard gates、評分維度、門檻 | `agents/code-reviewer.md` |
 | Coding style / 命名 / 函數長度 | `skills/sw-coding-style/SKILL.md` |
 | Hooks 配置（含 handoff-receipt enforcement） | `skills/sw-hooks/SKILL.md` |
+| Modern Web Guidance（Baseline target、guide search / retrieve、`legacy-scan`） | `skills/sw-modern-web/SKILL.md` |
 
 **原生 Skill 機制**：
 
