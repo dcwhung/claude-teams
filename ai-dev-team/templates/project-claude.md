@@ -56,6 +56,10 @@
 | CI/CD | [GitHub Actions / GitLab CI / 其他] | | |
 | 部署平台 | [Vercel / AWS / Railway / 其他] | | |
 
+This project's Baseline target is [Baseline Widely available / Baseline 2024 / Baseline Newly available].
+
+> 有 frontend 先需要。呢句英文要原句保留（Modern Web Guidance 靠佢判斷 fallback）；刪走就當 Baseline Widely available。揀法見 `skills/sw-modern-web/SKILL.md` §1。
+
 ---
 
 ## 環境資訊

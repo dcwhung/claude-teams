@@ -17,6 +17,7 @@ description: Architect 掃描 codebase，輸出架構分析報告
 ## 引用規範（SSoT）
 
 - Plan Before Do 確認規則（main vs subagent）→ `skills/sw-agent-protocols/SKILL.md` §2
+- Modern Web Guidance `legacy-scan`、Baseline target、finding 定級 → `skills/sw-modern-web/SKILL.md`
 
 本檔案只定義 `/audit` 獨有嘅執行流程同報告格式。
 
@@ -34,12 +35,13 @@ description: Architect 掃描 codebase，輸出架構分析報告
 5. 分析架構層次（目錄結構、模組職責、依賴關係）
 6. 分析 API 結構（routes、endpoints、controllers）
 7. 分析數據庫結構（schema、migrations、models）
-8. 識別問題（Critical / Warning / Observation）
-9. 評估技術債
-10. 輸出完整報告
-11. 將報告儲存至 `.proj-docs/audits/YYYY-MM-DD_HH-MM_audit_[描述].md`
-12. 更新 `.proj-docs/index.md`（加入新文件條目，更新「最後更新」日期）
-13. 如有發現 common knowledge，記錄入 shared-knowledge.md
+8. 如 project 有 frontend：按 sw-modern-web 對 FE source root 行 legacy-scan，逐條 verify（CLI 不可用 → 報告寫明已跳過）
+9. 識別問題（Critical / Warning / Observation）
+10. 評估技術債
+11. 輸出完整報告
+12. 將報告儲存至 `.proj-docs/audits/YYYY-MM-DD_HH-MM_audit_[描述].md`
+13. 更新 `.proj-docs/index.md`（加入新文件條目，更新「最後更新」日期）
+14. 如有發現 common knowledge，記錄入 shared-knowledge.md
 ```
 
 ---
@@ -152,6 +154,7 @@ description: Architect 掃描 codebase，輸出架構分析報告
 | 安全性 | 高/中/低 | | |
 | 性能 | 高/中/低 | | |
 | 依賴更新 | 高/中/低 | | |
+| Modern Web（legacy pattern） | 高/中/低 | Baseline target：[…]；legacy-scan：N finding（只覆蓋確定性規則） | |
 
 ---
 

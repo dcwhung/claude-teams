@@ -16,6 +16,7 @@ description: Coding style entry point — universal rules (function length, magi
 |------|---------------|---------|
 | TypeScript / React | `skills/sw-coding-style-ts/SKILL.md` | 寫或 review TS / TSX 代碼時 |
 | CSS / Styling | `skills/sw-coding-style-css/SKILL.md` | 寫或 review CSS / styled-jsx / Tailwind 樣式時，**任何 UI task 都要 load** |
+| HTML / Web Platform API | `skills/sw-modern-web/SKILL.md` | 寫或 review HTML / CSS / browser-side JS 時（Modern Web Guidance + Baseline target） |
 | PHP | `skills/sw-coding-style-php/SKILL.md` | 寫或 review PHP 代碼時 |
 | Python | `skills/sw-coding-style-py/SKILL.md` | 寫或 review Python 代碼時 |
 

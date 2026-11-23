@@ -20,6 +20,7 @@ argument-hint: [branch|PR|path]
 - Review 維度、評分、報告格式、Review Item ID 賦予規則 → `agents/code-reviewer.md`
 - Review Item ID vs QA Ticket 系統 → `skills/sw-ticket-management/SKILL.md`
 - Review 完成後 handoff → `skills/sw-post-review-handoff/SKILL.md` → Protocol 1
+- Diff 有 FE 檔案時嘅 Modern Web `legacy-scan` → `skills/sw-modern-web/SKILL.md` §3–§4
 
 本檔案只定義 `/review` 獨有嘅執行步驟。
 

@@ -179,3 +179,4 @@ QA 遇到已登記嘅 KI → 唔計 fail，報告寫一行引用 KI。新出現�
 - 測試執行範圍（Developer / Reviewer）→ `skills/sw-tdd/SKILL.md` §測試執行範圍
 - Receipt 格式（`stage` 欄）→ `skills/sw-post-review-handoff/SKILL.md`
 - Cloud 環境 Playwright 版本唔夾 → `shared-knowledge.md` SK-023
+- Modern Web Guidance 證據屬邊層（`legacy-scan` = L2；guide 建議 = L3；Baseline target = L1）→ `skills/sw-modern-web/SKILL.md` §4

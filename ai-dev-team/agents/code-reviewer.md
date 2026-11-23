@@ -96,6 +96,7 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 - [ ] 注釋是否足夠（複雜邏輯必須有注釋）
 - [ ] 代碼風格是否符合 ESLint / Prettier 規範
 - [ ] Accessibility：語意 HTML、ARIA、鍵盤導航、色彩對比（前端改動必查）
+- [ ] **Modern Web**（diff 有 FE 檔案先做）：只對 diff 涉及嘅 FE 路徑行 `legacy-scan`，finding 定級見 `skills/sw-modern-web/SKILL.md` §4（legacy pattern 冇違反 L1 → 最多 🟢）
 
 ### Design Asset Folders 檢查（有新增 / 搬 preview、設計圖、素材時）
 
