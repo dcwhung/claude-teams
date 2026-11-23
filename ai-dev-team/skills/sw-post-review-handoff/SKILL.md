@@ -156,7 +156,7 @@ blockers:
 □ 展示：spec 入面嘅 Design Proposal 描述 + 當前 UI 截圖
 □ 問用戶：「Proposal vs 實作 — 符合 design intent？Y / N」
 □ 用戶確認 Y：
-    ⚠️ QA 必須截 final screenshot 入 .proj-docs/design-baselines/<feature>-<date>.png
+    ⚠️ QA 必須截 final screenshot 入 _mockups_/<feature>/shipped-<YYYY-MM-DD>.png（global-rules §Design Asset Folders Rule）
     ⚠️ 更新 spec 將 origin 升級成 baseline:（下次同一 component 用 baseline origin）
 □ 用戶 N → invoke developer 修正
 ```

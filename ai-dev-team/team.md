@@ -95,6 +95,7 @@ Claude 會載入此 team 配置，並以對應 agent 角色回應。
 | Git flow（branch、commit、pre-flight、merge 規則） | `skills/sw-git-flow/SKILL.md` |
 | TDD Red-Green-Refactor 循環 | `skills/sw-tdd/SKILL.md` |
 | QA 驗收凍結（SHA-256 ledger）、三階段驗收（S1/S2/S3）、L1/L2/L3 Validation Gate、報告上限 | `skills/sw-validation-gate/SKILL.md` + `scripts/qa-ledger.sh` |
+| Preview / 設計原圖 / app 素材放邊（`_mockups_/` vs `_design_/` vs app folder） | `rules/global-rules.md` §Design Asset Folders Rule |
 | Autonomous Loop + Parallel Agents（低層機制）+ Edge Case 枚舉 | `skills/sw-autonomous-loop/SKILL.md` |
 | Multi-task Parallel Dispatch（決策層：conflict matrix、lane clustering、batch review/QA/release） | `skills/sw-parallel-dispatch/SKILL.md` |
 | CI/CD pipeline 階段、環境變數、回滾 | `skills/sw-ci-cd/SKILL.md` |

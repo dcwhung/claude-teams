@@ -97,6 +97,13 @@ description: ai-dev-team Code Reviewer — 獨立 code review，輸出評分報�
 - [ ] 代碼風格是否符合 ESLint / Prettier 規範
 - [ ] Accessibility：語意 HTML、ARIA、鍵盤導航、色彩對比（前端改動必查）
 
+### Design Asset Folders 檢查（有新增 / 搬 preview、設計圖、素材時）
+
+- [ ] 新 preview 喺 `_mockups_/<feature>/`、設計原圖喺 `_design_/`（唔係 `design/` / `mockups/` / `previews/` 等）— 違反 → 🟡
+- [ ] `_mockups_/` / `_design_/` 入面冇 app、build、script、test 會讀嘅檔（`git grep` 路徑確認）— 有 → 🔴，搬去 app folder
+- [ ] Deploy ignore（例如 `.vercelignore`）同 formatter ignore 有包兩個 folder — 冇 → 🔴
+- 詳細：`rules/global-rules.md` §Design Asset Folders Rule
+
 ### Design Fidelity 檢查（前端 UI 改動強制）
 
 > 適用條件：diff 包含 `*.tsx` / `*.jsx` / `*.css` / `*.scss` 改動時。

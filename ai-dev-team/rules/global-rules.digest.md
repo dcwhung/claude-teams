@@ -83,6 +83,11 @@ PWA project（有 manifest / service worker / pwa plugin）必須：
 ③ Animation：回饋 / 狀態轉換，token duration ≤ 300ms，尊重 `prefers-reduced-motion`
 → 詳細: global-rules.md §UX Flow & Icon-First UI Rule
 
+## Design Asset Folders（Hard Rule）
+`_mockups_/<feature>/`：用 browser 睇畫面效果嘅 preview（+ 佢自己用嘅圖）｜`_design_/`：設計原圖 / brainstorm 素材｜app / build / script 會讀 → app 自己 folder。
+兩個 review folder 都要喺 deploy / formatter ignore；QA 截圖唔 commit（`proposal:` ship 後 `_mockups_/<feature>/shipped-<date>.png` 除外）。
+→ 詳細: global-rules.md §Design Asset Folders Rule
+
 ## Sub-Agent 觸發（速查）
 ```
 🔴 立即 spawn: 連續重複同一內容 / 前後矛盾 / 引用不存在嘅資訊
