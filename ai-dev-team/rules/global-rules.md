@@ -720,7 +720,7 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 
 | Origin | 用喺邊種情況 | 必須提供 |
 |--------|----------|---------|
-| `mockup: <path>#<section>` | 有現成 mockup file（如 `_mockups_/` 內） | mockup file 路徑 + 引用 section |
+| `mockup: <path>#<section>` | 有現成 mockup file（`_mockups_/<feature>/index.html`，見 §Design Asset Folders Rule） | mockup file 路徑 + 引用 section |
 | `baseline: <path>` | 改現有 UI（bug fix / 微調 / refactor），冇 mockup | 當前 component 路徑（即 baseline 係依家 ship 緊嘅樣） |
 | `proposal: <path>` | 全新 UI 但冇 mockup（improvise 模式） | spec / plan 入面嘅 `## Design Proposal` section 路徑（ASCII / wireframe / Figma URL / 文字描述） |
 | `library: <name>@<version>` | 完全跟第三方 library 樣 | library 名 + 版本（如 `library: shadcn/ui@0.8 — Dialog`） |
@@ -730,7 +730,7 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 
 - Reviewer 見唔到 `Design Origin:` 行 → 必須 reject PR。
 - Origin 唔配對實際變動（例：標 `none-required` 但 diff 內有新 className / 新 layout）→ reject。
-- `proposal:` 模式 ship 之後，QA **必須**截圖儲入 `.proj-docs/design-baselines/<feature>-<date>.png`，並 update spec 將該 path 加返入 `## Visual Reference`。下次同一 component 動工時 origin 就升級成 `baseline:`。
+- `proposal:` 模式 ship 之後，QA **必須**截圖儲入 `_mockups_/<feature>/shipped-<YYYY-MM-DD>.png`（同 feature 嘅 preview 放埋一齊；見 §Design Asset Folders Rule），並 update spec 將該 path 加返入 `## Visual Reference`。下次同一 component 動工時 origin 就升級成 `baseline:`。
 - `baseline:` 模式如果改動超過 30% 視覺（layout 大改 / 色系大變 / 加 hero section），必須升級成 `proposal:` 流程（要 design 提案 + design sign-off）。
 
 **Spec reject 條件：**
@@ -739,6 +739,46 @@ mv .proj-docs/diagrams/flow/project-overview.html \
 - `mockup:` 但路徑唔存在 → reject
 
 > 詳見 `~/.claude/CLAUDE.md` Hard Rules #4。
+
+---
+
+## Design Asset Folders Rule（Hard Rule）
+
+> 此規則由 2026-11-23 生效（用戶規則；903-player PR #315、life-in-uk-test PR #169 第一次按呢個分法整理）。
+> 原因：preview、設計原圖同 app 真正會讀嘅素材混埋喺 `design/`、`mockups/`、`.proj-docs/design-baselines/`，分唔清邊啲會 ship、邊啲可以刪、邊啲改咗要驗收。
+
+**核心原則**：app 唔會讀、只係俾用戶 review UI 嘅嘢，一律放 `_mockups_/` 或 `_design_/`；app、build 或者 script 會直接讀嘅，放入 app 自己嘅 folder。
+
+| Folder | 係乜 | 點用 | 結構 |
+|--------|------|------|------|
+| `_mockups_/` | 用 browser 開嚟睇**畫面效果**嘅嘢：HTML preview、可互動原型、比較幾款方案 | 用戶揀款 / 確認 layout；確認後做 `Design Origin: mockup:` 嘅依據，code 要跟佢 | 一個 feature 一個 folder：`_mockups_/<feature>/index.html` + 佢自己用嘅圖（成個 folder 可以獨立打開） |
+| `_design_/` | **設計素材原檔**：artwork、banner、splash、logo 嘅高解析 / 未處理版本、brainstorm 素材 | 用圖像軟件打開或者再加工；app 用嘅係複製 / 處理過嘅版本 | 平鋪或者按類分 folder；冇 html |
+| app 自己嘅 folder（例如 `apps/<app>/assets/`、`public/`、`src/assets/`） | app、build 或者 script **會直接讀**嘅檔（例如 icon 生成 script 嘅原圖） | 屬於開發；改咗要驗收 | 跟 app 現有結構 |
+
+**放邊度（按次序問）：**
+
+```
+1. app / build / script / test 會直接讀？        → app 自己嘅 folder（唔可以放 _mockups_ / _design_）
+2. 用 browser 開嚟睇畫面效果？                    → _mockups_/<feature>/
+3. 圖檔原檔，app 用緊佢嘅副本或者處理過嘅版本？  → _design_/
+```
+
+- 只有一個 mockup 用嘅圖 → 跟 mockup 放 `_mockups_/<feature>/`；幾個地方都會用到嘅原圖先放 `_design_/`
+- ❌ 唔好再開 `design/`、`mockups/`、`previews/`、`.proj-docs/design-baselines/` 呢類冇底線嘅 review folder
+- ❌ QA / review 過程截圖唔 commit（放 scratchpad）；唯一例外見 §Design-Source Binding Rule（`proposal:` ship 後嘅 `shipped-<date>.png`）
+
+**兩個 folder 都必須：**
+
+- 喺 deploy ignore（例如 `.vercelignore`）同打包範圍之外：唔會 deploy、唔會入 bundle
+- 喺 formatter / linter ignore 入面（唔會被 prettier 改寫）
+- 唔屬於任何 QA 功能鏈：`qa-ledger.sh` 預設已經 ignore `_mockups_/*` 同 `_design_/*`
+- 被 code 註解引用時寫完整路徑（例如 `// mockup _mockups_/home-view/index.html`）；改名 / 刪檔要一併更新，歷史記錄（QA / review 報告、tickets、changelog）保留原文
+
+**Hard rule 細則：**
+
+- Reviewer 見到新 preview / 設計原圖放喺上面規定以外嘅位置 → 🟡（L1 = 本節）
+- Reviewer 見到 `_mockups_/` / `_design_/` 入面有 app 會讀嘅檔（code / build / test import 佢）→ 🔴：要搬去 app folder
+- Deploy ignore 冇包 `_mockups_/` / `_design_/` → 🔴（會將 review 檔公開 deploy）
 
 ---
 

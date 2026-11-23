@@ -153,6 +153,8 @@
 | Technical Spec | [連結或路徑] |
 | API 文件 | [連結或路徑] |
 | 設計稿 | [連結或路徑] |
+| UI preview（mockup） | `_mockups_/<feature>/index.html`（global-rules §Design Asset Folders Rule） |
+| 設計原圖 / 素材 | `_design_/` |
 | Staging 環境 | [連結] |
 
 ---

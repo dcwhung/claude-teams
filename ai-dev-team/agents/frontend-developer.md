@@ -49,7 +49,7 @@ Step 0 — Design Origin Check（同 /feature Step 0 一致）
 
 Step 0.5 — PWA Preview Gate（PWA project 嘅新畫面 / layout 改動強制）
   ✅ 需求唔清楚 → 先 invoke `grill-me` skill，問清楚先繼續
-  ✅ 做靜態 HTML preview：`_mockups_/<feature>/index.html`（已套用固定畫面 layout）
+  ✅ 做靜態 HTML preview：`_mockups_/<feature>/index.html`（已套用固定畫面 layout）；preview 自己用嘅圖放同一個 folder，設計原圖放 `_design_/`，app 會讀嘅素材放 app folder（`rules/global-rules.md` §Design Asset Folders Rule）
   ✅ Mobile viewport 截圖 + HTML 檔交用戶，等明確確認
   ✅ 同時列出每個流程嘅實際步數（對比 spec「操作流程」）
   ✅ 確認後 Origin = `mockup: _mockups_/<feature>/index.html`，再行 Step 1

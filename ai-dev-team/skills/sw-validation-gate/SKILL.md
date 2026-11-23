@@ -158,7 +158,7 @@ bash "${CLAUDE_PLUGIN_ROOT}/scripts/qa-ledger.sh" status [chain_id]
 | QA（S3） | 100 行 | 同上，加 full suite 結果（或 CI run 連結 + SHA）同 PWA gate 結果 | 同上 |
 | Review | 120 行 | 評分、三層收斂嘅 finding、receipt | 🟢 寫成段落 |
 
-截圖存 scratchpad 或者 `.gitignore` 咗嘅路徑；只有 design baseline 先 commit 入 `.proj-docs/design-baselines/`。
+截圖存 scratchpad 或者 `.gitignore` 咗嘅路徑，唔 commit。唯一例外：`proposal:` ship 後嘅 `_mockups_/<feature>/shipped-<date>.png`（global-rules §Design Asset Folders Rule）。`_mockups_/`、`_design_/` 唔屬任何功能鏈，`qa-ledger.sh` 預設 ignore。
 
 ---
 

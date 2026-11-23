@@ -28,6 +28,7 @@
 - ❌ 任何 `*.tsx`、`*.jsx`、`*.css`、`*.scss` 改動，PR description 冇 `Design Origin:` 行 → Reviewer 必須 reject
 - ❌ 用 `none-required` 但 diff 有新 className / layout → reject
 - ✅ 五種合法 origin：`mockup:` / `baseline:` / `proposal:` / `library:` / `none-required`（附 Why）
+- ✅ Folder：用 browser 睇畫面效果嘅 preview → `_mockups_/<feature>/`；設計原圖 / brainstorm 素材 → `_design_/`；app / build / script 會讀嘅 → app 自己 folder。兩個 review folder 都要喺 deploy ignore 入面 → 詳細：`rules/global-rules.md` §Design Asset Folders Rule
 - 觸發原因：2026-05-17 life-travels 前端同 mockup 完全唔符（黑色地球、錯誤字體、文案全錯）
 - 詳細：`rules/global-rules.md` §Design-Source Binding Rule、skill `sw-coding-style-css`
 

@@ -28,8 +28,9 @@ readonly LEDGER_HEADER=$'#chain_id\tstage\tpath\tsha256\tverified_commit\tverifi
 readonly NO_COMMIT="-"
 readonly DOUBLE_SLASH="//"
 readonly DEFAULT_IGNORE_FILE=".proj-docs/qa/ledger-ignore"
-# Docs never need QA (T0); a doc that IS in a chain (e.g. its frozen plan) is still tracked.
-readonly DEFAULT_IGNORE_PATTERNS=('*.md' '.proj-docs/*' '.tickets/*' 'docs/*' '.claude/*' '.gitignore' '*/.gitignore' '.git-blame-ignore-revs' 'LICENSE*' 'licenses/*')
+# Docs and review-only folders (_mockups_/, _design_/; global-rules §Design Asset Folders) never need QA (T0).
+# A doc that IS in a chain (e.g. its frozen plan) is still tracked.
+readonly DEFAULT_IGNORE_PATTERNS=('*.md' '_mockups_/*' '_design_/*' '.proj-docs/*' '.tickets/*' 'docs/*' '.claude/*' '.gitignore' '*/.gitignore' '.git-blame-ignore-revs' 'LICENSE*' 'licenses/*')
 
 LEDGER="${QA_LEDGER:-$DEFAULT_LEDGER}"
 IGNORE_FILE="${QA_LEDGER_IGNORE:-$DEFAULT_IGNORE_FILE}"

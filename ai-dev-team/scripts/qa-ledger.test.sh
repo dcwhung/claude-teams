@@ -288,6 +288,22 @@ test_impact_ignores_docs() {
     cleanup
 }
 
+test_impact_ignores_review_folders() {
+    echo "impact: _mockups_/ and _design_/ (review-only folders) are ignored by default"
+    new_project
+    mkdir -p _mockups_/home _design_
+    echo "<html>" >_mockups_/home/index.html
+    echo "png" >_design_/banner.webp
+    run freeze chain-a S1 qa/r1.md src/a.ts
+    run impact _mockups_/home/index.html _design_/banner.webp
+    assert_exit "$EXIT_OK" "$CODE" "review folders only → exit 0"
+    assert_not_contains "$OUT" "UNCOVERED" "no UNCOVERED for _mockups_/ / _design_/"
+    assert_contains "$OUT" "IGNORED	2" "both counted as ignored"
+    run impact src/_mockups_x.ts
+    assert_contains "$OUT" $'UNCOVERED\tsrc/_mockups_x.ts' "a src file merely named like it is not ignored"
+    cleanup
+}
+
 test_impact_frozen_doc_still_tracked() {
     echo "impact: a doc that is part of a chain (plan file) is still tracked"
     new_project
@@ -350,6 +366,7 @@ main() {
     test_impact_since_rename
     test_impact_changed_but_refrozen
     test_impact_ignores_docs
+    test_impact_ignores_review_folders
     test_impact_frozen_doc_still_tracked
     test_impact_ignore_file
     test_shasum_fallback
